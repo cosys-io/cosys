@@ -1,4 +1,4 @@
-package cosys
+package common
 
 import "github.com/cosys-io/cosys/internal/models"
 
@@ -11,38 +11,38 @@ type QueryEngine interface {
 }
 
 type QEParams struct {
-	Selects   []models.IAttribute
-	Columns   []models.IAttribute
+	Selects   []models.Attribute
+	Columns   []models.Attribute
 	Wheres    []models.Condition
 	LimitVal  int64
 	OffsetVal int64
 	OrderBys  []*models.Order
-	Populates []models.IAttribute
+	Populates []models.Attribute
 }
 
 func QEParam() *QEParams {
 	return &QEParams{
-		[]models.IAttribute{},
-		[]models.IAttribute{},
+		[]models.Attribute{},
+		[]models.Attribute{},
 		[]models.Condition{},
 		-1,
 		0,
 		[]*models.Order{},
-		[]models.IAttribute{},
+		[]models.Attribute{},
 	}
 }
 
-func (p *QEParams) Select(selects ...models.IAttribute) *QEParams {
+func (p *QEParams) Select(selects ...models.Attribute) *QEParams {
 	p.Selects = append(p.Selects, selects...)
 	return p
 }
 
-func (p *QEParams) Insert(columns ...models.IAttribute) *QEParams {
+func (p *QEParams) Insert(columns ...models.Attribute) *QEParams {
 	p.Columns = append(p.Columns, columns...)
 	return p
 }
 
-func (p *QEParams) Update(columns ...models.IAttribute) *QEParams {
+func (p *QEParams) Update(columns ...models.Attribute) *QEParams {
 	p.Columns = append(p.Columns, columns...)
 	return p
 }
@@ -67,7 +67,7 @@ func (p *QEParams) OrderBy(orderBy ...*models.Order) *QEParams {
 	return p
 }
 
-func (p *QEParams) Populate(populate ...models.IAttribute) *QEParams {
+func (p *QEParams) Populate(populate ...models.Attribute) *QEParams {
 	p.Populates = append(p.Populates, populate...)
 	return p
 }

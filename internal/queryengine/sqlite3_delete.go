@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 	"github.com/cosys-io/cosys/internal/models"
 )
 
-func SQLiteDeleteQuery(params *cosys.QEParams, model models.Model) (string, error) {
+func SQLiteDeleteQuery(params *common.QEParams, model models.Model) (string, error) {
 	var sb strings.Builder
 
 	sb.WriteString("DELETE FROM ")
 
-	sb.WriteString(model.Model_Name())
+	sb.WriteString(model.Name_())
 
 	num := len(params.Wheres)
 	if num > 0 {

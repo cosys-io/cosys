@@ -1,4 +1,4 @@
-package cosys
+package common
 
 type Service struct {
 	Functions map[string]Function

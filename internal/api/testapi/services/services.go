@@ -1,7 +1,7 @@
 package services
 
-import "github.com/cosys-io/cosys/internal/cosys"
+import "github.com/cosys-io/cosys/internal/common"
 
-var Services = map[string]*cosys.Service{
+var Services = map[string]*common.Service{
 	"dummy": DummyService,
 }

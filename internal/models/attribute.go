@@ -1,8 +1,8 @@
 package models
 
-type IAttribute interface {
-	DBName() string
-	StructName() string
+type Attribute interface {
+	Name() string
+	FieldName() string
 
 	Asc() *Order
 	Desc() *Order
@@ -11,34 +11,39 @@ type IAttribute interface {
 	NotNull() Condition
 }
 
-type Attribute struct {
-	dbname     string
-	structname string
+type AttributeBase struct {
+	name      string
+	fieldName string
+	schema    *AttributeSchema
 }
 
-func (a *Attribute) DBName() string {
-	return a.dbname
+func (a *AttributeBase) Name() string {
+	return a.name
 }
 
-func (a *Attribute) StructName() string {
-	return a.structname
+func (a *AttributeBase) FieldName() string {
+	return a.fieldName
 }
 
-func (a *Attribute) Asc() *Order {
+func (a *AttributeBase) Schema() *AttributeSchema {
+	return a.schema
+}
+
+func (a *AttributeBase) Asc() *Order {
 	return &Order{
 		a,
 		ASC,
 	}
 }
 
-func (a *Attribute) Desc() *Order {
+func (a *AttributeBase) Desc() *Order {
 	return &Order{
 		a,
 		DESC,
 	}
 }
 
-func (a *Attribute) Null() Condition {
+func (a *AttributeBase) Null() Condition {
 	return &ExpressionCondition{
 		NULL,
 		a,
@@ -46,7 +51,7 @@ func (a *Attribute) Null() Condition {
 	}
 }
 
-func (a *Attribute) NotNull() Condition {
+func (a *AttributeBase) NotNull() Condition {
 	return &ExpressionCondition{
 		NULL,
 		a,
@@ -57,7 +62,7 @@ func (a *Attribute) NotNull() Condition {
 // Order
 
 type Order struct {
-	Attribute IAttribute
+	Attribute Attribute
 	Order     OrderType
 }
 
@@ -116,7 +121,7 @@ func (n *NestedCondition) Or(right Condition) Condition {
 
 type ExpressionCondition struct {
 	Op    ExpressionOperation
-	Left  IAttribute
+	Left  Attribute
 	Right any
 }
 

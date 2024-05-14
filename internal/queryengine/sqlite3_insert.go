@@ -3,27 +3,27 @@ package queryengine
 import (
 	"strings"
 
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 	"github.com/cosys-io/cosys/internal/models"
 )
 
-func SQLiteInsertQuery(params *cosys.QEParams, model models.Model) (string, error) {
+func SQLiteInsertQuery(params *common.QEParams, model models.Model) (string, error) {
 	var sb strings.Builder
 
 	sb.WriteString("INSERT INTO ")
 
-	sb.WriteString(model.Model_Name())
+	sb.WriteString(model.Name_())
 
 	insert := params.Columns
 	num := len(params.Columns)
 	if num == 0 {
-		insert = model.Model_All()
+		insert = model.All_()
 		num = len(insert)
 	}
 
 	sb.WriteString(" ( ")
 	for index, col := range insert {
-		insertString := col.DBName()
+		insertString := col.Name()
 
 		sb.WriteString(insertString)
 		if index < num-1 {

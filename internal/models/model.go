@@ -1,10 +1,10 @@
 package models
 
 type Model interface {
-	Model_Name() string
-	Model_New() Entity
-	Model_All() []IAttribute
-	Model_Id() *IntAttribute
+	New_() Entity
+	All_() []Attribute
+	Id_() *IntAttribute
+	Name_() string
 }
 
 type Entity interface {

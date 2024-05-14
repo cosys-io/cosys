@@ -1,14 +1,15 @@
 package models
 
 type IntAttribute struct {
-	*Attribute
+	*AttributeBase
 }
 
-func NewIntAttribute(dbname, structname string) *IntAttribute {
+func NewIntAttribute(name, fieldName string) *IntAttribute {
 	return &IntAttribute{
-		&Attribute{
-			dbname,
-			structname,
+		&AttributeBase{
+			name,
+			fieldName,
+			nil,
 		},
 	}
 }

@@ -1,14 +1,15 @@
 package models
 
 type StringAttribute struct {
-	*Attribute
+	*AttributeBase
 }
 
-func NewStringAttribute(dbname, structname string) *StringAttribute {
+func NewStringAttribute(name, fieldName string) *StringAttribute {
 	return &StringAttribute{
-		&Attribute{
-			dbname,
-			structname,
+		&AttributeBase{
+			name,
+			fieldName,
+			nil,
 		},
 	}
 }

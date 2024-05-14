@@ -6,16 +6,16 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 	"github.com/cosys-io/cosys/internal/models"
 )
 
-func Extract(data models.Entity, params *cosys.QEParams, model models.Model) ([]any, error) {
+func Extract(data models.Entity, params *common.QEParams, model models.Model) ([]any, error) {
 	attributes := []any{}
 
 	columns := params.Columns
 	if len(params.Columns) == 0 {
-		columns = model.Model_All()
+		columns = model.All_()
 	}
 
 	var dataValue reflect.Value = reflect.ValueOf(data)
@@ -23,7 +23,7 @@ func Extract(data models.Entity, params *cosys.QEParams, model models.Model) ([]
 		dataValue = reflect.Indirect(dataValue)
 	}
 	for _, col := range columns {
-		name := col.StructName()
+		name := col.FieldName()
 
 		attributeValue := dataValue.FieldByName(name)
 		if attributeValue == (reflect.Value{}) {
@@ -36,12 +36,12 @@ func Extract(data models.Entity, params *cosys.QEParams, model models.Model) ([]
 	return attributes, nil
 }
 
-func Scan(rows *sql.Rows, params *cosys.QEParams, model models.Model) (models.Entity, error) {
-	entity := model.Model_New()
+func Scan(rows *sql.Rows, params *common.QEParams, model models.Model) (models.Entity, error) {
+	entity := model.New_()
 
 	selects := params.Selects
 	if len(params.Selects) == 0 {
-		selects = model.Model_All()
+		selects = model.All_()
 	}
 
 	entityType := reflect.TypeOf(entity)
@@ -53,7 +53,7 @@ func Scan(rows *sql.Rows, params *cosys.QEParams, model models.Model) (models.En
 	numCols := len(selects)
 	columns := make([]any, numCols)
 	for index, attribute := range selects {
-		field := entityValue.FieldByName(attribute.StructName())
+		field := entityValue.FieldByName(attribute.FieldName())
 		columns[index] = field.Addr().Interface()
 	}
 
@@ -65,7 +65,7 @@ func Scan(rows *sql.Rows, params *cosys.QEParams, model models.Model) (models.En
 	return entity, nil
 }
 
-func SelectQuery(dialect string, params *cosys.QEParams, model models.Model) (string, error) {
+func SelectQuery(dialect string, params *common.QEParams, model models.Model) (string, error) {
 	switch dialect {
 	case "sqlite3":
 		return SQLiteSelectQuery(params, model)
@@ -74,7 +74,7 @@ func SelectQuery(dialect string, params *cosys.QEParams, model models.Model) (st
 	}
 }
 
-func InsertQuery(dialect string, params *cosys.QEParams, model models.Model) (string, error) {
+func InsertQuery(dialect string, params *common.QEParams, model models.Model) (string, error) {
 	switch dialect {
 	case "sqlite3":
 		return SQLiteInsertQuery(params, model)
@@ -83,7 +83,7 @@ func InsertQuery(dialect string, params *cosys.QEParams, model models.Model) (st
 	}
 }
 
-func UpdateQuery(dialect string, params *cosys.QEParams, model models.Model) (string, error) {
+func UpdateQuery(dialect string, params *common.QEParams, model models.Model) (string, error) {
 	switch dialect {
 	case "sqlite3":
 		return SQLiteUpdateQuery(params, model)
@@ -92,7 +92,7 @@ func UpdateQuery(dialect string, params *cosys.QEParams, model models.Model) (st
 	}
 }
 
-func DeleteQuery(dialect string, params *cosys.QEParams, model models.Model) (string, error) {
+func DeleteQuery(dialect string, params *common.QEParams, model models.Model) (string, error) {
 	switch dialect {
 	case "sqlite3":
 		return SQLiteDeleteQuery(params, model)
@@ -108,7 +108,7 @@ func StringCondition(where models.Condition) (string, error) {
 	case *models.ExpressionCondition:
 		return StringExpressions(where)
 	case *models.BoolAttribute:
-		return where.DBName(), nil
+		return where.Name(), nil
 	default:
 		return "", fmt.Errorf("invalid where condition")
 	}
@@ -156,7 +156,7 @@ func StringExpressions(where *models.ExpressionCondition) (string, error) {
 	if where.Left == nil {
 		return "", fmt.Errorf("right operand not found")
 	} else {
-		left = where.Left.DBName()
+		left = where.Left.Name()
 	}
 
 	switch where.Op {
@@ -193,7 +193,7 @@ func StringExpressions(where *models.ExpressionCondition) (string, error) {
 
 func StringOrder(orderBy *models.Order) (string, error) {
 	if orderBy.Order == models.ASC || orderBy.Order == models.DESC {
-		return fmt.Sprintf("%s %s", orderBy.Attribute.DBName(), orderBy.Order), nil
+		return fmt.Sprintf("%s %s", orderBy.Attribute.Name(), orderBy.Order), nil
 	}
 	return "", fmt.Errorf("illegal operation for order condition: %s", orderBy.Order)
 }

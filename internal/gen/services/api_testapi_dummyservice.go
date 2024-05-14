@@ -4,17 +4,17 @@
 package services
 
 import (
-	. "github.com/cosys-io/cosys/internal/.gen/models"
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
+	. "github.com/cosys-io/cosys/internal/gen/models"
 
 	"github.com/cosys-io/cosys/internal/api/testapi/services"
 )
 
 type Api_Testapi_Dummyservice struct {
-	cs cosys.Cosys
+	cs common.Cosys
 }
 
-func New_Api_Testapi_Dummyservice(cs cosys.Cosys) any {
+func New_Api_Testapi_Dummyservice(cs common.Cosys) any {
 	return &Api_Testapi_Dummyservice{
 		cs,
 	}

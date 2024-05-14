@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	. "github.com/cosys-io/cosys/internal/.gen/models"
 	"github.com/cosys-io/cosys/internal/apis"
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
+	. "github.com/cosys-io/cosys/internal/gen/models"
 )
 
 var UsersController = apis.NewController(map[string]apis.Action{
@@ -18,7 +18,7 @@ var UsersController = apis.NewController(map[string]apis.Action{
 	"delete":  deleteUser,
 })
 
-func findOneUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
+func findOneUser(cs common.Cosys, ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context().Value("query_params").([]string)
 		id, _ := strconv.Atoi(ctx[0])
@@ -29,7 +29,7 @@ func findOneUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
 			return
 		}
 
-		user, err := es.FindOne("testapi::users", id, cosys.ESParam())
+		user, err := es.FindOne("testapi::users", id, common.ESParam())
 		if err != nil {
 			WriteError(w, "Could not find user.", 400)
 			return
@@ -39,7 +39,7 @@ func findOneUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
 	}
 }
 
-func createUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
+func createUser(cs common.Cosys, ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		createUserRequest := &struct {
 			Active bool   `json:"active"`
@@ -66,7 +66,7 @@ func createUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
 			return
 		}
 
-		newUser, err := es.Create("testapi::users", user, cosys.ESParam())
+		newUser, err := es.Create("testapi::users", user, common.ESParam())
 		if err != nil {
 			WriteError(w, "Could not create user.", 400)
 			return
@@ -76,7 +76,7 @@ func createUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
 	}
 }
 
-func updateUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
+func updateUser(cs common.Cosys, ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context().Value("query_params").([]string)
 		id, _ := strconv.Atoi(ctx[0])
@@ -106,7 +106,7 @@ func updateUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
 			return
 		}
 
-		newUser, err := es.Update("testapi::users", user, id, cosys.ESParam().SetField(Users.Active, Users.Name))
+		newUser, err := es.Update("testapi::users", user, id, common.ESParam().SetField(Users.Active, Users.Name))
 		if err != nil {
 			WriteError(w, "Could not update user.", 400)
 			return
@@ -116,7 +116,7 @@ func updateUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
 	}
 }
 
-func deleteUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
+func deleteUser(cs common.Cosys, ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context().Value("query_params").([]string)
 		id, _ := strconv.Atoi(ctx[0])
@@ -127,7 +127,7 @@ func deleteUser(cs cosys.Cosys, ctx context.Context) http.HandlerFunc {
 			return
 		}
 
-		oldUser, err := es.Delete("testapi::users", id, cosys.ESParam())
+		oldUser, err := es.Delete("testapi::users", id, common.ESParam())
 		if err != nil {
 			WriteError(w, "Could not delete user.", 400)
 			return

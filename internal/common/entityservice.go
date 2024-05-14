@@ -1,4 +1,4 @@
-package cosys
+package common
 
 import "github.com/cosys-io/cosys/internal/models"
 
@@ -11,33 +11,33 @@ type EntityService interface {
 }
 
 type ESParams struct {
-	GetFields []models.IAttribute
-	SetFields []models.IAttribute
+	GetFields []models.Attribute
+	SetFields []models.Attribute
 	Filters   []models.Condition
 	StartVal  int64
 	LimitVal  int64
 	Sorts     []*models.Order
-	Populates []models.IAttribute
+	Populates []models.Attribute
 }
 
 func ESParam() *ESParams {
 	return &ESParams{
-		[]models.IAttribute{},
-		[]models.IAttribute{},
+		[]models.Attribute{},
+		[]models.Attribute{},
 		[]models.Condition{},
 		0,
 		-1,
 		[]*models.Order{},
-		[]models.IAttribute{},
+		[]models.Attribute{},
 	}
 }
 
-func (p *ESParams) GetField(fields ...models.IAttribute) *ESParams {
+func (p *ESParams) GetField(fields ...models.Attribute) *ESParams {
 	p.GetFields = append(p.GetFields, fields...)
 	return p
 }
 
-func (p *ESParams) SetField(fields ...models.IAttribute) *ESParams {
+func (p *ESParams) SetField(fields ...models.Attribute) *ESParams {
 	p.SetFields = append(p.SetFields, fields...)
 	return p
 }
@@ -62,7 +62,7 @@ func (p *ESParams) Sort(sorts ...*models.Order) *ESParams {
 	return p
 }
 
-func (p *ESParams) Populate(populates ...models.IAttribute) *ESParams {
+func (p *ESParams) Populate(populates ...models.Attribute) *ESParams {
 	p.Populates = append(p.Populates, populates...)
 	return p
 }

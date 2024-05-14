@@ -1,9 +1,9 @@
 package entityservice
 
-import "github.com/cosys-io/cosys/internal/cosys"
+import "github.com/cosys-io/cosys/internal/common"
 
-func TransformParams(params *cosys.ESParams) *cosys.QEParams {
-	return cosys.QEParam().
+func TransformParams(params *common.ESParams) *common.QEParams {
+	return common.QEParam().
 		Select(params.GetFields...).
 		Insert(params.SetFields...).
 		Where(params.Filters...).

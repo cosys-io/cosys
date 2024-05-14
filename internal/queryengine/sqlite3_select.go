@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 	"github.com/cosys-io/cosys/internal/models"
 )
 
-func SQLiteSelectQuery(params *cosys.QEParams, model models.Model) (string, error) {
+func SQLiteSelectQuery(params *common.QEParams, model models.Model) (string, error) {
 	var sb strings.Builder
 
 	sb.WriteString("SELECT")
@@ -20,7 +20,7 @@ func SQLiteSelectQuery(params *cosys.QEParams, model models.Model) (string, erro
 		for index, col := range params.Selects {
 			sb.WriteString(" ")
 
-			colString := col.DBName()
+			colString := col.Name()
 
 			sb.WriteString(colString)
 
@@ -31,7 +31,7 @@ func SQLiteSelectQuery(params *cosys.QEParams, model models.Model) (string, erro
 	}
 
 	sb.WriteString(" FROM ")
-	sb.WriteString(model.Model_Name())
+	sb.WriteString(model.Name_())
 
 	num = len(params.Wheres)
 	if num > 0 {

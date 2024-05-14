@@ -3,9 +3,9 @@ package policies
 import (
 	"context"
 
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 )
 
-func DummyPolicy(cs cosys.Cosys, ctx context.Context) bool {
+func DummyPolicy(cs common.Cosys, ctx context.Context) bool {
 	return true
 }

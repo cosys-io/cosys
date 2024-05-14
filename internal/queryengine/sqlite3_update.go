@@ -4,28 +4,28 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 	"github.com/cosys-io/cosys/internal/models"
 )
 
-func SQLiteUpdateQuery(params *cosys.QEParams, model models.Model) (string, error) {
+func SQLiteUpdateQuery(params *common.QEParams, model models.Model) (string, error) {
 	var sb strings.Builder
 
 	sb.WriteString("UPDATE ")
 
-	sb.WriteString(model.Model_Name())
+	sb.WriteString(model.Name_())
 
 	sb.WriteString(" SET ")
 
 	update := params.Columns
 	num := len(params.Columns)
 	if num == 0 {
-		update = model.Model_All()
+		update = model.All_()
 		num = len(update)
 	}
 
 	for i := range num {
-		sb.WriteString(update[i].DBName())
+		sb.WriteString(update[i].Name())
 		sb.WriteString(" = ?")
 		if i < num-1 {
 			sb.WriteString(", ")

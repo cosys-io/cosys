@@ -1,14 +1,15 @@
 package models
 
 type BoolAttribute struct {
-	*Attribute
+	*AttributeBase
 }
 
-func NewBoolAttribute(dbname, structname string) *BoolAttribute {
+func NewBoolAttribute(name, fieldName string) *BoolAttribute {
 	return &BoolAttribute{
-		&Attribute{
-			dbname,
-			structname,
+		&AttributeBase{
+			name,
+			fieldName,
+			nil,
 		},
 	}
 }

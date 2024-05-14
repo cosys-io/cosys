@@ -14,22 +14,26 @@ type User struct {
 }
 
 type UsersModel struct {
+	*models.ModelSchema
+
 	Id     *models.IntAttribute
 	Active *models.BoolAttribute
 	Name   *models.StringAttribute
 }
 
 var Users = UsersModel{
+	models.NewModelSchema("collectionType", "users", "Users", "user", "users", ""),
+
 	models.NewIntAttribute("id", "Id"),
 	models.NewBoolAttribute("active", "Active"),
 	models.NewStringAttribute("name", "Name"),
 }
 
-func (u UsersModel) Model_Name() string {
+func (u UsersModel) Name_() string {
 	return "users"
 }
 
-func (u UsersModel) Model_New() models.Entity {
+func (u UsersModel) New_() models.Entity {
 	return &User{
 		0,
 		true,
@@ -37,14 +41,14 @@ func (u UsersModel) Model_New() models.Entity {
 	}
 }
 
-func (u UsersModel) Model_All() []models.IAttribute {
-	return []models.IAttribute{
+func (u UsersModel) All_() []models.Attribute {
+	return []models.Attribute{
 		Users.Id,
 		Users.Active,
 		Users.Name,
 	}
 }
 
-func (u UsersModel) Model_Id() *models.IntAttribute {
+func (u UsersModel) Id_() *models.IntAttribute {
 	return Users.Id
 }

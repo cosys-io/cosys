@@ -3,7 +3,7 @@ package apis
 import (
 	"context"
 
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 )
 
-type Policy func(cosys.Cosys, context.Context) bool
+type Policy func(common.Cosys, context.Context) bool

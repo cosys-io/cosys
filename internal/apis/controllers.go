@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 )
 
 type Controller struct {
@@ -21,7 +21,7 @@ func (c *Controller) Action(uid string) (Action, error) {
 	return action, nil
 }
 
-type Action func(cosys.Cosys, context.Context) http.HandlerFunc
+type Action func(common.Cosys, context.Context) http.HandlerFunc
 
 func NewController(actions map[string]Action) *Controller {
 	return &Controller{actions}

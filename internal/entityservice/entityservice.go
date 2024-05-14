@@ -1,21 +1,21 @@
 package entityservice
 
 import (
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
 	"github.com/cosys-io/cosys/internal/models"
 )
 
 type EntityService struct {
-	cosys cosys.Cosys
+	cosys common.Cosys
 }
 
-func NewEntityService(cosys cosys.Cosys) *EntityService {
+func NewEntityService(cosys common.Cosys) *EntityService {
 	return &EntityService{
 		cosys,
 	}
 }
 
-func (e *EntityService) FindOne(uid string, id int, params *cosys.ESParams) (models.Entity, error) {
+func (e *EntityService) FindOne(uid string, id int, params *common.ESParams) (models.Entity, error) {
 	queryParams := TransformParams(params)
 
 	model, err := e.cosys.Model(uid)
@@ -23,7 +23,7 @@ func (e *EntityService) FindOne(uid string, id int, params *cosys.ESParams) (mod
 		return nil, err
 	}
 
-	queryParams.Where(model.Model_Id().Eq(id))
+	queryParams.Where(model.Id_().Eq(id))
 	queryParams.Limit(1)
 
 	qe, err := e.cosys.QueryEngine(uid)
@@ -34,7 +34,7 @@ func (e *EntityService) FindOne(uid string, id int, params *cosys.ESParams) (mod
 	return qe.FindOne(queryParams)
 }
 
-func (e *EntityService) FindMany(uid string, params *cosys.ESParams) ([]models.Entity, error) {
+func (e *EntityService) FindMany(uid string, params *common.ESParams) ([]models.Entity, error) {
 	queryParams := TransformParams(params)
 
 	qe, err := e.cosys.QueryEngine(uid)
@@ -45,7 +45,7 @@ func (e *EntityService) FindMany(uid string, params *cosys.ESParams) ([]models.E
 	return qe.FindMany(queryParams)
 }
 
-func (e *EntityService) Create(uid string, entity models.Entity, params *cosys.ESParams) (models.Entity, error) {
+func (e *EntityService) Create(uid string, entity models.Entity, params *common.ESParams) (models.Entity, error) {
 	queryParams := TransformParams(params)
 
 	qe, err := e.cosys.QueryEngine(uid)
@@ -56,7 +56,7 @@ func (e *EntityService) Create(uid string, entity models.Entity, params *cosys.E
 	return qe.Create(entity, queryParams)
 }
 
-func (e *EntityService) Update(uid string, entity models.Entity, id int, params *cosys.ESParams) (models.Entity, error) {
+func (e *EntityService) Update(uid string, entity models.Entity, id int, params *common.ESParams) (models.Entity, error) {
 	queryParams := TransformParams(params)
 
 	model, err := e.cosys.Model(uid)
@@ -64,7 +64,7 @@ func (e *EntityService) Update(uid string, entity models.Entity, id int, params 
 		return nil, err
 	}
 
-	queryParams.Where(model.Model_Id().Eq(id))
+	queryParams.Where(model.Id_().Eq(id))
 
 	qe, err := e.cosys.QueryEngine(uid)
 	if err != nil {
@@ -74,7 +74,7 @@ func (e *EntityService) Update(uid string, entity models.Entity, id int, params 
 	return qe.Update(entity, queryParams)
 }
 
-func (e *EntityService) Delete(uid string, id int, params *cosys.ESParams) (models.Entity, error) {
+func (e *EntityService) Delete(uid string, id int, params *common.ESParams) (models.Entity, error) {
 	queryParams := TransformParams(params)
 
 	model, err := e.cosys.Model(uid)
@@ -82,7 +82,7 @@ func (e *EntityService) Delete(uid string, id int, params *cosys.ESParams) (mode
 		return nil, err
 	}
 
-	queryParams.Where(model.Model_Id().Eq(id))
+	queryParams.Where(model.Id_().Eq(id))
 
 	qe, err := e.cosys.QueryEngine(uid)
 	if err != nil {

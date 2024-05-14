@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/cosys-io/cosys/internal/.gen/apis"
-	"github.com/cosys-io/cosys/internal/cosys"
+	"github.com/cosys-io/cosys/internal/common"
+	"github.com/cosys-io/cosys/internal/gen/apis"
 )
 
 type IServer interface {
@@ -15,10 +15,10 @@ type IServer interface {
 
 type Server struct {
 	Port  string
-	Cosys cosys.Cosys
+	Cosys common.Cosys
 }
 
-func NewServer(port string, cosys cosys.Cosys) *Server {
+func NewServer(port string, cosys common.Cosys) *Server {
 	return &Server{
 		port,
 		cosys,
