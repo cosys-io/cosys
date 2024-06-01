@@ -14,7 +14,7 @@ var DummyService = common.NewService(map[string]common.Function{
 
 func findUserByName(cs common.Cosys) common.ServiceFunction {
 	return func(name string) (*User, error) {
-		es, err := cs.EntityService()
+		es, err := cs.ModuleService()
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func findUserByName(cs common.Cosys) common.ServiceFunction {
 
 func findActiveUsers(cs common.Cosys) common.ServiceFunction {
 	return func() ([]*User, error) {
-		es, err := cs.EntityService()
+		es, err := cs.ModuleService()
 		if err != nil {
 			return nil, err
 		}

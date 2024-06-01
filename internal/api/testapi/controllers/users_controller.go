@@ -23,7 +23,7 @@ func findOneUser(cs common.Cosys, ctx context.Context) http.HandlerFunc {
 		ctx := r.Context().Value("query_params").([]string)
 		id, _ := strconv.Atoi(ctx[0])
 
-		es, err := cs.EntityService()
+		es, err := cs.ModuleService()
 		if err != nil {
 			InternalErrorHandler(w)
 			return
@@ -60,7 +60,7 @@ func createUser(cs common.Cosys, ctx context.Context) http.HandlerFunc {
 			Name:   createUserRequest.Name,
 		}
 
-		es, err := cs.EntityService()
+		es, err := cs.ModuleService()
 		if err != nil {
 			InternalErrorHandler(w)
 			return
@@ -100,7 +100,7 @@ func updateUser(cs common.Cosys, ctx context.Context) http.HandlerFunc {
 			Name:   updateUserRequest.Name,
 		}
 
-		es, err := cs.EntityService()
+		es, err := cs.ModuleService()
 		if err != nil {
 			InternalErrorHandler(w)
 			return
@@ -121,7 +121,7 @@ func deleteUser(cs common.Cosys, ctx context.Context) http.HandlerFunc {
 		ctx := r.Context().Value("query_params").([]string)
 		id, _ := strconv.Atoi(ctx[0])
 
-		es, err := cs.EntityService()
+		es, err := cs.ModuleService()
 		if err != nil {
 			InternalErrorHandler(w)
 			return

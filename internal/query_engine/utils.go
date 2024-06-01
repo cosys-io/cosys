@@ -1,4 +1,4 @@
-package queryengine
+package query_engine
 
 import (
 	"database/sql"

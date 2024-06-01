@@ -1,4 +1,4 @@
-package entityservice
+package module_service
 
 import "github.com/cosys-io/cosys/internal/common"
 
