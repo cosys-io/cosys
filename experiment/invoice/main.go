@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	proto "github.com/cosys-io/cosys/experiment/invoicer"
+	proto "github.com/cosys-io/cosys/experiment/invoice/invoicer"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -13,10 +13,10 @@ type myInvoiceServer struct {
 	proto.UnimplementedInvoicerServer
 }
 
-func (receiver myInvoiceServer) Create(context.Context, *proto.CreateRequest) (*proto.CreateResponse, error) {
+func (receiver myInvoiceServer) Create(ctx context.Context, req *proto.CreateRequest) (*proto.CreateResponse, error) {
 	return &proto.CreateResponse{
-		Pdf:  []byte("Hello, World!"),
-		Docx: []byte("Hello, World!"),
+		Pdf:  []byte(req.From),
+		Docx: []byte("Hello"),
 	}, nil
 }
 
