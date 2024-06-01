@@ -16,15 +16,15 @@ func NewIntAttribute(name, fieldName string) *IntAttribute {
 
 func (s *IntAttribute) Eq(right int) Condition {
 	return &ExpressionCondition{
-		EQ,
+		Eq,
 		s,
 		right,
 	}
 }
 
-func (s *IntAttribute) NEq(right int) Condition {
+func (s *IntAttribute) Neq(right int) Condition {
 	return &ExpressionCondition{
-		NEQ,
+		Neq,
 		s,
 		right,
 	}
@@ -32,7 +32,7 @@ func (s *IntAttribute) NEq(right int) Condition {
 
 func (s *IntAttribute) In(right []int) Condition {
 	return &ExpressionCondition{
-		IN,
+		In,
 		s,
 		right,
 	}
@@ -40,7 +40,7 @@ func (s *IntAttribute) In(right []int) Condition {
 
 func (s *IntAttribute) NotIn(right []int) Condition {
 	return &ExpressionCondition{
-		NOTIN,
+		NotIn,
 		s,
 		right,
 	}
@@ -48,7 +48,7 @@ func (s *IntAttribute) NotIn(right []int) Condition {
 
 func (s *IntAttribute) Lt(right int) Condition {
 	return &ExpressionCondition{
-		LT,
+		Lt,
 		s,
 		right,
 	}
@@ -56,7 +56,7 @@ func (s *IntAttribute) Lt(right int) Condition {
 
 func (s *IntAttribute) Gt(right int) Condition {
 	return &ExpressionCondition{
-		GT,
+		Gt,
 		s,
 		right,
 	}
@@ -64,14 +64,14 @@ func (s *IntAttribute) Gt(right int) Condition {
 
 func (s *IntAttribute) Lte(right int) Condition {
 	return &ExpressionCondition{
-		LTE,
+		Lte,
 		s,
 		right,
 	}
 }
 func (s *IntAttribute) Gte(right int) Condition {
 	return &ExpressionCondition{
-		GTE,
+		Gte,
 		s,
 		right,
 	}

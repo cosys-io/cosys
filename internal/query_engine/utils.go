@@ -160,9 +160,9 @@ func StringExpressions(where *models.ExpressionCondition) (string, error) {
 	}
 
 	switch where.Op {
-	case models.NONE:
+	case models.None:
 		return left, nil
-	case models.EQ, models.NEQ:
+	case models.Eq, models.Neq:
 		switch r := where.Right.(type) {
 		case string:
 			return fmt.Sprintf(`%s %s "%s"`, left, where.Op, r), nil
@@ -177,14 +177,14 @@ func StringExpressions(where *models.ExpressionCondition) (string, error) {
 		default:
 			return "", fmt.Errorf("illegal right operand: %s", where.Right)
 		}
-	case models.LT, models.GT, models.LTE, models.GTE:
+	case models.Lt, models.Gt, models.Lte, models.Gte:
 		if _, ok := where.Right.(int); !ok {
 			return "", fmt.Errorf("illegal right operand: %s", where.Right)
 		}
 		right := strconv.Itoa(where.Right.(int))
 
 		return fmt.Sprintf("%s %s %s", left, where.Op, right), nil
-	case models.NULL, models.NOTNULL:
+	case models.Null, models.NotNull:
 		return fmt.Sprintf("%s %s", left, where.Op), nil
 	default:
 		return "", fmt.Errorf("illegal operation: %s", where.Op)

@@ -16,7 +16,7 @@ func NewStringAttribute(name, fieldName string) *StringAttribute {
 
 func (s *StringAttribute) Eq(right string) Condition {
 	return &ExpressionCondition{
-		EQ,
+		Eq,
 		s,
 		right,
 	}
@@ -24,7 +24,7 @@ func (s *StringAttribute) Eq(right string) Condition {
 
 func (s *StringAttribute) NEq(right string) Condition {
 	return &ExpressionCondition{
-		NEQ,
+		Neq,
 		s,
 		right,
 	}
@@ -32,7 +32,7 @@ func (s *StringAttribute) NEq(right string) Condition {
 
 func (s *StringAttribute) In(right []string) Condition {
 	return &ExpressionCondition{
-		IN,
+		In,
 		s,
 		right,
 	}
@@ -40,7 +40,7 @@ func (s *StringAttribute) In(right []string) Condition {
 
 func (s *StringAttribute) NotIn(right []string) Condition {
 	return &ExpressionCondition{
-		NOTIN,
+		NotIn,
 		s,
 		right,
 	}
@@ -48,7 +48,7 @@ func (s *StringAttribute) NotIn(right []string) Condition {
 
 func (s *StringAttribute) Contains(right string) Condition {
 	return &ExpressionCondition{
-		CONTAINS,
+		Contains,
 		s,
 		right,
 	}
@@ -56,7 +56,7 @@ func (s *StringAttribute) Contains(right string) Condition {
 
 func (s *StringAttribute) NotContains(right string) Condition {
 	return &ExpressionCondition{
-		NOTCONTAINS,
+		NotContains,
 		s,
 		right,
 	}
@@ -64,7 +64,7 @@ func (s *StringAttribute) NotContains(right string) Condition {
 
 func (s *StringAttribute) StartsWith(right string) Condition {
 	return &ExpressionCondition{
-		STARTSWITH,
+		StartsWith,
 		s,
 		right,
 	}
@@ -72,7 +72,7 @@ func (s *StringAttribute) StartsWith(right string) Condition {
 
 func (s *StringAttribute) EndsWith(right string) Condition {
 	return &ExpressionCondition{
-		ENDSWITH,
+		EndsWith,
 		s,
 		right,
 	}

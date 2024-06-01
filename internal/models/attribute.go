@@ -45,7 +45,7 @@ func (a *AttributeBase) Desc() *Order {
 
 func (a *AttributeBase) Null() Condition {
 	return &ExpressionCondition{
-		NULL,
+		Null,
 		a,
 		nil,
 	}
@@ -53,7 +53,7 @@ func (a *AttributeBase) Null() Condition {
 
 func (a *AttributeBase) NotNull() Condition {
 	return &ExpressionCondition{
-		NULL,
+		Null,
 		a,
 		nil,
 	}
@@ -128,25 +128,25 @@ type ExpressionCondition struct {
 type ExpressionOperation string
 
 const (
-	NONE ExpressionOperation = ""
+	None ExpressionOperation = ""
 
-	EQ    ExpressionOperation = "="
-	NEQ   ExpressionOperation = "<>"
-	IN    ExpressionOperation = "IN"
-	NOTIN ExpressionOperation = "NOT IN"
+	Eq    ExpressionOperation = "="
+	Neq   ExpressionOperation = "<>"
+	In    ExpressionOperation = "IN"
+	NotIn ExpressionOperation = "NOT IN"
 
-	LT  ExpressionOperation = "<"
-	GT  ExpressionOperation = ">"
-	LTE ExpressionOperation = "<="
-	GTE ExpressionOperation = ">="
+	Lt  ExpressionOperation = "<"
+	Gt  ExpressionOperation = ">"
+	Lte ExpressionOperation = "<="
+	Gte ExpressionOperation = ">="
 
-	CONTAINS    ExpressionOperation = "CONTAINS"
-	NOTCONTAINS ExpressionOperation = "NOTCONTAINS"
-	STARTSWITH  ExpressionOperation = "STARTSWITH"
-	ENDSWITH    ExpressionOperation = "ENDSWITH"
+	Contains    ExpressionOperation = "CONTAINS"
+	NotContains ExpressionOperation = "NOT CONTAINS"
+	StartsWith  ExpressionOperation = "STARTS WITH"
+	EndsWith    ExpressionOperation = "ENDS WITH"
 
-	NULL    ExpressionOperation = "IS NULL"
-	NOTNULL ExpressionOperation = "IS NOT NULL"
+	Null    ExpressionOperation = "IS NULL"
+	NotNull ExpressionOperation = "IS NOT NULL"
 )
 
 func (e ExpressionCondition) Not() Condition {
