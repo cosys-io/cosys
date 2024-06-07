@@ -4,9 +4,9 @@ import (
 	"database/sql"
 
 	"github.com/cosys-io/cosys/internal/common"
-	genlifecycles "github.com/cosys-io/cosys/internal/gen/lifecycles"
-	genmodels "github.com/cosys-io/cosys/internal/gen/models"
-	genservices "github.com/cosys-io/cosys/internal/gen/services"
+	genLifecycles "github.com/cosys-io/cosys/internal/gen/lifecycles"
+	genModels "github.com/cosys-io/cosys/internal/gen/models"
+	genServices "github.com/cosys-io/cosys/internal/gen/services"
 	"github.com/cosys-io/cosys/internal/models"
 	"github.com/cosys-io/cosys/internal/module_service"
 	"github.com/cosys-io/cosys/internal/query_engine"
@@ -25,13 +25,13 @@ func (c *Cosys) ModuleService() (common.EntityService, error) {
 }
 
 func (c *Cosys) Service(uid string) (common.ServiceFunction, error) {
-	return genservices.Service(c, uid)
+	return genServices.Service(c, uid)
 }
 
 func (c *Cosys) Model(uid string) (models.Model, error) {
-	return genmodels.Model(uid)
+	return genModels.Model(uid)
 }
 
 func (c *Cosys) Lifecycle(uid string) (*common.Lifecycles, error) {
-	return genlifecycles.Lifecycle(uid)
+	return genLifecycles.Lifecycle(uid)
 }
