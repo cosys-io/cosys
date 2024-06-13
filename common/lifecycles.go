@@ -1,17 +1,17 @@
 package common
 
-type LifeCycle map[string]LifeCycleFunc
+type Lifecycle map[string]LifecycleFunc
 
-type LifeCycleFunc func(Event) error
+type LifecycleFunc func(Event) error
 
 type Event struct {
-	Params *DBParams
+	Params DBParams
 	Result any
 	State  any
 }
 
-func NewLifeCycle() LifeCycle {
-	return LifeCycle{
+func NewLifeCycle() Lifecycle {
+	return Lifecycle{
 		"beforeFindOne":    noop,
 		"beforeFindMany":   noop,
 		"afterFindOne":     noop,
@@ -28,6 +28,14 @@ func NewLifeCycle() LifeCycle {
 		"beforeDeleteMany": noop,
 		"afterDelete":      noop,
 		"afterDeleteMany":  noop,
+	}
+}
+
+func NewEvent(params DBParams) Event {
+	return Event{
+		Params: params,
+		Result: nil,
+		State:  nil,
 	}
 }
 

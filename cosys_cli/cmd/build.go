@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"bufio"
-	"errors"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
-	"os/exec"
 )
 
 func init() {
@@ -51,30 +48,9 @@ func getModules() ([]string, error) {
 	return modules, nil
 }
 
-func getModfile() (string, error) {
-	file, err := os.Open("go.mod")
-	if err != nil {
-		return "", nil
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		return line[7:], nil
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	return "", errors.New("module not found")
-}
-
 func generateMain(modfile string, modules []string) error {
-	if err := generateDir("bin", genHeadOnly); err != nil {
-		return nil
+	if err := generateDir("bin", genHeadOnly, skipIfExists); err != nil {
+		return err
 	}
 
 	ctx := struct {
@@ -86,11 +62,10 @@ func generateMain(modfile string, modules []string) error {
 	}
 
 	if err := generateFile("main.go", MainTmpl, ctx, deleteIfExists); err != nil {
-		return nil
+		return err
 	}
 
-	cmd := exec.Command("go", "build", "-o", "bin/cosys", "main.go")
-	if err := cmd.Run(); err != nil {
+	if err := RunCommand("go", "build", "-o", "bin/cosys", "main.go"); err != nil {
 		return err
 	}
 

@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"log"
-	"os/exec"
 )
 
 func init() {
@@ -22,8 +21,7 @@ var startCmd = &cobra.Command{
 }
 
 func startServer() error {
-	cmd := exec.Command("./bin/cosys")
-	if err := cmd.Run(); err != nil {
+	if err := RunCommand("bin/cosys"); err != nil {
 		return err
 	}
 

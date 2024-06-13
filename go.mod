@@ -7,6 +7,7 @@ replace github.com/cosys-io/cosys/experiment/invoice/invoicer => ./experiment/in
 require (
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.6.1
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/spf13/cobra v1.8.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
