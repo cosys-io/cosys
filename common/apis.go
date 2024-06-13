@@ -48,15 +48,9 @@ func UsePolicies(policies ...string) RouteOption {
 
 // Controllers
 
-type Controller struct {
-	Actions map[string]Action
-}
+type Controller map[string]Action
 
 type Action func(Cosys, context.Context) http.HandlerFunc
-
-func NewController(actions map[string]Action) *Controller {
-	return &Controller{actions}
-}
 
 // Middlewares
 

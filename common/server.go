@@ -18,7 +18,7 @@ func NewServer(port string, cosys *Cosys) *Server {
 	}
 }
 
-func (s *Server) Start() error {
+func (s Server) Start() error {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +57,7 @@ func (s *Server) Start() error {
 						// Internal Server Error
 						return
 					}
-					actionFunc, ok := controller.Actions[actionName]
+					actionFunc, ok := (*controller)[actionName]
 					if !ok {
 						// Internal Server Error
 						return

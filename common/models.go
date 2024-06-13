@@ -35,33 +35,33 @@ type AttributeBase struct {
 	schema    *AttributeSchema
 }
 
-func (a *AttributeBase) Name() string {
+func (a AttributeBase) Name() string {
 	return a.name
 }
 
-func (a *AttributeBase) FieldName() string {
+func (a AttributeBase) FieldName() string {
 	return a.fieldName
 }
 
-func (a *AttributeBase) Schema() *AttributeSchema {
+func (a AttributeBase) Schema() *AttributeSchema {
 	return a.schema
 }
 
-func (a *AttributeBase) Asc() *Order {
+func (a AttributeBase) Asc() *Order {
 	return &Order{
 		a,
 		Asc,
 	}
 }
 
-func (a *AttributeBase) Desc() *Order {
+func (a AttributeBase) Desc() *Order {
 	return &Order{
 		a,
 		Desc,
 	}
 }
 
-func (a *AttributeBase) Null() Condition {
+func (a AttributeBase) Null() Condition {
 	return &ExpressionCondition{
 		Null,
 		a,
@@ -69,7 +69,7 @@ func (a *AttributeBase) Null() Condition {
 	}
 }
 
-func (a *AttributeBase) NotNull() Condition {
+func (a AttributeBase) NotNull() Condition {
 	return &ExpressionCondition{
 		Null,
 		a,
@@ -113,7 +113,7 @@ const (
 	Or  NestedOperation = "Or"
 )
 
-func (n *NestedCondition) Not() Condition {
+func (n NestedCondition) Not() Condition {
 	return &NestedCondition{
 		Not,
 		n,
@@ -121,7 +121,7 @@ func (n *NestedCondition) Not() Condition {
 	}
 }
 
-func (n *NestedCondition) And(right Condition) Condition {
+func (n NestedCondition) And(right Condition) Condition {
 	return &NestedCondition{
 		And,
 		n,
@@ -129,7 +129,7 @@ func (n *NestedCondition) And(right Condition) Condition {
 	}
 }
 
-func (n *NestedCondition) Or(right Condition) Condition {
+func (n NestedCondition) Or(right Condition) Condition {
 	return &NestedCondition{
 		Or,
 		n,
@@ -207,7 +207,7 @@ func NewIntAttribute(name, fieldName string) *IntAttribute {
 	}
 }
 
-func (s *IntAttribute) Eq(right int) Condition {
+func (s IntAttribute) Eq(right int) Condition {
 	return &ExpressionCondition{
 		Eq,
 		s,
@@ -215,7 +215,7 @@ func (s *IntAttribute) Eq(right int) Condition {
 	}
 }
 
-func (s *IntAttribute) NEq(right int) Condition {
+func (s IntAttribute) NEq(right int) Condition {
 	return &ExpressionCondition{
 		Neq,
 		s,
@@ -223,7 +223,7 @@ func (s *IntAttribute) NEq(right int) Condition {
 	}
 }
 
-func (s *IntAttribute) In(right []int) Condition {
+func (s IntAttribute) In(right []int) Condition {
 	return &ExpressionCondition{
 		In,
 		s,
@@ -231,7 +231,7 @@ func (s *IntAttribute) In(right []int) Condition {
 	}
 }
 
-func (s *IntAttribute) NotIn(right []int) Condition {
+func (s IntAttribute) NotIn(right []int) Condition {
 	return &ExpressionCondition{
 		NotIn,
 		s,
@@ -239,7 +239,7 @@ func (s *IntAttribute) NotIn(right []int) Condition {
 	}
 }
 
-func (s *IntAttribute) Lt(right int) Condition {
+func (s IntAttribute) Lt(right int) Condition {
 	return &ExpressionCondition{
 		Lt,
 		s,
@@ -247,7 +247,7 @@ func (s *IntAttribute) Lt(right int) Condition {
 	}
 }
 
-func (s *IntAttribute) Gt(right int) Condition {
+func (s IntAttribute) Gt(right int) Condition {
 	return &ExpressionCondition{
 		Gt,
 		s,
@@ -255,7 +255,7 @@ func (s *IntAttribute) Gt(right int) Condition {
 	}
 }
 
-func (s *IntAttribute) Lte(right int) Condition {
+func (s IntAttribute) Lte(right int) Condition {
 	return &ExpressionCondition{
 		Lte,
 		s,
@@ -263,7 +263,7 @@ func (s *IntAttribute) Lte(right int) Condition {
 	}
 }
 
-func (s *IntAttribute) Gte(right int) Condition {
+func (s IntAttribute) Gte(right int) Condition {
 	return &ExpressionCondition{
 		Gte,
 		s,
@@ -287,7 +287,7 @@ func NewBoolAttribute(name, fieldName string) *BoolAttribute {
 	}
 }
 
-func (b *BoolAttribute) Not() Condition {
+func (b BoolAttribute) Not() Condition {
 	return &NestedCondition{
 		Not,
 		b,
@@ -295,7 +295,7 @@ func (b *BoolAttribute) Not() Condition {
 	}
 }
 
-func (b *BoolAttribute) And(right Condition) Condition {
+func (b BoolAttribute) And(right Condition) Condition {
 	return &NestedCondition{
 		And,
 		b,
@@ -303,7 +303,7 @@ func (b *BoolAttribute) And(right Condition) Condition {
 	}
 }
 
-func (b *BoolAttribute) Or(right Condition) Condition {
+func (b BoolAttribute) Or(right Condition) Condition {
 	return &NestedCondition{
 		And,
 		b,
@@ -327,7 +327,7 @@ func NewStringAttribute(name, fieldName string) *StringAttribute {
 	}
 }
 
-func (s *StringAttribute) Eq(right string) Condition {
+func (s StringAttribute) Eq(right string) Condition {
 	return &ExpressionCondition{
 		Eq,
 		s,
@@ -335,7 +335,7 @@ func (s *StringAttribute) Eq(right string) Condition {
 	}
 }
 
-func (s *StringAttribute) NEq(right string) Condition {
+func (s StringAttribute) NEq(right string) Condition {
 	return &ExpressionCondition{
 		Neq,
 		s,
@@ -343,7 +343,7 @@ func (s *StringAttribute) NEq(right string) Condition {
 	}
 }
 
-func (s *StringAttribute) In(right []string) Condition {
+func (s StringAttribute) In(right []string) Condition {
 	return &ExpressionCondition{
 		In,
 		s,
@@ -351,7 +351,7 @@ func (s *StringAttribute) In(right []string) Condition {
 	}
 }
 
-func (s *StringAttribute) NotIn(right []string) Condition {
+func (s StringAttribute) NotIn(right []string) Condition {
 	return &ExpressionCondition{
 		NotIn,
 		s,
@@ -359,7 +359,7 @@ func (s *StringAttribute) NotIn(right []string) Condition {
 	}
 }
 
-func (s *StringAttribute) Contains(right string) Condition {
+func (s StringAttribute) Contains(right string) Condition {
 	return &ExpressionCondition{
 		Contains,
 		s,
@@ -367,7 +367,7 @@ func (s *StringAttribute) Contains(right string) Condition {
 	}
 }
 
-func (s *StringAttribute) NotContains(right string) Condition {
+func (s StringAttribute) NotContains(right string) Condition {
 	return &ExpressionCondition{
 		NotContains,
 		s,
@@ -375,7 +375,7 @@ func (s *StringAttribute) NotContains(right string) Condition {
 	}
 }
 
-func (s *StringAttribute) StartsWith(right string) Condition {
+func (s StringAttribute) StartsWith(right string) Condition {
 	return &ExpressionCondition{
 		StartsWith,
 		s,
@@ -383,7 +383,7 @@ func (s *StringAttribute) StartsWith(right string) Condition {
 	}
 }
 
-func (s *StringAttribute) EndsWith(right string) Condition {
+func (s StringAttribute) EndsWith(right string) Condition {
 	return &ExpressionCondition{
 		EndsWith,
 		s,
