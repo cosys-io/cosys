@@ -26,12 +26,15 @@ func init() {
 	generateCollectionCmd.Flags().StringVarP(&singularName, "singular", "S", "", "singular name of the new content type")
 	generateCollectionCmd.Flags().StringVarP(&pluralName, "plural", "P", "", "plural name of the new content type")
 	generateCollectionCmd.Flags().StringVarP(&description, "description", "D", "", "description of the new content type")
+	generateCollectionCmd.MarkFlagRequired("display")
+	generateCollectionCmd.MarkFlagRequired("singular")
+	generateCollectionCmd.MarkFlagRequired("plural")
 
 	generateCmd.AddCommand(generateCollectionCmd)
 }
 
 var generateCollectionCmd = &cobra.Command{
-	Use:   "collection content_type_name ",
+	Use:   "collection content_type_name [attributes] [flags]",
 	Short: "Generate a collection type",
 	Long:  "Generate a collection type.",
 	Args:  cobra.MinimumNArgs(1),
@@ -101,10 +104,10 @@ func schemaFromArgs(collection string, display string, singular string, plural s
 		attrSchema := &common.AttributeSchema{
 			Type:            attrType,
 			Required:        false,
-			Max:             0,
-			Min:             0,
-			MaxLength:       0,
-			MinLength:       0,
+			Max:             2147483647,
+			Min:             -2147483648,
+			MaxLength:       -1,
+			MinLength:       -1,
 			Private:         false,
 			NotConfigurable: false,
 			Default:         "",
@@ -117,29 +120,29 @@ func schemaFromArgs(collection string, display string, singular string, plural s
 			switch {
 			case option == "required":
 				attrSchema.Required = true
-			case regexp.MustCompile(`^max\(([-.0-9]+)\)$`).MatchString(option):
-				matches := regexp.MustCompile(`^max\(([-.0-9]+)\)$`).FindStringSubmatch(option)
+			case regexp.MustCompile(`^max=([-0-9]+)$`).MatchString(option):
+				matches := regexp.MustCompile(`^max=([-0-9]+)$`).FindStringSubmatch(option)
 				val, err := strconv.ParseInt(matches[1], 10, 64)
 				if err != nil {
 					return nil, err
 				}
 				attrSchema.Max = val
-			case regexp.MustCompile(`^min\(([-.0-9]+)\)$`).MatchString(option):
-				matches := regexp.MustCompile(`^min\(([-.0-9]+)\)$`).FindStringSubmatch(option)
+			case regexp.MustCompile(`^min=([-0-9]+)$`).MatchString(option):
+				matches := regexp.MustCompile(`^min=([-0-9]+)$`).FindStringSubmatch(option)
 				val, err := strconv.ParseInt(matches[1], 10, 64)
 				if err != nil {
 					return nil, err
 				}
 				attrSchema.Min = val
-			case regexp.MustCompile(`^maxlength\((\d+)\)$`).MatchString(option):
-				matches := regexp.MustCompile(`^maxlength\((\d+)\)$`).FindStringSubmatch(option)
+			case regexp.MustCompile(`^maxlength=(\d+)$`).MatchString(option):
+				matches := regexp.MustCompile(`^maxlength=(\d+)$`).FindStringSubmatch(option)
 				val, err := strconv.Atoi(matches[1])
 				if err != nil {
 					return nil, err
 				}
 				attrSchema.MaxLength = val
-			case regexp.MustCompile(`^minlength\((\d+)\)$`).MatchString(option):
-				matches := regexp.MustCompile(`^minlength\((\d+)\)$`).FindStringSubmatch(option)
+			case regexp.MustCompile(`^minlength=(\d+)$`).MatchString(option):
+				matches := regexp.MustCompile(`^minlength=(\d+)$`).FindStringSubmatch(option)
 				val, err := strconv.Atoi(matches[1])
 				if err != nil {
 					return nil, err

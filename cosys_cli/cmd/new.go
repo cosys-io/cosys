@@ -17,7 +17,7 @@ var (
 
 func init() {
 	newCmd.Flags().StringVarP(&profile, "profile", "P", "", "profile name for the new project go module")
-	newCmd.MarkFlagRequired("p")
+	newCmd.MarkFlagRequired("profile")
 	newCmd.Flags().StringVarP(&db, "database", "D", "sqlite3", "database system for the new project")
 	newCmd.Flags().StringVarP(&tmpl, "template", "T", "", "template for the new project")
 
