@@ -34,7 +34,7 @@ func init() {
 }
 
 var generateCollectionCmd = &cobra.Command{
-	Use:   "collection content_type_name [attributes] [flags]",
+	Use:   "collection collection_name [attributes] [flags]",
 	Short: "Generate a collection type",
 	Long:  "Generate a collection type.",
 	Args:  cobra.MinimumNArgs(1),
@@ -152,8 +152,8 @@ func schemaFromArgs(collection string, display string, singular string, plural s
 				attrSchema.Private = true
 			case option == "notconfigurable":
 				attrSchema.NotConfigurable = true
-			case regexp.MustCompile(`^default\((.+)\)$`).MatchString(option):
-				matches := regexp.MustCompile(`^default\((.+)\)$`).FindStringSubmatch(option)
+			case regexp.MustCompile(`^default=(.+)=$`).MatchString(option):
+				matches := regexp.MustCompile(`^default=(.+)$`).FindStringSubmatch(option)
 				attrSchema.Default = matches[1]
 			case option == "notnullable":
 				attrSchema.NotNullable = true
