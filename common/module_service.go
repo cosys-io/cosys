@@ -1,61 +1,37 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
-type ModuleService struct {
-	Cosys *Cosys
-}
+var (
+	msMutex sync.RWMutex
+	msMap   = make(map[string]func(*Cosys) ModuleService)
+)
 
-func (e *ModuleService) FindOne(uid string, id int, params MSParams) (Entity, error) {
-	queryParams := transformParams(params)
+func RegisterModuleService(name string, moduleService func(*Cosys) ModuleService) error {
+	msMutex.Lock()
+	defer msMutex.Unlock()
 
-	model, ok := e.Cosys.Models[uid]
-	if !ok {
-		return nil, fmt.Errorf("model not found: %s", uid)
+	if moduleService == nil {
+		return fmt.Errorf("module service is nil")
 	}
 
-	queryParams = queryParams.Where(model.Id_().Eq(id))
-	queryParams = queryParams.Limit(1)
-
-	return e.Cosys.Database().FindOne(uid, queryParams)
-}
-
-func (e *ModuleService) FindMany(uid string, params MSParams) ([]Entity, error) {
-	queryParams := transformParams(params)
-
-	return e.Cosys.Database().FindMany(uid, queryParams)
-}
-
-func (e *ModuleService) Create(uid string, entity Entity, params MSParams) (Entity, error) {
-	queryParams := transformParams(params)
-
-	return e.Cosys.Database().Create(uid, entity, queryParams)
-}
-
-func (e *ModuleService) Update(uid string, entity Entity, id int, params MSParams) (Entity, error) {
-	queryParams := transformParams(params)
-
-	model, ok := e.Cosys.Models[uid]
-	if !ok {
-		return nil, fmt.Errorf("model not found: %s", uid)
+	if _, dup := msMap[name]; dup {
+		return fmt.Errorf("duplicate module service:" + name)
 	}
 
-	queryParams = queryParams.Where(model.Id_().Eq(id))
-
-	return e.Cosys.Database().Update(uid, entity, queryParams)
+	msMap[name] = moduleService
+	return nil
 }
 
-func (e *ModuleService) Delete(uid string, id int, params MSParams) (Entity, error) {
-	queryParams := transformParams(params)
-
-	model, ok := e.Cosys.Models[uid]
-	if !ok {
-		return nil, fmt.Errorf("model not found: %s", uid)
-	}
-
-	queryParams = queryParams.Where(model.Id_().Eq(id))
-
-	return e.Cosys.Database().Delete(uid, queryParams)
+type ModuleService interface {
+	FindOne(uid string, id int, params MSParams) (Entity, error)
+	FindMany(uid string, params MSParams) ([]Entity, error)
+	Create(uid string, data Entity, params MSParams) (Entity, error)
+	Update(uid string, data Entity, id int, params MSParams) (Entity, error)
+	Delete(uid string, id int, params MSParams) (Entity, error)
 }
 
 type MSParams struct {
@@ -113,15 +89,4 @@ func (p MSParams) Sort(sorts ...*Order) MSParams {
 func (p MSParams) Populate(populates ...Attribute) MSParams {
 	p.Populates = append(p.Populates, populates...)
 	return p
-}
-
-func transformParams(params MSParams) DBParams {
-	return DBParam().
-		Select(params.GetFields...).
-		Insert(params.SetFields...).
-		Where(params.Filters...).
-		Limit(params.LimitVal).
-		Offset(params.StartVal).
-		OrderBy(params.Sorts...).
-		Populate(params.Populates...)
 }

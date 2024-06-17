@@ -1,7 +1,6 @@
 package common
 
 import (
-	"context"
 	"net/http"
 	"regexp"
 )
@@ -50,12 +49,12 @@ func UsePolicies(policies ...string) RouteOption {
 
 type Controller map[string]Action
 
-type Action func(Cosys, context.Context) http.HandlerFunc
+type Action func(Cosys) http.HandlerFunc
 
 // Middlewares
 
-type Middleware func(Cosys, context.Context) func(http.HandlerFunc) http.HandlerFunc
+type Middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc
 
 // Policies
 
-type Policy func(Cosys, context.Context) bool
+type Policy func(Cosys, *http.Request) bool

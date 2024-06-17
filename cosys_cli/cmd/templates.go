@@ -18,6 +18,7 @@ import (
 	"{{.Modfile}}/modules/{{.ModuleName}}/middlewares"
 	"{{.Modfile}}/modules/{{.ModuleName}}/policies"
 	"{{.Modfile}}/modules/{{.ModuleName}}/routes"
+	"{{.Modfile}}/modules/{{.ModuleName}}/content_types"
 )
 
 var Module = &common.Module{
@@ -25,7 +26,7 @@ var Module = &common.Module{
 	Controllers: controllers.Controllers,
 	Middlewares: middlewares.Middlewares,
 	Policies: policies.Policies,
-	Models: nil,
+	Models: models.Models,
 	Services: nil,
 
 	OnRegister: nil,
@@ -61,13 +62,13 @@ var ServicesTmpl = `package services
 
 import "github.com/cosys-io/cosys/common"
 
-var Services = map[string]*common.Service{}`
+var Services = map[string]common.Service{}`
 
 var ModelsTmpl = `package models
 
 import "github.com/cosys-io/cosys/common"
 
-var Models = map[string]*common.Model{}`
+var Models = map[string]common.Model{}`
 
 var ModelTmpl = `package {{.CollectionName}}
 	

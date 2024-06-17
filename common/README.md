@@ -9,7 +9,7 @@ The package to be imported in cosys projects.
 
 ```
 
-Cosys is the main app, where the database, module service, server, models, services, configs can be accessed from.
+Cosys is the main app, where the database, module service, server, models, services, configs can be accessed from. Models and services are accessed via their uids `module_name.model_name`, `module_name.service_name` respectively.
 
 When the Cosys app is run, the Cosys struct undergoes the following procedure.
 
@@ -146,32 +146,26 @@ Controller is a grouping of similar actions.
 ## type Action
 
 ```go
-type Action func(Cosys, context.Context) http.HandlerFunc
+type Action func(Cosys) http.HandlerFunc
 ```
 
 Action handles incoming server requests.
 
-Action receives a Cosys struct and Context struct containing the http.Request struct, the http.ResponseWriter struct, and a state variable of any type.
-
 ## type Middleware
 
 ```go
-type Middleware func(Cosys, context.Context) func(http.HandlerFunc) http.HandlerFunc
+type Middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc
 ```
 
 Middleware runs processes before and after the controller handles incoming requests.
 
-Middleware receives a Cosys struct and Context struct containing the http.Request struct, the http.ResponseWriter struct, and a state variable of any type.
-
 ## type Policy
 
 ```go
-type Policy func(Cosys, context.Context) bool
+type Policy func(Cosys, *http.Request) bool
 ```
 
 Policy checks specific conditions before the controller handles incoming requests.
-
-Policy receives a Cosys struct and Context struct containing the http.Request struct, the http.ResponseWriter struct, and a state variable of any type.
 
 ## type Route
 

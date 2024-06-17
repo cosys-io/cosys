@@ -1,27 +1,42 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type Cosys struct {
 	Configs  *Configs
 	Modules  map[string]*Module
 	Services map[string]Service
 	Models   map[string]Model
-	Db       func(*Cosys) Database
-	Ms       func(*Cosys) *ModuleService
-	Sv       func(*Cosys) *Server
 }
 
 func (c Cosys) Database() Database {
-	return c.Db(&c)
+	database, ok := dbMap["sqlite3"]
+	if !ok {
+		log.Fatal("database not found: " + "sqlite3")
+	}
+
+	return database(&c)
 }
 
-func (c Cosys) ModuleService() *ModuleService {
-	return c.Ms(&c)
+func (c Cosys) ModuleService() ModuleService {
+	moduleService, ok := msMap["default"]
+	if !ok {
+		log.Fatal("module service not found: " + "default")
+	}
+
+	return moduleService(&c)
 }
 
-func (c Cosys) Server() *Server {
-	return c.Sv(&c)
+func (c Cosys) Server() Server {
+	server, ok := svMap["default"]
+	if !ok {
+		log.Fatal("server not found: " + "default")
+	}
+
+	return server(&c)
 }
 
 func NewCosys(configs *Configs) *Cosys {
@@ -30,9 +45,6 @@ func NewCosys(configs *Configs) *Cosys {
 		Modules:  map[string]*Module{},
 		Services: map[string]Service{},
 		Models:   map[string]Model{},
-		Db:       nil,
-		Ms:       func(cosys *Cosys) *ModuleService { return &ModuleService{Cosys: cosys} },
-		Sv:       func(cosys *Cosys) *Server { return &Server{Port: "3000", Cosys: cosys} },
 	}
 
 	return cosys

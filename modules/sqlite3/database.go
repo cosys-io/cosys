@@ -21,12 +21,12 @@ func (d Database) FindOne(uid string, params common.DBParams) (common.Entity, er
 	params = params.Limit(1)
 
 	lifecycle := model.Lifecycle_()
-	event := common.NewEvent(params)
 	before, ok := lifecycle["beforeFindOne"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: beforeFindOne")
 	}
-	if err := before(event); err != nil {
+	state, err := before(params, nil, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -51,12 +51,11 @@ func (d Database) FindOne(uid string, params common.DBParams) (common.Entity, er
 		return nil, err
 	}
 
-	event.Result = entity
 	after, ok := lifecycle["afterFindOne"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: afterFindOne")
 	}
-	if err := after(event); err != nil {
+	if _, err := after(params, entity, state); err != nil {
 		return nil, err
 	}
 
@@ -70,12 +69,12 @@ func (d Database) FindMany(uid string, params common.DBParams) ([]common.Entity,
 	}
 
 	lifecycle := model.Lifecycle_()
-	event := common.NewEvent(params)
 	before, ok := lifecycle["beforeFindMany"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: beforeFindMany")
 	}
-	if err := before(event); err != nil {
+	state, err := before(params, nil, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -103,12 +102,11 @@ func (d Database) FindMany(uid string, params common.DBParams) ([]common.Entity,
 		entities = append(entities, entity)
 	}
 
-	event.Result = entities
 	after, ok := lifecycle["afterFindMany"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: afterFindMany")
 	}
-	if err := after(event); err != nil {
+	if _, err := after(params, entities, state); err != nil {
 		return nil, err
 	}
 
@@ -122,12 +120,12 @@ func (d Database) Create(uid string, data common.Entity, params common.DBParams)
 	}
 
 	lifecycle := model.Lifecycle_()
-	event := common.NewEvent(params)
 	before, ok := lifecycle["beforeCreate"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: beforeCreate")
 	}
-	if err := before(event); err != nil {
+	state, err := before(params, nil, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -146,12 +144,11 @@ func (d Database) Create(uid string, data common.Entity, params common.DBParams)
 		return nil, err
 	}
 
-	event.Result = data
 	after, ok := lifecycle["afterCreate"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: afterCreate")
 	}
-	if err := after(event); err != nil {
+	if _, err := after(params, data, state); err != nil {
 		return nil, err
 	}
 
@@ -167,12 +164,12 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 	}
 
 	lifecycle := model.Lifecycle_()
-	event := common.NewEvent(params)
 	before, ok := lifecycle["beforeCreateMany"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: beforeCreateMany")
 	}
-	if err := before(event); err != nil {
+	state, err := before(params, nil, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -193,12 +190,11 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 		}
 	}
 
-	event.Result = datas
 	after, ok := lifecycle["afterCreateMany"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: afterCreateMany")
 	}
-	if err := after(event); err != nil {
+	if _, err := after(params, datas, state); err != nil {
 		return nil, err
 	}
 
@@ -216,12 +212,12 @@ func (d Database) Update(uid string, data common.Entity, params common.DBParams)
 	}
 
 	lifecycle := model.Lifecycle_()
-	event := common.NewEvent(params)
 	before, ok := lifecycle["beforeUpdate"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: beforeUpdate")
 	}
-	if err := before(event); err != nil {
+	state, err := before(params, nil, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -240,12 +236,11 @@ func (d Database) Update(uid string, data common.Entity, params common.DBParams)
 		return nil, err
 	}
 
-	event.Result = data
 	after, ok := lifecycle["afterUpdate"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: afterUpdate")
 	}
-	if err := after(event); err != nil {
+	if _, err := after(params, data, state); err != nil {
 		return nil, err
 	}
 
@@ -261,12 +256,12 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 	}
 
 	lifecycle := model.Lifecycle_()
-	event := common.NewEvent(params)
 	before, ok := lifecycle["beforeUpdateMany"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: beforeUpdateMany")
 	}
-	if err := before(event); err != nil {
+	state, err := before(params, nil, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -285,12 +280,11 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 		return nil, err
 	}
 
-	event.Result = data
 	after, ok := lifecycle["afterUpdateMany"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: afterUpdateMany")
 	}
-	if err := after(event); err != nil {
+	if _, err := after(params, data, state); err != nil {
 		return nil, err
 	}
 
@@ -308,12 +302,12 @@ func (d Database) Delete(uid string, params common.DBParams) (common.Entity, err
 	}
 
 	lifecycle := model.Lifecycle_()
-	event := common.NewEvent(params)
 	before, ok := lifecycle["beforeDelete"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: beforeDelete")
 	}
-	if err := before(event); err != nil {
+	state, err := before(params, nil, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -329,12 +323,11 @@ func (d Database) Delete(uid string, params common.DBParams) (common.Entity, err
 
 	// TODO: return old entity
 
-	event.Result = nil
 	after, ok := lifecycle["afterDelete"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: afterDelete")
 	}
-	if err := after(event); err != nil {
+	if _, err := after(params, nil, state); err != nil {
 		return nil, err
 	}
 
@@ -348,12 +341,12 @@ func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entit
 	}
 
 	lifecycle := model.Lifecycle_()
-	event := common.NewEvent(params)
 	before, ok := lifecycle["beforeDeleteMany"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: beforeDeleteMany")
 	}
-	if err := before(event); err != nil {
+	state, err := before(params, nil, nil)
+	if err != nil {
 		return nil, err
 	}
 
@@ -369,12 +362,11 @@ func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entit
 
 	// TODO: return old entity
 
-	event.Result = nil
 	after, ok := lifecycle["afterDeleteMany"]
 	if !ok {
 		return nil, fmt.Errorf("lifecycle not found: afterDeleteMany")
 	}
-	if err := after(event); err != nil {
+	if _, err := after(params, nil, state); err != nil {
 		return nil, err
 	}
 

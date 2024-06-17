@@ -1,91 +1,60 @@
 package common
 
 import (
-	"context"
+	"bytes"
+	"fmt"
 	"net/http"
-	"regexp"
+	"sync"
 )
 
-type Server struct {
-	Port  string
-	Cosys *Cosys
-}
+var (
+	svMutex sync.RWMutex
+	svMap   = make(map[string]func(*Cosys) Server)
+)
 
-func NewServer(port string, cosys *Cosys) *Server {
-	return &Server{
-		port,
-		cosys,
-	}
-}
+func RegisterServer(name string, server func(*Cosys) Server) error {
+	svMutex.Lock()
+	defer svMutex.Unlock()
 
-func (s Server) Start() error {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		for _, module := range s.Cosys.Modules {
-			for _, route := range module.Routes {
-				matches := route.Regex.FindStringSubmatch(r.URL.Path)
-				if len(matches) > 0 {
-					if r.Method != route.Method {
-						continue
-					}
-					ctx := context.WithValue(r.Context(), "query_params", matches[1:])
-
-					for _, policyName := range route.Policies {
-						policy, ok := module.Policies[policyName]
-						if !ok {
-							// Internal Server Error
-							return
-						}
-						if !policy(*s.Cosys, ctx) {
-							// Forbidden
-							return
-						}
-					}
-
-					uidRegex := regexp.MustCompile(`(.+)\.(.+)`)
-					actionUid := route.Action
-					uidMatches := uidRegex.FindStringSubmatch(actionUid)
-					if len(uidMatches) != 3 {
-						// Internal Server Error
-						return
-					}
-					controllerName := uidMatches[1]
-					actionName := uidMatches[2]
-					controller, ok := module.Controllers[controllerName]
-					if !ok {
-						// Internal Server Error
-						return
-					}
-					actionFunc, ok := (*controller)[actionName]
-					if !ok {
-						// Internal Server Error
-						return
-					}
-					action := actionFunc(*s.Cosys, ctx)
-
-					for _, middlewareName := range route.Middlewares {
-						middlewareFunc, ok := module.Middlewares[middlewareName]
-						if !ok {
-							// Internal Server Error
-							return
-						}
-						middleware := middlewareFunc(*s.Cosys, ctx)
-
-						action = middleware(action)
-					}
-
-					action(w, r.WithContext(ctx))
-					return
-				}
-			}
-		}
-		http.NotFound(w, r)
-	})
-
-	if err := http.ListenAndServe(":"+s.Port, mux); err != nil {
-		return err
+	if server == nil {
+		return fmt.Errorf("server is nil")
 	}
 
+	if _, dup := svMap[name]; dup {
+		return fmt.Errorf("duplicate server:" + name)
+	}
+
+	svMap[name] = server
 	return nil
+}
+
+type Server interface {
+	Start() error
+}
+
+type ResponseContextKey struct{}
+
+type StateContextKey struct{}
+
+var (
+	ResponseKey ResponseContextKey
+	StateKey    StateContextKey
+)
+
+type ResponseWriter struct {
+	Writer http.ResponseWriter
+	Log    bytes.Buffer
+}
+
+func (r ResponseWriter) Header() http.Header {
+	return r.Writer.Header()
+}
+
+func (r ResponseWriter) Write(b []byte) (int, error) {
+	r.Log.Write(b)
+	return r.Writer.Write(b)
+}
+
+func (r ResponseWriter) WriteHeader(statusCode int) {
+	r.Writer.WriteHeader(statusCode)
 }
