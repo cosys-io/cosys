@@ -2,13 +2,7 @@ package common
 
 type Lifecycle map[string]LifecycleFunc
 
-type LifecycleFunc func(*Event) error
-
-type Event struct {
-	Params DBParams
-	Result any
-	State  any
-}
+type LifecycleFunc func(params DBParams, result any, state any) (afterState any, err error)
 
 func NewLifeCycle() Lifecycle {
 	return Lifecycle{
@@ -31,12 +25,4 @@ func NewLifeCycle() Lifecycle {
 	}
 }
 
-func NewEvent(params DBParams) Event {
-	return Event{
-		Params: params,
-		Result: nil,
-		State:  nil,
-	}
-}
-
-func noop(event *Event) error { return nil }
+func noop(params DBParams, result any, state any) (any, error) { return nil, nil }
