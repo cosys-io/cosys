@@ -38,11 +38,11 @@ func (s Server) Start() error {
 					for _, policyName := range route.Policies {
 						policy, ok := module.Policies[policyName]
 						if !ok {
-							// Internal Server Error
+							common.RespondInternalError(w)
 							return
 						}
 						if !policy(*s.Cosys, r.WithContext(ctx)) {
-							// Forbidden
+							common.RespondError(w, "Forbidden", http.StatusForbidden)
 							return
 						}
 					}
@@ -51,19 +51,19 @@ func (s Server) Start() error {
 					actionUid := route.Action
 					uidMatches := uidRegex.FindStringSubmatch(actionUid)
 					if len(uidMatches) != 3 {
-						// Internal Server Error
+						common.RespondInternalError(w)
 						return
 					}
 					controllerName := uidMatches[1]
 					actionName := uidMatches[2]
 					controller, ok := module.Controllers[controllerName]
 					if !ok {
-						// Internal Server Error
+						common.RespondInternalError(w)
 						return
 					}
 					actionFunc, ok := (*controller)[actionName]
 					if !ok {
-						// Internal Server Error
+						common.RespondInternalError(w)
 						return
 					}
 					action := actionFunc(*s.Cosys)
@@ -71,7 +71,7 @@ func (s Server) Start() error {
 					for _, middlewareName := range route.Middlewares {
 						middlewareFunc, ok := module.Middlewares[middlewareName]
 						if !ok {
-							// Internal Server Error
+							common.RespondInternalError(w)
 							return
 						}
 						middleware := middlewareFunc(*s.Cosys)
