@@ -19,7 +19,7 @@ func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 	update := params.Columns
 	num := len(params.Columns)
 	if num == 0 {
-		update = model.All_()
+		update = model.All_()[1:]
 		num = len(update)
 	}
 

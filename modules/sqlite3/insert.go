@@ -16,7 +16,7 @@ func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
 	insert := params.Columns
 	num := len(params.Columns)
 	if num == 0 {
-		insert = model.All_()
+		insert = model.All_()[1:]
 		num = len(insert)
 	}
 

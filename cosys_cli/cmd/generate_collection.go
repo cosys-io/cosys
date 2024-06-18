@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/cosys-io/cosys/common"
+	gen "github.com/cosys-io/cosys/cosys_cli/cmd/generator"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"log"
@@ -60,11 +61,11 @@ func GenerateType(typeName string, schema *common.ModelSchema) error {
 		return err
 	}
 
-	if err := generateModel(typeName, schema, ctx); err != nil {
+	if err = generateModel(typeName, schema, ctx); err != nil {
 		return err
 	}
 
-	if err := generateApi(typeName, ctx); err != nil {
+	if err = generateApi(typeName, ctx); err != nil {
 		return err
 	}
 
@@ -74,23 +75,14 @@ func GenerateType(typeName string, schema *common.ModelSchema) error {
 func generateModel(typeName string, schema *common.ModelSchema, ctx *ModelCtx) error {
 	typeDir := filepath.Join("modules/api/content_types", typeName)
 
-	if err := generateDir(typeDir, genHeadOnly); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(typeDir, "schema.yaml"), SchemaYamlTmpl, schema); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(typeDir, "schema.go"), SchemaGoTmpl, schema); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(typeDir, "lifecycle.go"), LifecycleTmpl, ctx); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(typeDir, "model.go"), ModelTmpl, ctx); err != nil {
+	generator := gen.NewGenerator(
+		gen.NewDir(typeDir, gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(typeDir, "schema.yaml"), SchemaYamlTmpl, schema),
+		gen.NewFile(filepath.Join(typeDir, "schema.go"), SchemaGoTmpl, schema),
+		gen.NewFile(filepath.Join(typeDir, "lifecycle.go"), LifecycleTmpl, ctx),
+		gen.NewFile(filepath.Join(typeDir, "model.go"), ModelTmpl, ctx),
+	)
+	if err := generator.Generate(); err != nil {
 		return err
 	}
 
@@ -98,23 +90,14 @@ func generateModel(typeName string, schema *common.ModelSchema, ctx *ModelCtx) e
 }
 
 func generateApi(typeName string, ctx *ModelCtx) error {
-	if err := generateFile(filepath.Join("modules/api/controllers", typeName+"_controllers.go"), ModelControllerTmpl, ctx); err != nil {
-		return err
-	}
-
-	if err := modifyFile("modules/api/content_types/models.go", `import \(`, ModelsImportTmpl, ctx); err != nil {
-		return err
-	}
-
-	if err := modifyFile("modules/api/content_types/models.go", `var Models = map\[string\]common\.Model\{`, ModelsStructTmpl, ctx); err != nil {
-		return err
-	}
-
-	if err := modifyFile("modules/api/controllers/controllers.go", `var Controllers = map\[string\]common\.Controller\{`, ControllersStructTmpl, ctx); err != nil {
-		return err
-	}
-
-	if err := modifyFile("modules/api/routes/routes.go", `var Routes = \[\]\*common\.Route\{`, RoutesStructTmpl, ctx); err != nil {
+	generator := gen.NewGenerator(
+		gen.NewFile(filepath.Join("modules/api/controllers", typeName+"_controllers.go"), ModelControllerTmpl, ctx),
+		gen.ModifyFile("modules/api/content_types/models.go", `import \(`, ModelsImportTmpl, ctx),
+		gen.ModifyFile("modules/api/content_types/models.go", `var Models = map\[string\]common\.Model\{`, ModelsStructTmpl, ctx),
+		gen.ModifyFile("modules/api/controllers/controllers.go", `var Controllers = map\[string\]common\.Controller\{`, ControllersStructTmpl, ctx),
+		gen.ModifyFile("modules/api/routes/routes.go", `var Routes = \[\]\*common\.Route\{`, RoutesStructTmpl, ctx),
+	)
+	if err := generator.Generate(); err != nil {
 		return err
 	}
 
@@ -332,7 +315,7 @@ func update{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		newEntity, err := cs.ModuleService().Update("api.{{.CollectionName}}", entity, id, common.MSParam().SetField(model.All_()...))
+		newEntity, err := cs.ModuleService().Update("api.{{.CollectionName}}", entity, id, common.MSParam())
 		if err != nil {
 			common.RespondError(w, "Could not update {{.SingularNameCamel}}.", http.StatusBadRequest)
 			return

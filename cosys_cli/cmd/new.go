@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/cosys-io/cosys/cosys_cli/cmd/generator"
 	"log"
 	"os/exec"
 	"path/filepath"
@@ -58,19 +59,13 @@ func generateProject(projectName, pf, db, tmpl string) error {
 func generateConfigs(projectName, db, tmpl string) error {
 	configsDir := filepath.Join(projectName, "configs")
 
-	if err := generateDir(configsDir); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(configsDir, "admin.go"), AdminCfgTmpl, nil); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(configsDir, "database.go"), DbCfgTmpl, nil); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(configsDir, "server.go"), ServerCfgTmpl, nil); err != nil {
+	generator := gen.NewGenerator(
+		gen.NewDir(configsDir),
+		gen.NewFile(filepath.Join(configsDir, "admin.go"), AdminCfgTmpl, nil),
+		gen.NewFile(filepath.Join(configsDir, "database.go"), DbCfgTmpl, nil),
+		gen.NewFile(filepath.Join(configsDir, "server.go"), ServerCfgTmpl, nil),
+	)
+	if err := generator.Generate(); err != nil {
 		return err
 	}
 
@@ -80,7 +75,7 @@ func generateConfigs(projectName, db, tmpl string) error {
 func generateModules(projectName, pf, db, tmpl string) error {
 	modulesDir := filepath.Join(projectName, "modules")
 
-	if err := generateDir(modulesDir); err != nil {
+	if err := gen.NewDir(modulesDir).Act(); err != nil {
 		return err
 	}
 
