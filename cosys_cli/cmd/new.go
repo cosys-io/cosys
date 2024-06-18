@@ -108,3 +108,9 @@ func generateModfile(projectName, pf string) error {
 
 	return nil
 }
+
+var AdminCfgTmpl = `package configs`
+
+var DbCfgTmpl = `package configs`
+
+var ServerCfgTmpl = `package configs`

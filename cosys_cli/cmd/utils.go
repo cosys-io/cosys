@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"text/template"
 )
 
@@ -93,6 +94,46 @@ func generateFile(path string, tmplStr string, ctx any, options ...genOption) er
 	}
 
 	if _, err = file.WriteString(buffer.String()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func modifyFile(path string, patternStr string, tmplStr string, ctx any) error {
+	exists, err := pathExists(path)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return fmt.Errorf("file does not exist: %s", path)
+	}
+
+	oldFile, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	pattern, err := regexp.Compile(patternStr)
+	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New("tmpl").Parse(tmplStr)
+	if err != nil {
+		return err
+	}
+
+	var buffer bytes.Buffer
+	if err = tmpl.Execute(&buffer, ctx); err != nil {
+		return err
+	}
+
+	newFile := pattern.ReplaceAll(oldFile, buffer.Bytes())
+
+	err = os.WriteFile(path, newFile, os.ModePerm)
+	if err != nil {
 		return err
 	}
 

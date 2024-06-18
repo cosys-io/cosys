@@ -61,7 +61,7 @@ func (s Server) Start() error {
 						common.RespondInternalError(w)
 						return
 					}
-					actionFunc, ok := (*controller)[actionName]
+					actionFunc, ok := controller[actionName]
 					if !ok {
 						common.RespondInternalError(w)
 						return

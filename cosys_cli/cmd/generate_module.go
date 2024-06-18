@@ -97,3 +97,65 @@ func generateModule(moduleDir, moduleName, modfile string) error {
 
 	return nil
 }
+
+var ModuleTmpl = `package {{.ModuleName}}
+
+import (
+	"github.com/cosys-io/cosys/common"
+	"{{.Modfile}}/modules/{{.ModuleName}}/controllers"
+	"{{.Modfile}}/modules/{{.ModuleName}}/middlewares"
+	"{{.Modfile}}/modules/{{.ModuleName}}/policies"
+	"{{.Modfile}}/modules/{{.ModuleName}}/routes"
+	"{{.Modfile}}/modules/{{.ModuleName}}/content_types"
+)
+
+var Module = &common.Module{
+	Routes: routes.Routes,
+	Controllers: controllers.Controllers,
+	Middlewares: middlewares.Middlewares,
+	Policies: policies.Policies,
+	Models: models.Models,
+	Services: nil,
+
+	OnRegister: nil,
+	OnDestroy: nil,
+}
+`
+
+var ControllersTmpl = `package controllers
+
+import "github.com/cosys-io/cosys/common"
+
+var Controllers = map[string]*common.Controller{}`
+
+var MiddlewaresTmpl = `package middlewares
+
+import "github.com/cosys-io/cosys/common"
+
+var Middlewares = map[string]common.Middleware{}`
+
+var PoliciesTmpl = `package policies
+
+import "github.com/cosys-io/cosys/common"
+
+var Policies = map[string]common.Policy{}`
+
+var RoutesTmpl = `package routes
+
+import "github.com/cosys-io/cosys/common"
+
+var Routes = []*common.Route{}`
+
+var ServicesTmpl = `package services
+
+import "github.com/cosys-io/cosys/common"
+
+var Services = map[string]common.Service{}`
+
+var ModelsTmpl = `package models
+
+import (
+	"github.com/cosys-io/cosys/common"
+)
+
+var Models = map[string]common.Model{}`

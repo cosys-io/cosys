@@ -75,3 +75,33 @@ func generateMain(modfile string, modules []string) error {
 
 	return nil
 }
+
+var MainTmpl = `package main
+
+{{$modfile := .Modfile}}
+import (
+	"log"	
+
+	"github.com/cosys-io/cosys/common"
+{{range .Modules}}	"{{$modfile}}/modules/{{.}}"
+{{end}})
+
+func main() {
+	var err error 
+	
+	modules := map[string]*common.Module{
+{{range .Modules}}		"{{.}}": {{.}}.Module,
+{{end}}}
+
+	cosys := common.NewCosys(nil)
+
+	cosys, err = cosys.Register(modules)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := cosys.Start(); err != nil {
+		log.Fatal(err)
+	}
+}
+`
