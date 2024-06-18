@@ -3,7 +3,10 @@ package content_builder
 import "github.com/cosys-io/cosys/common"
 
 var Module = &common.Module{
-	Routes: nil,
+	Routes: []*common.Route{
+		common.NewRoute("GET", `/admin/get/([a-zA-Z]+)`, "admin.get"),
+		common.NewRoute("POST", `/admin/build/([a-zA-Z]+)`, "admin.build"),
+	},
 	Controllers: map[string]common.Controller{
 		"admin": Controller,
 	},

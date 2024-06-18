@@ -126,31 +126,36 @@ var ControllersTmpl = `package controllers
 
 import "github.com/cosys-io/cosys/common"
 
-var Controllers = map[string]*common.Controller{}`
+var Controllers = map[string]*common.Controller{
+}`
 
 var MiddlewaresTmpl = `package middlewares
 
 import "github.com/cosys-io/cosys/common"
 
-var Middlewares = map[string]common.Middleware{}`
+var Middlewares = map[string]common.Middleware{
+}`
 
 var PoliciesTmpl = `package policies
 
 import "github.com/cosys-io/cosys/common"
 
-var Policies = map[string]common.Policy{}`
+var Policies = map[string]common.Policy{
+}`
 
 var RoutesTmpl = `package routes
 
 import "github.com/cosys-io/cosys/common"
 
-var Routes = []*common.Route{}`
+var Routes = []*common.Route{
+}`
 
 var ServicesTmpl = `package services
 
 import "github.com/cosys-io/cosys/common"
 
-var Services = map[string]common.Service{}`
+var Services = map[string]common.Service{
+}`
 
 var ModelsTmpl = `package models
 
@@ -158,4 +163,5 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-var Models = map[string]common.Model{}`
+var Models = map[string]common.Model{
+}`
