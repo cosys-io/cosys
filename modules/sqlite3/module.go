@@ -8,8 +8,13 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var (
+	db *sql.DB
+)
+
 func init() {
-	db, err := sql.Open("sqlite3", "data.db")
+	var err error
+	db, err = sql.Open("sqlite3", "data.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,6 +39,6 @@ var Module = &common.Module{
 	Models:      nil,
 	Services:    nil,
 
-	OnRegister: nil,
+	OnRegister: loadSchema,
 	OnDestroy:  nil,
 }

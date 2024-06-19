@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/cosys-io/cosys/cosys_cli/cmd/generator"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -49,7 +50,7 @@ func getModules() ([]string, error) {
 }
 
 func generateMain(modfile string, modules []string) error {
-	if err := generateDir("bin", genHeadOnly, skipIfExists); err != nil {
+	if err := gen.NewDir("bin", gen.GenHeadOnly, gen.SkipIfExists).Act(); err != nil {
 		return err
 	}
 
@@ -61,7 +62,7 @@ func generateMain(modfile string, modules []string) error {
 		Modules: modules,
 	}
 
-	if err := generateFile("main.go", MainTmpl, ctx, deleteIfExists); err != nil {
+	if err := gen.NewFile("main.go", MainTmpl, ctx, gen.DeleteIfExists).Act(); err != nil {
 		return err
 	}
 
@@ -75,3 +76,33 @@ func generateMain(modfile string, modules []string) error {
 
 	return nil
 }
+
+var MainTmpl = `package main
+
+{{$modfile := .Modfile}}
+import (
+	"log"	
+
+	"github.com/cosys-io/cosys/common"
+{{range .Modules}}	"{{$modfile}}/modules/{{.}}"
+{{end}})
+
+func main() {
+	var err error 
+	
+	modules := map[string]*common.Module{
+{{range .Modules}}		"{{.}}": {{.}}.Module,
+{{end}}}
+
+	cosys := common.NewCosys(nil)
+
+	cosys, err = cosys.Register(modules)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := cosys.Start(); err != nil {
+		log.Fatal(err)
+	}
+}
+`

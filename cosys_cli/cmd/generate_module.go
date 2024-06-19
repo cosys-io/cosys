@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	gen "github.com/cosys-io/cosys/cosys_cli/cmd/generator"
 	"log"
 	"path/filepath"
 
@@ -31,10 +32,6 @@ var generateModuleCmd = &cobra.Command{
 }
 
 func generateModule(moduleDir, moduleName, modfile string) error {
-	if err := generateDir(moduleDir, genHeadOnly); err != nil {
-		return err
-	}
-
 	ctx := struct {
 		ModuleName string
 		Modfile    string
@@ -43,57 +40,93 @@ func generateModule(moduleDir, moduleName, modfile string) error {
 		modfile,
 	}
 
-	if err := generateFile(filepath.Join(moduleDir, "module.go"), ModuleTmpl, ctx); err != nil {
-		return err
-	}
-
-	if err := generateDir(filepath.Join(moduleDir, "content_types"), genHeadOnly); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(moduleDir, "content_types", "models.go"), ModelsTmpl, nil); err != nil {
-		return err
-	}
-
-	if err := generateDir(filepath.Join(moduleDir, "controllers"), genHeadOnly); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(moduleDir, "controllers", "controllers.go"), ControllersTmpl, nil); err != nil {
-		return err
-	}
-
-	if err := generateDir(filepath.Join(moduleDir, "middlewares"), genHeadOnly); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(moduleDir, "middlewares", "middlewares.go"), MiddlewaresTmpl, nil); err != nil {
-		return err
-	}
-
-	if err := generateDir(filepath.Join(moduleDir, "policies"), genHeadOnly); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(moduleDir, "policies", "policies.go"), PoliciesTmpl, nil); err != nil {
-		return err
-	}
-
-	if err := generateDir(filepath.Join(moduleDir, "routes"), genHeadOnly); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(moduleDir, "routes", "routes.go"), RoutesTmpl, nil); err != nil {
-		return err
-	}
-
-	if err := generateDir(filepath.Join(moduleDir, "services"), genHeadOnly); err != nil {
-		return err
-	}
-
-	if err := generateFile(filepath.Join(moduleDir, "services", "services.go"), ServicesTmpl, nil); err != nil {
+	generator := gen.NewGenerator(
+		gen.NewDir(moduleDir, gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(moduleDir, "module.go"), ModuleTmpl, ctx),
+		gen.NewDir(filepath.Join(moduleDir, "content_types"), gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(moduleDir, "content_types", "models.go"), ModelsTmpl, nil),
+		gen.NewDir(filepath.Join(moduleDir, "controllers"), gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(moduleDir, "controllers", "controllers.go"), ControllersTmpl, nil),
+		gen.NewDir(filepath.Join(moduleDir, "middlewares"), gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(moduleDir, "middlewares", "middlewares.go"), MiddlewaresTmpl, nil),
+		gen.NewDir(filepath.Join(moduleDir, "policies"), gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(moduleDir, "policies", "policies.go"), PoliciesTmpl, nil),
+		gen.NewDir(filepath.Join(moduleDir, "routes"), gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(moduleDir, "routes", "routes.go"), RoutesTmpl, nil),
+		gen.NewDir(filepath.Join(moduleDir, "services"), gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(moduleDir, "services", "services.go"), ServicesTmpl, nil),
+	)
+	if err := generator.Generate(); err != nil {
 		return err
 	}
 
 	return nil
 }
+
+var ModuleTmpl = `package {{.ModuleName}}
+
+import (
+	"github.com/cosys-io/cosys/common"
+	"{{.Modfile}}/modules/{{.ModuleName}}/controllers"
+	"{{.Modfile}}/modules/{{.ModuleName}}/middlewares"
+	"{{.Modfile}}/modules/{{.ModuleName}}/policies"
+	"{{.Modfile}}/modules/{{.ModuleName}}/routes"
+	"{{.Modfile}}/modules/{{.ModuleName}}/content_types"
+)
+
+var Module = &common.Module{
+	Routes: routes.Routes,
+	Controllers: controllers.Controllers,
+	Middlewares: middlewares.Middlewares,
+	Policies: policies.Policies,
+	Models: models.Models,
+	Services: nil,
+
+	OnRegister: nil,
+	OnDestroy: nil,
+}
+`
+
+var ControllersTmpl = `package controllers
+
+import "github.com/cosys-io/cosys/common"
+
+var Controllers = map[string]common.Controller{
+}`
+
+var MiddlewaresTmpl = `package middlewares
+
+import "github.com/cosys-io/cosys/common"
+
+var Middlewares = map[string]common.Middleware{
+}`
+
+var PoliciesTmpl = `package policies
+
+import "github.com/cosys-io/cosys/common"
+
+var Policies = map[string]common.Policy{
+}`
+
+var RoutesTmpl = `package routes
+
+import "github.com/cosys-io/cosys/common"
+
+var Routes = []*common.Route{
+}`
+
+var ServicesTmpl = `package services
+
+import "github.com/cosys-io/cosys/common"
+
+var Services = map[string]common.Service{
+}`
+
+var ModelsTmpl = `package models
+
+import (
+	"github.com/cosys-io/cosys/common"
+)
+
+var Models = map[string]common.Model{
+}`

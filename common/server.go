@@ -58,3 +58,49 @@ func (r ResponseWriter) Write(b []byte) (int, error) {
 func (r ResponseWriter) WriteHeader(statusCode int) {
 	r.Writer.WriteHeader(statusCode)
 }
+
+func ReadState(r *http.Request, stateName string) (any, error) {
+	ctx := r.Context()
+	if ctx == nil {
+		return nil, fmt.Errorf("context not found")
+	}
+
+	stateMap := ctx.Value(StateKey)
+	if stateMap == nil {
+		return nil, fmt.Errorf("state not found")
+	}
+
+	switch stateMap.(type) {
+	case map[string]any:
+
+	default:
+		return nil, fmt.Errorf("state has wrong type")
+	}
+
+	state, ok := stateMap.(map[string]any)[stateName]
+	if !ok {
+		return nil, fmt.Errorf("state not found: " + stateName)
+	}
+
+	return state, nil
+}
+
+func ReadParams(r *http.Request) ([]string, error) {
+	params, err := ReadState(r, "query_params")
+	if err != nil {
+		return nil, err
+	}
+
+	if params == nil {
+		return nil, fmt.Errorf("query params not found")
+	}
+
+	switch params.(type) {
+	case []string:
+
+	default:
+		return nil, fmt.Errorf("query params has wrong type")
+	}
+
+	return params.([]string), nil
+}

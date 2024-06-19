@@ -14,7 +14,7 @@ func Extract(data common.Entity, params *common.DBParams, model common.Model) ([
 
 	columns := params.Columns
 	if len(params.Columns) == 0 {
-		columns = model.All_()
+		columns = model.All_()[1:]
 	}
 
 	var dataValue reflect.Value = reflect.ValueOf(data)
