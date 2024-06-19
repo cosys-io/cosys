@@ -2,8 +2,6 @@ module github.com/cosys-io/cosys
 
 go 1.22.3
 
-replace github.com/cosys-io/cosys/experiment/invoice/invoicer => ./experiment/invoice/invoicer
-
 require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/spf13/cobra v1.8.0
