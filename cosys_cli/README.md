@@ -4,7 +4,7 @@ CLI tools for managing a cosys project.
 ## Installation
 Run the following to install the Cosys CLI binary into `$GOPATH/bin`. 
 
-`go install github.com/cosys-io/cosys/cosys_cli`
+`go install github.com/cosys-io/cosys/cosys_cli@latest`
 
 Run the following to add `$GOPATH/bin` to `$PATH`.
 
