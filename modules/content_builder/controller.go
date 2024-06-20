@@ -1,9 +1,9 @@
 package content_builder
 
 import (
+	"encoding/json"
 	"github.com/cosys-io/cosys/common"
 	"github.com/cosys-io/cosys/cosys_cli/cmd"
-	"gopkg.in/yaml.v3"
 	"net/http"
 )
 
@@ -26,27 +26,21 @@ func schema(cosys common.Cosys) http.HandlerFunc {
 
 func build(cosys common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params, err := common.ReadParams(r)
-		if err != nil {
-			common.RespondInternalError(w)
-			return
-		}
-
-		if len(params) == 0 {
-			common.RespondInternalError(w)
-			return
-		}
-
-		name := params[0]
-
 		schemaParsed := &common.ModelSchemaParsed{}
 
-		if err := yaml.NewDecoder(r.Body).Decode(schemaParsed); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(schemaParsed); err != nil {
 			common.RespondError(w, "Bad request.", http.StatusBadRequest)
 			return
 		}
 
-		if err := cmd.GenerateType(name, schemaParsed.Schema()); err != nil {
+		newSchema, err := schemaParsed.Schema()
+		if err != nil {
+			common.RespondError(w, "Bad request.", http.StatusBadRequest)
+			return
+		}
+		newSchema.Attributes = append([]*common.AttributeSchema{&common.IdSchema}, newSchema.Attributes...)
+
+		if err = cmd.GenerateType(newSchema); err != nil {
 			common.RespondError(w, "Unable to build content type.", http.StatusBadRequest)
 			return
 		}

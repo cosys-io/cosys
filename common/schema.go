@@ -78,6 +78,22 @@ func NewAttributeSchema(attrName, attrType string) (*AttributeSchema, error) {
 	return attrSchema, nil
 }
 
+var IdSchema = AttributeSchema{
+	Name:         "id",
+	SimpleType:   "Number",
+	DetailedType: "Int",
+	ShownInTable: true,
+	Required:     true,
+	Max:          2147483647,
+	Min:          -2147483648,
+	MaxLength:    -1,
+	MinLength:    -1,
+	Private:      false,
+	Editable:     false,
+	Nullable:     false,
+	Unique:       true,
+}
+
 func GetSchema(path string) (*ModelSchema, error) {
 	schemaParsed := &ModelSchemaParsed{}
 
@@ -85,7 +101,11 @@ func GetSchema(path string) (*ModelSchema, error) {
 		return nil, err
 	}
 
-	return schemaParsed.Schema(), nil
+	schema, err := schemaParsed.Schema()
+	if err != nil {
+		return nil, err
+	}
+	return schema, nil
 }
 
 type ModelSchemaParsed struct {
@@ -98,11 +118,31 @@ type ModelSchemaParsed struct {
 	Attributes     []*AttributeSchemaParsed `yaml:"attributes" json:"attributes"`
 }
 
-func (m ModelSchemaParsed) Schema() *ModelSchema {
+func (m ModelSchemaParsed) Schema() (*ModelSchema, error) {
+	if m.DisplayName == "" {
+		return nil, fmt.Errorf("model has no display name")
+	}
+	if m.ModelType == "" {
+		return nil, fmt.Errorf("model %s has no model type", m.DisplayName)
+	}
+	if m.CollectionName == "" {
+		return nil, fmt.Errorf("model %s has no collection name", m.DisplayName)
+	}
+	if m.SingularName == "" {
+		return nil, fmt.Errorf("model %s has no singular name", m.DisplayName)
+	}
+	if m.PluralName == "" {
+		return nil, fmt.Errorf("model %s has no plural name", m.DisplayName)
+	}
+
 	attrs := []*AttributeSchema{}
 
 	for _, attr := range m.Attributes {
-		attrs = append(attrs, attr.Schema())
+		attrSchema, err := attr.Schema()
+		if err != nil {
+			return nil, err
+		}
+		attrs = append(attrs, attrSchema)
 	}
 
 	return &ModelSchema{
@@ -113,7 +153,7 @@ func (m ModelSchemaParsed) Schema() *ModelSchema {
 		PluralName:     m.PluralName,
 		Description:    m.Description,
 		Attributes:     attrs,
-	}
+	}, nil
 }
 
 type AttributeSchemaParsed struct {
@@ -135,7 +175,17 @@ type AttributeSchemaParsed struct {
 	Unique   *bool   `yaml:"unique" json:"unique"`
 }
 
-func (a AttributeSchemaParsed) Schema() *AttributeSchema {
+func (a AttributeSchemaParsed) Schema() (*AttributeSchema, error) {
+	if a.Name == "" {
+		return nil, fmt.Errorf("attribute has no name")
+	}
+	if a.SimpleType == "" {
+		return nil, fmt.Errorf("attribute %s has no simple type", a.Name)
+	}
+	if a.DetailedType == "" {
+		return nil, fmt.Errorf("attribute %s has no detailed type", a.Name)
+	}
+
 	return &AttributeSchema{
 		Name:         a.Name,
 		SimpleType:   a.SimpleType,
@@ -153,7 +203,7 @@ func (a AttributeSchemaParsed) Schema() *AttributeSchema {
 		Default:  checkDefault("", a.Default),
 		Nullable: checkDefault(true, a.Nullable),
 		Unique:   checkDefault(true, a.Unique),
-	}
+	}, nil
 }
 
 func checkDefault[T any](defaultValue T, value *T) T {
