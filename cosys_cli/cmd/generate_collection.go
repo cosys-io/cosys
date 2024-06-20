@@ -78,7 +78,6 @@ func generateModel(typeName string, schema *common.ModelSchema, ctx *ModelCtx) e
 	generator := gen.NewGenerator(
 		gen.NewDir(typeDir, gen.GenHeadOnly),
 		gen.NewFile(filepath.Join(typeDir, "schema.yaml"), SchemaYamlTmpl, schema),
-		gen.NewFile(filepath.Join(typeDir, "schema.go"), SchemaGoTmpl, schema),
 		gen.NewFile(filepath.Join(typeDir, "lifecycle.go"), LifecycleTmpl, ctx),
 		gen.NewFile(filepath.Join(typeDir, "model.go"), ModelTmpl, ctx),
 	)
@@ -106,7 +105,22 @@ func generateApi(typeName string, ctx *ModelCtx) error {
 
 var ModelTmpl = `package {{.CollectionName}}
 	
-import "github.com/cosys-io/cosys/common"
+import (
+	"log"
+	"github.com/cosys-io/cosys/common"
+)
+
+var (
+	Schema = &common.ModelSchema{}
+)
+
+func init() {
+	var err error
+	Schema, err = common.GetSchema("modules/api/content_types/{{.CollectionName}}/schema.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 type {{.SingularName}} struct {
 {{range .Attributes}}    {{.NamePascal}} {{.TypeLower}} ` + "`" + `json:"{{.NameCamel}}"` + "`" + `
@@ -147,7 +161,7 @@ func (m {{.PluralName}}Model) Id_() *common.IntAttribute {
 }
 
 func (m {{.PluralName}}Model) Schema_() *common.ModelSchema {
-	return m.schema
+	return Schema
 }
 
 func (m {{.PluralName}}Model) Lifecycle_() common.Lifecycle {
@@ -159,39 +173,6 @@ var LifecycleTmpl = `package {{.CollectionName}}
 import "github.com/cosys-io/cosys/common"
 
 var Lifecycle = common.NewLifeCycle()`
-
-var SchemaGoTmpl = `package {{.CollectionName}}
-
-import "github.com/cosys-io/cosys/common"
-
-var Schema = &common.ModelSchema{
-	ModelType:      "collectiontype",
-	CollectionName: "{{.CollectionName}}",
-	DisplayName:    "{{.DisplayName}}",
-	SingularName:   "{{.SingularName}}",
-	PluralName:     "{{.PluralName}}",
-	Description:    "{{.Description}}",
-	Attributes: []*common.AttributeSchema{
-{{range .Attributes}}        {
-			Name: "{{.Name}}",
-			SimpleType: "{{.SimpleType}}",
-			DetailedType: "{{.DetailedType}}",
-			
-			ShownInTable: {{.ShownInTable}},
-			Required: {{.Required}},
-			Max: {{.Max}},
-			Min: {{.Min}},
-			MaxLength: {{.MaxLength}},
-			MinLength: {{.MinLength}},
-			Private: {{.Private}},
-			Editable: {{.Editable}},
-			
-			Default: "{{.Default}}",
-			Nullable: {{.Nullable}},
-			Unique: {{.Unique}},
-		},
-{{end}}    },
-}`
 
 var SchemaYamlTmpl = `modelType: {{.ModelType}}
 collectionName: {{.CollectionName}}
@@ -408,47 +389,9 @@ func schemaFromArgs(collection string, display string, singular string, plural s
 		attrName := split[0]
 		attrType := split[1]
 
-		attrSchema := &common.AttributeSchema{
-			Name:         attrName,
-			SimpleType:   "",
-			DetailedType: "",
-			ShownInTable: true,
-			Required:     false,
-			Max:          2147483647,
-			Min:          -2147483648,
-			MaxLength:    -1,
-			MinLength:    -1,
-			Private:      false,
-			Editable:     true,
-			Default:      "",
-			Nullable:     true,
-			Unique:       false,
-		}
-
-		switch attrType {
-		case "string":
-			attrSchema.SimpleType = "String"
-			attrSchema.DetailedType = "String"
-		case "int":
-			attrSchema.SimpleType = "Number"
-			attrSchema.DetailedType = "Int"
-		case "float":
-			attrSchema.SimpleType = "Number"
-			attrSchema.DetailedType = "Float"
-		case "boolean":
-			attrSchema.SimpleType = "Boolean"
-			attrSchema.DetailedType = "Boolean"
-		case "date":
-			attrSchema.SimpleType = "Date"
-			attrSchema.DetailedType = "Date"
-		case "datetime":
-			attrSchema.SimpleType = "DateTime"
-			attrSchema.DetailedType = "DateTime"
-		case "timestamp":
-			attrSchema.SimpleType = "TimeStamp"
-			attrSchema.DetailedType = "TimeStamp"
-		default:
-			return nil, fmt.Errorf("invalid attribute type: %s", attrType)
+		attrSchema, err := common.NewAttributeSchema(attrType, attrType)
+		if err != nil {
+			return nil, err
 		}
 
 		for _, option := range split[2:] {

@@ -1,11 +1,7 @@
 package common
 
 import (
-	"fmt"
 	"github.com/joho/godotenv"
-	"gopkg.in/yaml.v3"
-	"os"
-	"reflect"
 )
 
 type Configs struct {
@@ -45,16 +41,16 @@ func GetConfigs() (Configs, error) {
 	moduleCfg := &ModuleConfigs{}
 	serverCfg := &ServerConfigs{}
 
-	if err := ParseFile("configs/admin.yaml", adminCfg); err != nil {
+	if err := ParseFile("configs/admin.yaml", adminCfg, true); err != nil {
 		return Configs{}, err
 	}
-	if err := ParseFile("configs/database.yaml", databaseCfg); err != nil {
+	if err := ParseFile("configs/database.yaml", databaseCfg, true); err != nil {
 		return Configs{}, err
 	}
-	if err := ParseFile("configs/module.yaml", moduleCfg); err != nil {
+	if err := ParseFile("configs/module.yaml", moduleCfg, true); err != nil {
 		return Configs{}, err
 	}
-	if err := ParseFile("configs/server.yaml", serverCfg); err != nil {
+	if err := ParseFile("configs/server.yaml", serverCfg, true); err != nil {
 		return Configs{}, err
 	}
 
@@ -64,48 +60,4 @@ func GetConfigs() (Configs, error) {
 		Module:   moduleCfg,
 		Server:   serverCfg,
 	}, nil
-}
-
-func ParseFile(path string, obj any) error {
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	if err = yaml.Unmarshal(file, obj); err != nil {
-		return err
-	}
-
-	objValue := reflect.ValueOf(obj)
-	if reflect.TypeOf(obj).Kind() == reflect.Pointer {
-		objValue = reflect.Indirect(objValue)
-	}
-	if objValue.Kind() != reflect.Struct {
-		return fmt.Errorf("object is not a struct")
-	}
-
-	numFields := objValue.NumField()
-	for i := 0; i < numFields; i++ {
-		fieldValue := objValue.Field(i)
-		if !fieldValue.IsValid() {
-			return fmt.Errorf("object has no field %s", objValue.Type().Field(i).Name)
-		}
-		field := fieldValue.Interface()
-		if reflect.TypeOf(field).String() != "string" {
-			continue
-		}
-		if !fieldValue.CanSet() {
-			return fmt.Errorf("field %s cannot be set", objValue.Type().Field(i).Name)
-		}
-		fieldString := field.(string)
-		if len(fieldString) < 5 {
-			continue
-		}
-		if fieldString[:4] == "ENV." {
-			fieldEnv := os.Getenv(fieldString[4:])
-			fieldValue.SetString(fieldEnv)
-		}
-	}
-
-	return nil
 }
