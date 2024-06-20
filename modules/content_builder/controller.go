@@ -29,10 +29,12 @@ func build(cosys common.Cosys) http.HandlerFunc {
 		params, err := common.ReadParams(r)
 		if err != nil {
 			common.RespondInternalError(w)
+			return
 		}
 
 		if len(params) == 0 {
 			common.RespondInternalError(w)
+			return
 		}
 
 		name := params[0]
@@ -46,6 +48,7 @@ func build(cosys common.Cosys) http.HandlerFunc {
 
 		if err := cmd.GenerateType(name, schemaParsed.Schema()); err != nil {
 			common.RespondError(w, "Unable to build content type.", http.StatusBadRequest)
+			return
 		}
 
 		common.RespondOne(w, "Content type successfully created.", 200)
