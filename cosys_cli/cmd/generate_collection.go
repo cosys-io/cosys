@@ -174,19 +174,20 @@ var Schema = &common.ModelSchema{
 	Attributes: []*common.AttributeSchema{
 {{range .Attributes}}        {
 			Name: "{{.Name}}",
-			Type: "{{.Type}}",
+			SimpleType: "{{.SimpleType}}",
+			DetailedType: "{{.DetailedType}}",
 			
+			ShownInTable: {{.ShownInTable}},
 			Required: {{.Required}},
 			Max: {{.Max}},
 			Min: {{.Min}},
 			MaxLength: {{.MaxLength}},
 			MinLength: {{.MinLength}},
 			Private: {{.Private}},
-			NotConfigurable: {{.NotConfigurable}},
+			Editable: {{.Editable}},
 			
 			Default: "{{.Default}}",
-			NotNullable: {{.NotNullable}},
-			Unsigned: {{.Unsigned}},
+			Nullable: {{.Nullable}},
 			Unique: {{.Unique}},
 		},
 {{end}}    },
@@ -200,17 +201,18 @@ pluralName: {{.PluralName}}
 description: {{.Description}}
 attributes:
 {{range .Attributes}}  - name: {{.Name}}
-    type: {{.Type}}{{if .Required}}
+    simpleDataType: {{.SimpleType}}
+    detailedDataType: {{.DetailedType}}{{if not .ShownInTable}}
+    shownInTable: false{{end}}{{if .Required}}
     required: true{{end}}{{if ne .Max 2147483647}}
     max: {{.Max}}{{end}}{{if ne .Min -2147483648}}
     min: {{.Min}}{{end}}{{if ne .MaxLength -1}}
     maxLength: {{.MaxLength}}{{end}}{{if ne .MinLength -1}}
     minLength: {{.MinLength}}{{end}}{{if .Private}}
-    private: true{{end}}{{if .NotConfigurable}}
-    notConfigurable: true{{end}}{{if .Default}}
-    default: {{.Default}}{{end}}{{if .NotNullable}}
-    notNullable: true{{end}}{{if .Unsigned}}
-    unsigned: true{{end}}{{if .Unique}}
+    private: true{{end}}{{if not .Editable}}
+    editable: false{{end}}{{if .Default}}
+    default: {{.Default}}{{end}}{{if not .Nullable}}
+    nullable: false{{end}}{{if .Unique}}
     unique: true{{end}}
 {{end}}`
 
@@ -379,18 +381,19 @@ func schemaFromArgs(collection string, display string, singular string, plural s
 		Description:    description,
 		Attributes: []*common.AttributeSchema{
 			{
-				Name:            "id",
-				Type:            "integer",
-				Required:        true,
-				Max:             2147483647,
-				Min:             -2147483648,
-				MaxLength:       -1,
-				MinLength:       -1,
-				Private:         false,
-				NotConfigurable: false,
-				NotNullable:     true,
-				Unsigned:        true,
-				Unique:          true,
+				Name:         "id",
+				SimpleType:   "Number",
+				DetailedType: "Int",
+				ShownInTable: true,
+				Required:     true,
+				Max:          2147483647,
+				Min:          -2147483648,
+				MaxLength:    -1,
+				MinLength:    -1,
+				Private:      false,
+				Editable:     false,
+				Nullable:     false,
+				Unique:       true,
 			},
 		},
 	}
@@ -406,23 +409,52 @@ func schemaFromArgs(collection string, display string, singular string, plural s
 		attrType := split[1]
 
 		attrSchema := &common.AttributeSchema{
-			Name:            attrName,
-			Type:            attrType,
-			Required:        false,
-			Max:             2147483647,
-			Min:             -2147483648,
-			MaxLength:       -1,
-			MinLength:       -1,
-			Private:         false,
-			NotConfigurable: false,
-			Default:         "",
-			NotNullable:     false,
-			Unsigned:        false,
-			Unique:          false,
+			Name:         attrName,
+			SimpleType:   "",
+			DetailedType: "",
+			ShownInTable: true,
+			Required:     false,
+			Max:          2147483647,
+			Min:          -2147483648,
+			MaxLength:    -1,
+			MinLength:    -1,
+			Private:      false,
+			Editable:     true,
+			Default:      "",
+			Nullable:     true,
+			Unique:       false,
+		}
+
+		switch attrType {
+		case "string":
+			attrSchema.SimpleType = "String"
+			attrSchema.DetailedType = "String"
+		case "int":
+			attrSchema.SimpleType = "Number"
+			attrSchema.DetailedType = "Int"
+		case "float":
+			attrSchema.SimpleType = "Number"
+			attrSchema.DetailedType = "Float"
+		case "boolean":
+			attrSchema.SimpleType = "Boolean"
+			attrSchema.DetailedType = "Boolean"
+		case "date":
+			attrSchema.SimpleType = "Date"
+			attrSchema.DetailedType = "Date"
+		case "datetime":
+			attrSchema.SimpleType = "DateTime"
+			attrSchema.DetailedType = "DateTime"
+		case "timestamp":
+			attrSchema.SimpleType = "TimeStamp"
+			attrSchema.DetailedType = "TimeStamp"
+		default:
+			return nil, fmt.Errorf("invalid attribute type: %s", attrType)
 		}
 
 		for _, option := range split[2:] {
 			switch {
+			case option == "notshown":
+				attrSchema.ShownInTable = false
 			case option == "required":
 				attrSchema.Required = true
 			case regexp.MustCompile(`^max=([-0-9]+)$`).MatchString(option):
@@ -455,17 +487,17 @@ func schemaFromArgs(collection string, display string, singular string, plural s
 				attrSchema.MinLength = val
 			case option == "private":
 				attrSchema.Private = true
-			case option == "notconfigurable":
-				attrSchema.NotConfigurable = true
+			case option == "noteditable":
+				attrSchema.Editable = false
 			case regexp.MustCompile(`^default=(.+)=$`).MatchString(option):
 				matches := regexp.MustCompile(`^default=(.+)$`).FindStringSubmatch(option)
 				attrSchema.Default = matches[1]
 			case option == "notnullable":
-				attrSchema.NotNullable = true
-			case option == "unsigned":
-				attrSchema.Unsigned = true
+				attrSchema.Nullable = false
 			case option == "unique":
 				attrSchema.Unique = true
+			default:
+				return nil, fmt.Errorf("invalid option: %s", option)
 			}
 		}
 
@@ -520,14 +552,14 @@ func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
 			NamePascal: caser.String(attr.Name),
 		}
 
-		switch attr.Type {
-		case "integer":
+		switch attr.SimpleType {
+		case "Number":
 			attrCtx.TypeLower = "int"
 			attrCtx.TypeUpper = "Int"
-		case "string":
+		case "String":
 			attrCtx.TypeLower = "string"
 			attrCtx.TypeUpper = "String"
-		case "boolean":
+		case "Boolean":
 			attrCtx.TypeLower = "bool"
 			attrCtx.TypeUpper = "Bool"
 		}

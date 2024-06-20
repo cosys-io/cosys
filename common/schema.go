@@ -11,19 +11,20 @@ type ModelSchema struct {
 }
 
 type AttributeSchema struct {
-	Name string `yaml:"name" json:"name"`
-	Type string `yaml:"type" json:"type"`
+	Name         string `yaml:"name" json:"name"`
+	SimpleType   string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
+	DetailedType string `yaml:"detailedDataType" json:"detailedDataType"`
 
-	Required        bool  `yaml:"required" json:"required"`
-	Max             int64 `yaml:"max" json:"max"`
-	Min             int64 `yaml:"min" json:"min"`
-	MaxLength       int   `yaml:"maxLength" json:"maxLength"`
-	MinLength       int   `yaml:"minLength" json:"minLength"`
-	Private         bool  `yaml:"private" json:"private"`
-	NotConfigurable bool  `yaml:"notConfigurable" json:"notConfigurable"`
+	ShownInTable bool  `yaml:"shownInTable" json:"shownInTable"`
+	Required     bool  `yaml:"required" json:"required"`
+	Max          int64 `yaml:"max" json:"max"`
+	Min          int64 `yaml:"min" json:"min"`
+	MaxLength    int   `yaml:"maxLength" json:"maxLength"`
+	MinLength    int   `yaml:"minLength" json:"minLength"`
+	Private      bool  `yaml:"private" json:"private"`
+	Editable     bool  `yaml:"editable" json:"editable"`
 
-	Default     string `yaml:"default" json:"default"`
-	NotNullable bool   `yaml:"notNullable" json:"notNullable"`
-	Unsigned    bool   `yaml:"unsigned" json:"unsigned"`
-	Unique      bool   `yaml:"unique" json:"unique"`
+	Default  string `yaml:"default" json:"default"`
+	Nullable bool   `yaml:"nullable" json:"nullable"`
+	Unique   bool   `yaml:"unique" json:"unique"`
 }
