@@ -38,6 +38,8 @@ func installModules(dir string, modules ...string) error {
 		return err
 	}
 
+	defer os.RemoveAll(filepath.Join(dir, ".clone"))
+
 	if err := RunCommand(filepath.Join(dir, ".clone"), "git", cmdArgs...); err != nil {
 		return err
 	}
@@ -50,10 +52,6 @@ func installModules(dir string, modules ...string) error {
 		if err := cp.Copy(filepath.Join(dir, ".clone", "modules", moduleName), filepath.Join(dir, "modules", moduleName)); err != nil {
 			return err
 		}
-	}
-
-	if err := os.RemoveAll(filepath.Join(dir, ".clone")); err != nil {
-		return err
 	}
 
 	if err := RunCommand(dir, "go", "mod", "tidy"); err != nil {
