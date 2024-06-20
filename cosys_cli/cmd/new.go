@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/cosys-io/cosys/cosys_cli/cmd/generator"
 	"log"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -49,6 +48,10 @@ func generateProject(projectName, pf, db, tmpl string) error {
 		return err
 	}
 
+	if err := installModules(projectName, db, "server", "module_service", "content_builder"); err != nil {
+		return err
+	}
+
 	if err := generateModfile(projectName, pf); err != nil {
 		return err
 	}
@@ -66,6 +69,7 @@ func generateConfigs(projectName, db, tmpl string) error {
 	}
 
 	generator := gen.NewGenerator(
+		gen.NewFile(filepath.Join(projectName, ".env"), EnvTmpl, ctx),
 		gen.NewDir(configsDir),
 		gen.NewFile(filepath.Join(configsDir, "admin.yaml"), AdminCfgTmpl, ctx),
 		gen.NewFile(filepath.Join(configsDir, "database.yaml"), DbCfgTmpl, ctx),
@@ -96,20 +100,25 @@ func generateModules(projectName, pf, db, tmpl string) error {
 }
 
 func generateModfile(projectName, pf string) error {
-	cmd := exec.Command("go", "mod", "init", fmt.Sprintf("github.com/%s/%s", pf, projectName))
-	cmd.Dir = projectName
-	if err := cmd.Run(); err != nil {
+	if err := RunCommand(projectName, "go", "mod", "init", fmt.Sprintf("github.com/%s/%s", pf, projectName)); err != nil {
 		return err
 	}
 
-	cmd = exec.Command("go", "get", "github.com/cosys-io/cosys")
-	cmd.Dir = projectName
-	if err := cmd.Run(); err != nil {
+	if err := RunCommand(projectName, "go", "get", "github.com/cosys-io/cosys"); err != nil {
 		return err
 	}
 
 	return nil
 }
+
+var EnvTmpl = `HOST = localhost
+PORT = 3000
+
+DBNAME = cosys
+DBHOST = db
+DBPORT = 3000
+DBUSER = cosys
+DBPASS = cosys`
 
 var AdminCfgTmpl = ``
 

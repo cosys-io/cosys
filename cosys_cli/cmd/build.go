@@ -66,7 +66,7 @@ func generateMain(modfile string, modules []string) error {
 		return err
 	}
 
-	if err := RunCommand("go", "build", "-o", "bin/cosys", "main.go"); err != nil {
+	if err := RunCommand("", "go", "build", "-o", "bin/cosys", "main.go"); err != nil {
 		return err
 	}
 

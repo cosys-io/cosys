@@ -28,8 +28,11 @@ func getModfile() (string, error) {
 	return "", errors.New("module not found")
 }
 
-func RunCommand(name string, args ...string) error {
+func RunCommand(dir string, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
+	if dir != "" {
+		cmd.Dir = dir
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
