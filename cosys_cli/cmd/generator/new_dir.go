@@ -35,7 +35,9 @@ func (a NewDirAction) Act() error {
 
 	if exists {
 		if a.opts.deleteIfExists {
-			os.RemoveAll(a.path)
+			if err := os.RemoveAll(a.path); err != nil {
+				return err
+			}
 		} else {
 			if a.opts.skipIfExists {
 				return nil
