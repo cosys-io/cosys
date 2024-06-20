@@ -59,11 +59,18 @@ func generateProject(projectName, pf, db, tmpl string) error {
 func generateConfigs(projectName, db, tmpl string) error {
 	configsDir := filepath.Join(projectName, "configs")
 
+	ctx := struct {
+		Database string
+	}{
+		Database: db,
+	}
+
 	generator := gen.NewGenerator(
 		gen.NewDir(configsDir),
-		gen.NewFile(filepath.Join(configsDir, "admin.go"), AdminCfgTmpl, nil),
-		gen.NewFile(filepath.Join(configsDir, "database.go"), DbCfgTmpl, nil),
-		gen.NewFile(filepath.Join(configsDir, "server.go"), ServerCfgTmpl, nil),
+		gen.NewFile(filepath.Join(configsDir, "admin.yaml"), AdminCfgTmpl, ctx),
+		gen.NewFile(filepath.Join(configsDir, "database.yaml"), DbCfgTmpl, ctx),
+		gen.NewFile(filepath.Join(configsDir, "module.yaml"), ModuleCfgTmpl, ctx),
+		gen.NewFile(filepath.Join(configsDir, "server.yaml"), ServerCfgTmpl, ctx),
 	)
 	if err := generator.Generate(); err != nil {
 		return err
@@ -104,8 +111,21 @@ func generateModfile(projectName, pf string) error {
 	return nil
 }
 
-var AdminCfgTmpl = `package configs`
+var AdminCfgTmpl = ``
 
-var DbCfgTmpl = `package configs`
+var DbCfgTmpl = `client: {{.Database}}
+name: ENV.DBNAME
+host: ENV.DBHOST
+port: ENV.DBPORT
+user: ENV.DBUSER
+pass: ENV.DBPASS`
 
-var ServerCfgTmpl = `package configs`
+var ModuleCfgTmpl = `modules: 
+  - api
+  - module_service
+  - server
+  - content_builder
+  - sqlite3`
+
+var ServerCfgTmpl = `host: ENV.HOST
+port: ENV.PORT`

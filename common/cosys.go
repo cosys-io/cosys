@@ -6,7 +6,7 @@ import (
 )
 
 type Cosys struct {
-	Configs  *Configs
+	Configs  Configs
 	Modules  map[string]*Module
 	Services map[string]Service
 	Models   map[string]Model
@@ -39,7 +39,7 @@ func (c Cosys) Server() Server {
 	return server(&c)
 }
 
-func NewCosys(configs *Configs) *Cosys {
+func NewCosys(configs Configs) *Cosys {
 	cosys := &Cosys{
 		Configs:  configs,
 		Modules:  map[string]*Module{},
@@ -54,9 +54,16 @@ func (c Cosys) Register(modules map[string]*Module) (*Cosys, error) {
 	cosys := c
 	var err error
 
-	cosys.Modules = modules
+	cosys.Modules = map[string]*Module{}
 
-	for _, module := range modules {
+	for _, moduleName := range c.Configs.Module.Modules {
+		module, ok := modules[moduleName]
+		if !ok {
+			return nil, fmt.Errorf("module %s not found", moduleName)
+		}
+
+		cosys.Modules[moduleName] = module
+
 		for name, model := range module.Models {
 			if _, ok := cosys.Models[name]; ok {
 				return nil, fmt.Errorf("model already exists: %s", name)

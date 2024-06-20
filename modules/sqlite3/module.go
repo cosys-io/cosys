@@ -13,12 +13,6 @@ var (
 )
 
 func init() {
-	var err error
-	db, err = sql.Open("sqlite3", "data.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	dbFunc := func(cosys *common.Cosys) common.Database {
 		return Database{
 			cosys: cosys,
@@ -26,9 +20,23 @@ func init() {
 		}
 	}
 
-	if err = common.RegisterDatabase("sqlite3", dbFunc); err != nil {
+	if err := common.RegisterDatabase("sqlite3", dbFunc); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func OnRegister(cosys common.Cosys) (common.Cosys, error) {
+	var err error
+	db, err = sql.Open("sqlite3", "data.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := loadSchema(cosys); err != nil {
+		return cosys, err
+	}
+
+	return cosys, nil
 }
 
 var Module = &common.Module{
@@ -39,6 +47,6 @@ var Module = &common.Module{
 	Models:      nil,
 	Services:    nil,
 
-	OnRegister: loadSchema,
+	OnRegister: OnRegister,
 	OnDestroy:  nil,
 }

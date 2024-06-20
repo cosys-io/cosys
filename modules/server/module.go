@@ -5,10 +5,14 @@ import (
 	"log"
 )
 
+var (
+	port string
+)
+
 func init() {
 	svFunc := func(cosys *common.Cosys) common.Server {
 		return Server{
-			Port:  "3000",
+			Port:  port,
 			Cosys: cosys,
 		}
 	}
@@ -16,6 +20,11 @@ func init() {
 	if err := common.RegisterServer("default", svFunc); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func OnRegister(cosys common.Cosys) (common.Cosys, error) {
+	port = cosys.Configs.Server.Port
+	return cosys, nil
 }
 
 var Module = &common.Module{
@@ -26,6 +35,6 @@ var Module = &common.Module{
 	Models:      nil,
 	Services:    nil,
 
-	OnRegister: nil,
+	OnRegister: OnRegister,
 	OnDestroy:  nil,
 }

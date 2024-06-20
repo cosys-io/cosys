@@ -7,17 +7,17 @@ import (
 	"strings"
 )
 
-func loadSchema(cosys common.Cosys) (common.Cosys, error) {
+func loadSchema(cosys common.Cosys) error {
 	for _, module := range cosys.Modules {
 		for _, model := range module.Models {
 			schema := schemaToSQL(*model.Schema_())
 			if _, err := db.Exec(schema); err != nil {
-				return cosys, err
+				return err
 			}
 		}
 	}
 
-	return cosys, nil
+	return nil
 }
 
 func schemaToSQL(schema common.ModelSchema) string {

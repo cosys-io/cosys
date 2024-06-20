@@ -94,7 +94,12 @@ func main() {
 {{range .Modules}}		"{{.}}": {{.}}.Module,
 {{end}}}
 
-	cosys := common.NewCosys(nil)
+	cfg, err := common.GetConfigs()
+	if err != nil {
+		log.Fatal(err)	
+	}
+
+	cosys := common.NewCosys(cfg)
 
 	cosys, err = cosys.Register(modules)
 	if err != nil {
