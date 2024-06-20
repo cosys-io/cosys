@@ -8,29 +8,19 @@ import (
 )
 
 var Controller = map[string]common.Action{
-	"get":   get,
-	"build": build,
+	"schema": schema,
+	"build":  build,
 }
 
-func get(cosys common.Cosys) http.HandlerFunc {
+func schema(cosys common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params, err := common.ReadParams(r)
-		if err != nil {
-			common.RespondInternalError(w)
+		schemas := []common.ModelSchema{}
+
+		for _, model := range cosys.Models {
+			schemas = append(schemas, *model.Schema_())
 		}
 
-		if len(params) == 0 {
-			common.RespondInternalError(w)
-		}
-
-		name := params[0]
-		model, ok := cosys.Models["api."+name]
-		if !ok {
-			common.RespondError(w, "Content type not found.", http.StatusNotFound)
-		}
-
-		schema := model.Schema_()
-		common.RespondOne(w, schema, 200)
+		common.RespondMany(w, schemas, 1, http.StatusOK)
 	}
 }
 
@@ -91,21 +81,22 @@ func (m ModelSchemaRequest) Schema() *common.ModelSchema {
 }
 
 type AttributeSchemaRequest struct {
-	Name string `yaml:"name" json:"name"`
-	Type string `yaml:"type" json:"type"`
+	Name         string `yaml:"name" json:"name"`
+	SimpleType   string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
+	DetailedType string `yaml:"detailedDataType" json:"detailedDataType"`
 
-	Required        bool   `yaml:"required" json:"required"`
-	Max             *int64 `yaml:"max" json:"max"`
-	Min             *int64 `yaml:"min" json:"min"`
-	MaxLength       *int   `yaml:"maxLength" json:"maxLength"`
-	MinLength       *int   `yaml:"minLength" json:"minLength"`
-	Private         bool   `yaml:"private" json:"private"`
-	NotConfigurable bool   `yaml:"notConfigurable" json:"notConfigurable"`
+	ShownInTable bool   `yaml:"shownInTable" json:"shownInTable"`
+	Required     bool   `yaml:"required" json:"required"`
+	Max          *int64 `yaml:"max" json:"max"`
+	Min          *int64 `yaml:"min" json:"min"`
+	MaxLength    *int   `yaml:"maxLength" json:"maxLength"`
+	MinLength    *int   `yaml:"minLength" json:"minLength"`
+	Private      bool   `yaml:"private" json:"private"`
+	Editable     bool   `yaml:"editable" json:"editable"`
 
-	Default     string `yaml:"default" json:"default"`
-	NotNullable bool   `yaml:"notNullable" json:"notNullable"`
-	Unsigned    bool   `yaml:"unsigned" json:"unsigned"`
-	Unique      bool   `yaml:"unique" json:"unique"`
+	Default  string `yaml:"default" json:"default"`
+	Nullable bool   `yaml:"nullable" json:"nullable"`
+	Unique   bool   `yaml:"unique" json:"unique"`
 }
 
 func (a AttributeSchemaRequest) Schema() *common.AttributeSchema {
@@ -127,20 +118,21 @@ func (a AttributeSchemaRequest) Schema() *common.AttributeSchema {
 	}
 
 	return &common.AttributeSchema{
-		Name: a.Name,
-		Type: a.Type,
+		Name:         a.Name,
+		SimpleType:   a.SimpleType,
+		DetailedType: a.DetailedType,
 
-		Required:        a.Required,
-		Max:             maxVal,
-		Min:             minVal,
-		MaxLength:       maxLength,
-		MinLength:       minLength,
-		Private:         a.Private,
-		NotConfigurable: a.NotConfigurable,
+		ShownInTable: a.ShownInTable,
+		Required:     a.Required,
+		Max:          maxVal,
+		Min:          minVal,
+		MaxLength:    maxLength,
+		MinLength:    minLength,
+		Private:      a.Private,
+		Editable:     a.Editable,
 
-		Default:     a.Default,
-		NotNullable: a.NotNullable,
-		Unsigned:    a.Unsigned,
-		Unique:      a.Unique,
+		Default:  a.Default,
+		Nullable: a.Nullable,
+		Unique:   a.Unique,
 	}
 }
