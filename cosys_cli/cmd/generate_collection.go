@@ -496,7 +496,7 @@ var ControllersStructTmpl = `var Controllers = map[string]common.Controller{
 	"{{.CollectionName}}": {{.PluralName}}Controller,`
 
 var RoutesStructTmpl = `var Routes = []*common.Route{
-	common.NewRoute("GET", ` + "`/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.findOne"),
-	common.NewRoute("POST", ` + "`/{{.CollectionName}}`" + `, "{{.CollectionName}}.create"),
-	common.NewRoute("PUT", ` + "`/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.update"),
-	common.NewRoute("DELETE", ` + "`/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.delete"),`
+	common.NewRoute("GET", ` + "`/api/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.findOne"),
+	common.NewRoute("POST", ` + "`/api/{{.CollectionName}}`" + `, "{{.CollectionName}}.create"),
+	common.NewRoute("PUT", ` + "`/api/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.update"),
+	common.NewRoute("DELETE", ` + "`/api/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.delete"),`

@@ -1,7 +1,33 @@
-# cosys - content builder
-This module is responsible for handling the creation of new content types.
+# cosys - admin
+This module is responsible for creating the Admin UI API.
 
 ### Documentation:
+
+**Admin Routes**
+
+The admin module creates five API endpoints per model for CRUD operations.
+
+`GET /admin/{contentTypeName}`
+
+`GET /admin/{contentTypeName}/{documentId}`
+
+`POST /admin/{contentTypeName}`
+
+`PUT /admin/{contentTypeName}/{documentId}`
+
+`DELETE /admin/{contentTypeName}/{documentId}`
+
+**Schema**
+
+The admin module creates four API endpoints for CRUD operations on content-types.
+
+`GET /admin/schema`
+
+`POST /admin/schema`
+
+`PUT /admin/schema/{contentTypeName}`
+
+`DELETE /admin/schema/{contentTypeName}`
 
 ```yaml
 paths:
