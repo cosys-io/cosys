@@ -2,23 +2,22 @@ package common
 
 import (
 	"net/http"
-	"regexp"
 )
 
 // Routes
 
 type Route struct {
 	Method      string
-	Regex       *regexp.Regexp
+	Path        string
 	Action      string
 	Middlewares []string
 	Policies    []string
 }
 
-func NewRoute(method string, route string, action string, options ...RouteOption) *Route {
+func NewRoute(method string, path string, action string, options ...RouteOption) *Route {
 	newRoute := &Route{
 		method,
-		regexp.MustCompile(`^` + route + `$`),
+		path,
 		action,
 		[]string{},
 		[]string{},

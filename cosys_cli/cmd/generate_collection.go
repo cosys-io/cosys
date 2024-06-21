@@ -371,12 +371,7 @@ func findOne{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		if len(params) == 0 {
-			common.RespondInternalError(w)
-			return
-		}
-
-		id, err := strconv.Atoi(params[0])
+		id, err := strconv.Atoi(params["documentId"])
 		if err != nil {
 			common.RespondError(w, "Bad request.", http.StatusBadRequest)
 			return
@@ -424,12 +419,7 @@ func update{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		if len(params) == 0 {
-			common.RespondInternalError(w)
-			return
-		}
-
-		id, err := strconv.Atoi(params[0])
+		id, err := strconv.Atoi(params["documentId"])
 		if err != nil {
 			common.RespondError(w, "Bad request.", http.StatusBadRequest)
 			return
@@ -465,12 +455,7 @@ func delete{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		if len(params) == 0 {
-			common.RespondInternalError(w)
-			return
-		}
-
-		id, err := strconv.Atoi(params[0])
+		id, err := strconv.Atoi(params["documentId"])
 		if err != nil {
 			common.RespondError(w, "Bad request.", http.StatusBadRequest)
 			return
@@ -496,7 +481,7 @@ var ControllersStructTmpl = `var Controllers = map[string]common.Controller{
 	"{{.CollectionName}}": {{.PluralName}}Controller,`
 
 var RoutesStructTmpl = `var Routes = []*common.Route{
-	common.NewRoute("GET", ` + "`/api/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.findOne"),
+	common.NewRoute("GET", ` + "`/api/{{.CollectionName}}/{documentId}`" + `, "{{.CollectionName}}.findOne"),
 	common.NewRoute("POST", ` + "`/api/{{.CollectionName}}`" + `, "{{.CollectionName}}.create"),
-	common.NewRoute("PUT", ` + "`/api/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.update"),
-	common.NewRoute("DELETE", ` + "`/api/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.delete"),`
+	common.NewRoute("PUT", ` + "`/api/{{.CollectionName}}/{documentId}`" + `, "{{.CollectionName}}.update"),
+	common.NewRoute("DELETE", ` + "`/api/{{.CollectionName}}/{documentId}`" + `, "{{.CollectionName}}.delete"),`

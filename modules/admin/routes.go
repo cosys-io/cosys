@@ -35,10 +35,10 @@ func AddRoutes(uid string, model common.Model, cosys *common.Cosys) error {
 	adminModule.Controllers[modelName+"Admin"] = controller
 
 	routes := []*common.Route{
-		common.NewRoute("GET", fmt.Sprintf(`/admin/%s/([0-9]+)`, modelName), modelName+"Admin.findOne"),
+		common.NewRoute("GET", fmt.Sprintf(`/admin/%s/{documentId}`, modelName), modelName+"Admin.findOne"),
 		common.NewRoute("POST", fmt.Sprintf(`/admin/%s`, modelName), modelName+"Admin.create"),
-		common.NewRoute("PUT", fmt.Sprintf(`/admin/%s/([0-9]+)`, modelName), modelName+"Admin.update"),
-		common.NewRoute("DELETE", fmt.Sprintf(`/admin/%s/([0-9]+)`, modelName), modelName+"Admin.delete"),
+		common.NewRoute("PUT", fmt.Sprintf(`/admin/%s/{documentId}`, modelName), modelName+"Admin.update"),
+		common.NewRoute("DELETE", fmt.Sprintf(`/admin/%s/{documentId}`, modelName), modelName+"Admin.delete"),
 	}
 	adminModule.Routes = append(adminModule.Routes, routes...)
 
@@ -54,12 +54,7 @@ func findOne(uid string, contentModel common.Model) func(common.Cosys) http.Hand
 				return
 			}
 
-			if len(params) == 0 {
-				common.RespondInternalError(w)
-				return
-			}
-
-			id, err := strconv.Atoi(params[0])
+			id, err := strconv.Atoi(params["documentId"])
 			if err != nil {
 				common.RespondError(w, "Bad request.", http.StatusBadRequest)
 				return
@@ -111,12 +106,7 @@ func update(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 				return
 			}
 
-			if len(params) == 0 {
-				common.RespondInternalError(w)
-				return
-			}
-
-			id, err := strconv.Atoi(params[0])
+			id, err := strconv.Atoi(params["documentId"])
 			if err != nil {
 				common.RespondError(w, "Bad request.", http.StatusBadRequest)
 				return
@@ -154,12 +144,7 @@ func delete(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 				return
 			}
 
-			if len(params) == 0 {
-				common.RespondInternalError(w)
-				return
-			}
-
-			id, err := strconv.Atoi(params[0])
+			id, err := strconv.Atoi(params["documentId"])
 			if err != nil {
 				common.RespondError(w, "Bad request.", http.StatusBadRequest)
 				return

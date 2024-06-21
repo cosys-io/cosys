@@ -85,8 +85,8 @@ func ReadState(r *http.Request, stateName string) (any, error) {
 	return state, nil
 }
 
-func ReadParams(r *http.Request) ([]string, error) {
-	params, err := ReadState(r, "query_params")
+func ReadParams(r *http.Request) (map[string]string, error) {
+	params, err := ReadState(r, "queryParams")
 	if err != nil {
 		return nil, err
 	}
@@ -96,11 +96,11 @@ func ReadParams(r *http.Request) ([]string, error) {
 	}
 
 	switch params.(type) {
-	case []string:
+	case map[string]string:
 
 	default:
 		return nil, fmt.Errorf("query params has wrong type")
 	}
 
-	return params.([]string), nil
+	return params.(map[string]string), nil
 }
