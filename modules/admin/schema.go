@@ -1,4 +1,4 @@
-package content_builder
+package admin
 
 import (
 	"encoding/json"
@@ -7,7 +7,12 @@ import (
 	"net/http"
 )
 
-var Controller = map[string]common.Action{
+var SchemaRoutes = []*common.Route{
+	common.NewRoute("GET", `/admin/schema`, "admin.schema"),
+	common.NewRoute("POST", `/admin/schema`, "admin.build"),
+}
+
+var SchemaController = map[string]common.Action{
 	"schema": schema,
 	"build":  build,
 }

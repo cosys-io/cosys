@@ -202,7 +202,7 @@ func (a AttributeSchemaParsed) Schema() (*AttributeSchema, error) {
 
 		Default:  checkDefault("", a.Default),
 		Nullable: checkDefault(true, a.Nullable),
-		Unique:   checkDefault(true, a.Unique),
+		Unique:   checkDefault(false, a.Unique),
 	}, nil
 }
 

@@ -77,7 +77,9 @@ func (c Cosys) Register(modules map[string]*Module) (*Cosys, error) {
 			}
 			cosys.Services[name] = service
 		}
+	}
 
+	for _, module := range cosys.Modules {
 		if module.OnRegister == nil {
 			continue
 		}
