@@ -6,6 +6,7 @@ import (
 	"github.com/cosys-io/cosys/common"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func OnRegister(cosys common.Cosys) (common.Cosys, error) {
@@ -27,14 +28,16 @@ func AddRoutes(uid string, model common.Model, cosys *common.Cosys) error {
 	modelName := model.Name_()
 
 	controller := map[string]common.Action{
-		"findOne": findOne(uid, model),
-		"create":  create(uid, model),
-		"update":  update(uid, model),
-		"delete":  delete(uid, model),
+		"findMany": findMany(uid, model),
+		"findOne":  findOne(uid, model),
+		"create":   create(uid, model),
+		"update":   update(uid, model),
+		"delete":   delete(uid, model),
 	}
 	adminModule.Controllers[modelName+"Admin"] = controller
 
 	routes := []*common.Route{
+		common.NewRoute("GET", fmt.Sprintf(`/admin/%s`, modelName), modelName+"Admin.findMany"),
 		common.NewRoute("GET", fmt.Sprintf(`/admin/%s/{documentId}`, modelName), modelName+"Admin.findOne"),
 		common.NewRoute("POST", fmt.Sprintf(`/admin/%s`, modelName), modelName+"Admin.create"),
 		common.NewRoute("PUT", fmt.Sprintf(`/admin/%s/{documentId}`, modelName), modelName+"Admin.update"),
@@ -43,6 +46,143 @@ func AddRoutes(uid string, model common.Model, cosys *common.Cosys) error {
 	adminModule.Routes = append(adminModule.Routes, routes...)
 
 	return nil
+}
+
+func findMany(uid string, contentModel common.Model) func(common.Cosys) http.HandlerFunc {
+	return func(cosys common.Cosys) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			params, err := common.ReadParams(r)
+			if err != nil {
+				common.RespondInternalError(w)
+				return
+			}
+
+			model, ok := cosys.Models[uid]
+			if !ok {
+				common.RespondInternalError(w)
+				return
+			}
+			attrSlice := model.All_()
+
+			page := 1
+			pageSize := int64(20)
+			sort := []*common.Order{}
+			filter := []common.Condition{}
+			fields := []common.Attribute{}
+			populate := []common.Attribute{}
+
+			pageSizeString, ok := params["pageSize"]
+			if ok {
+				pageSize, err = strconv.ParseInt(pageSizeString, 10, 64)
+				if err != nil {
+					common.RespondError(w, "Bad request.", http.StatusBadRequest)
+					return
+				}
+			}
+
+			pageString, ok := params["page"]
+			if ok {
+				page, err = strconv.Atoi(pageString)
+				if err != nil {
+					common.RespondError(w, "Bad request.", http.StatusBadRequest)
+					return
+				}
+			}
+
+			sortSliceString, ok := params["sort"]
+			if ok {
+				sortSlice := strings.Split(sortSliceString, ",")
+				for _, sortString := range sortSlice {
+					if len(sortString) == 0 {
+						common.RespondError(w, "Bad request.", http.StatusBadRequest)
+						return
+					}
+
+					isAsc := true
+					if sortString[0] == '-' {
+						isAsc = false
+						sortString = sortString[1:]
+					}
+
+					var sortAttr common.Attribute
+
+					for _, attr := range attrSlice {
+						if attr.Name() == sortString {
+							sortAttr = attr
+						}
+					}
+
+					if sortAttr == nil {
+						common.RespondError(w, "Bad request.", http.StatusBadRequest)
+						return
+					}
+
+					if isAsc {
+						sort = append(sort, sortAttr.Asc())
+					} else {
+						sort = append(sort, sortAttr.Desc())
+					}
+				}
+			}
+
+			fieldSliceString, ok := params["fields"]
+			if ok {
+				fieldSlice := strings.Split(fieldSliceString, ",")
+				for _, fieldString := range fieldSlice {
+					var fieldAttr common.Attribute
+
+					for _, attr := range attrSlice {
+						if attr.Name() == fieldString {
+							fieldAttr = attr
+						}
+					}
+
+					if fieldAttr == nil {
+						common.RespondError(w, "Bad request.", http.StatusBadRequest)
+						return
+					}
+
+					fields = append(fields, fieldAttr)
+				}
+			}
+
+			populateSliceString, ok := params["populate"]
+			if ok {
+				populateSlice := strings.Split(populateSliceString, ",")
+				for _, populateString := range populateSlice {
+					var populateAttr common.Attribute
+
+					for _, attr := range attrSlice {
+						if attr.Name() == populateString {
+							populateAttr = attr
+						}
+					}
+
+					if populateAttr == nil {
+						common.RespondError(w, "Bad request.", http.StatusBadRequest)
+						return
+					}
+
+					populate = append(populate, populateAttr)
+				}
+			}
+
+			msParams := common.MSParam().
+				Start(pageSize * (int64(page) - 1)).
+				Limit(pageSize).
+				Sort(sort...).
+				Filter(filter...).
+				GetField(fields...).
+				Populate(populate...)
+			entities, err := cosys.ModuleService().FindMany(uid, msParams)
+			if err != nil {
+				common.RespondError(w, fmt.Sprintf("Could not find %s.", contentModel.Schema_().PluralName), http.StatusBadRequest)
+				return
+			}
+
+			common.RespondMany(w, entities, page, http.StatusOK)
+		}
+	}
 }
 
 func findOne(uid string, contentModel common.Model) func(common.Cosys) http.HandlerFunc {
@@ -54,7 +194,13 @@ func findOne(uid string, contentModel common.Model) func(common.Cosys) http.Hand
 				return
 			}
 
-			id, err := strconv.Atoi(params["documentId"])
+			idString, ok := params["documentId"]
+			if !ok {
+				common.RespondError(w, "Bad request.", http.StatusBadRequest)
+				return
+			}
+
+			id, err := strconv.Atoi(idString)
 			if err != nil {
 				common.RespondError(w, "Bad request.", http.StatusBadRequest)
 				return
@@ -106,7 +252,13 @@ func update(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 				return
 			}
 
-			id, err := strconv.Atoi(params["documentId"])
+			idString, ok := params["documentId"]
+			if !ok {
+				common.RespondError(w, "Bad request.", http.StatusBadRequest)
+				return
+			}
+
+			id, err := strconv.Atoi(idString)
 			if err != nil {
 				common.RespondError(w, "Bad request.", http.StatusBadRequest)
 				return
@@ -144,7 +296,13 @@ func delete(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 				return
 			}
 
-			id, err := strconv.Atoi(params["documentId"])
+			idString, ok := params["documentId"]
+			if !ok {
+				common.RespondError(w, "Bad request.", http.StatusBadRequest)
+				return
+			}
+
+			id, err := strconv.Atoi(idString)
 			if err != nil {
 				common.RespondError(w, "Bad request.", http.StatusBadRequest)
 				return
