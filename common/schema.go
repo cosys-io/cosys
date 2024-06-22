@@ -32,6 +32,10 @@ type AttributeSchema struct {
 }
 
 func NewAttributeSchema(attrName, attrType string) (*AttributeSchema, error) {
+	if attrName == "" {
+		return nil, fmt.Errorf("invalid attribute name: %s", attrName)
+	}
+
 	var simpleType string
 	var detailedType string
 
@@ -96,17 +100,13 @@ var IdSchema = AttributeSchema{
 }
 
 func GetSchema(path string) (*ModelSchema, error) {
-	schemaParsed := &ModelSchemaParsed{}
+	schemaParsed := ModelSchemaParsed{}
 
-	if err := ParseFile(path, schemaParsed, false); err != nil {
+	if err := ParseFile(path, &schemaParsed, false); err != nil {
 		return nil, err
 	}
 
-	schema, err := schemaParsed.Schema()
-	if err != nil {
-		return nil, err
-	}
-	return schema, nil
+	return schemaParsed.Schema()
 }
 
 type ModelSchemaParsed struct {

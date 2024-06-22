@@ -32,12 +32,20 @@ type RouteOption func(*Route)
 
 func UseMiddlewares(middlewares ...string) RouteOption {
 	return func(route *Route) {
+		if route == nil {
+			return
+		}
+
 		route.Middlewares = append(route.Middlewares, middlewares...)
 	}
 }
 
 func UsePolicies(policies ...string) RouteOption {
 	return func(route *Route) {
+		if route == nil {
+			return
+		}
+
 		route.Policies = append(route.Policies, policies...)
 	}
 }

@@ -20,6 +20,10 @@ func OnRegister(cosys common.Cosys) (common.Cosys, error) {
 }
 
 func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
+	if cosys == nil {
+		return fmt.Errorf("cosys is nil")
+	}
+
 	adminModule, ok := cosys.Modules["admin"]
 	if !ok {
 		return fmt.Errorf("admin module not found")

@@ -10,6 +10,14 @@ import (
 )
 
 func Extract(data common.Entity, params *common.DBParams, model common.Model) ([]any, error) {
+	if data == nil {
+		return nil, fmt.Errorf("data is nil")
+	}
+
+	if model == nil {
+		return nil, fmt.Errorf("model is nil")
+	}
+
 	var attrs []any
 
 	columns := params.Columns
@@ -20,6 +28,9 @@ func Extract(data common.Entity, params *common.DBParams, model common.Model) ([
 	dataValue := reflect.ValueOf(data)
 	if reflect.TypeOf(data).Kind() == reflect.Pointer {
 		dataValue = reflect.Indirect(dataValue)
+	}
+	if dataValue.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("data is not a struct")
 	}
 	for _, col := range columns {
 		attrName := col.FieldName()
@@ -36,6 +47,14 @@ func Extract(data common.Entity, params *common.DBParams, model common.Model) ([
 }
 
 func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.Entity, error) {
+	if rows == nil {
+		return nil, fmt.Errorf("rows is nil")
+	}
+
+	if model == nil {
+		return nil, fmt.Errorf("model is nil")
+	}
+
 	entity := model.New_()
 
 	selects := params.Selects
@@ -47,6 +66,9 @@ func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.E
 	entityValue := reflect.ValueOf(entity).Convert(entityType)
 	if entityType.Kind() == reflect.Pointer {
 		entityValue = reflect.Indirect(entityValue)
+	}
+	if entityValue.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("entity is not a struct")
 	}
 
 	numCols := len(selects)
@@ -65,6 +87,10 @@ func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.E
 }
 
 func StringCondition(where common.Condition) (string, error) {
+	if where == nil {
+		return "", fmt.Errorf("where is nil")
+	}
+
 	switch where := where.(type) {
 	case *common.NestedCondition:
 		return StringNested(where)
@@ -78,6 +104,10 @@ func StringCondition(where common.Condition) (string, error) {
 }
 
 func StringNested(where *common.NestedCondition) (string, error) {
+	if where == nil {
+		return "", fmt.Errorf("where is nil")
+	}
+
 	var err error
 
 	var left string
@@ -115,6 +145,10 @@ func StringNested(where *common.NestedCondition) (string, error) {
 }
 
 func StringExpressions(where *common.ExpressionCondition) (string, error) {
+	if where == nil {
+		return "", fmt.Errorf("where is nil")
+	}
+
 	var left string
 	if where.Left == nil {
 		return "", fmt.Errorf("right operand not found")
@@ -155,6 +189,10 @@ func StringExpressions(where *common.ExpressionCondition) (string, error) {
 }
 
 func StringOrder(orderBy *common.Order) (string, error) {
+	if orderBy == nil {
+		return "", fmt.Errorf("order is nil")
+	}
+
 	if orderBy.Order == common.Asc || orderBy.Order == common.Desc {
 		return fmt.Sprintf("%s %s", orderBy.Attribute.Name(), orderBy.Order), nil
 	}

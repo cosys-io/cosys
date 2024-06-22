@@ -60,6 +60,10 @@ func (r ResponseWriter) WriteHeader(statusCode int) {
 }
 
 func ReadState(r *http.Request, stateName string) (any, error) {
+	if r == nil {
+		return nil, fmt.Errorf("request is nil")
+	}
+
 	ctx := r.Context()
 	if ctx == nil {
 		return nil, fmt.Errorf("context not found")
@@ -86,6 +90,10 @@ func ReadState(r *http.Request, stateName string) (any, error) {
 }
 
 func ReadParams(r *http.Request) (map[string]string, error) {
+	if r == nil {
+		return nil, fmt.Errorf("request is nil")
+	}
+
 	params, err := ReadState(r, "queryParams")
 	if err != nil {
 		return nil, err

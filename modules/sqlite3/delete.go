@@ -8,6 +8,10 @@ import (
 )
 
 func DeleteQuery(params *common.DBParams, model common.Model) (string, error) {
+	if model == nil {
+		return "", fmt.Errorf("model is nil")
+	}
+
 	var sb strings.Builder
 
 	sb.WriteString("DELETE FROM ")

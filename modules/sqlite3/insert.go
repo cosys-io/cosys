@@ -1,12 +1,17 @@
 package sqlite3
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/cosys-io/cosys/common"
 )
 
 func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
+	if model == nil {
+		return "", fmt.Errorf("model is nil")
+	}
+
 	var sb strings.Builder
 
 	sb.WriteString("INSERT INTO ")

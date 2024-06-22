@@ -52,7 +52,11 @@ func (c Cosys) Register(modules map[string]*Module) (*Cosys, error) {
 	newCosys := c
 	var err error
 
-	newCosys.Modules = map[string]*Module{}
+	if modules == nil {
+		modules = make(map[string]*Module)
+	}
+
+	newCosys.Modules = make(map[string]*Module)
 
 	for _, moduleName := range newCosys.Configs.Module.Modules {
 		module, ok := modules[moduleName]
