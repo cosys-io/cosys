@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"github.com/cosys-io/cosys/common"
 	gen "github.com/cosys-io/cosys/cosys_cli/cmd/generator"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"log"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/iancoleman/strcase"
 	"github.com/spf13/cobra"
 )
 
@@ -61,21 +60,21 @@ func GenerateType(schema *common.ModelSchema) error {
 		return err
 	}
 
-	typeName := schema.CollectionName
+	typeSnakeName := strcase.ToSnake(schema.PluralName)
 
-	if err = generateModel(typeName, schema, ctx); err != nil {
+	if err = generateModel(typeSnakeName, schema, ctx); err != nil {
 		return err
 	}
 
-	if err = generateApi(typeName, ctx); err != nil {
+	if err = generateApi(typeSnakeName, ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func generateModel(typeName string, schema *common.ModelSchema, ctx *ModelCtx) error {
-	typeDir := filepath.Join("modules/api/content_types", typeName)
+func generateModel(typeSnakeName string, schema *common.ModelSchema, ctx *ModelCtx) error {
+	typeDir := filepath.Join("modules/api/content_types", typeSnakeName)
 
 	generator := gen.NewGenerator(
 		gen.NewDir(typeDir, gen.GenHeadOnly),
@@ -90,9 +89,9 @@ func generateModel(typeName string, schema *common.ModelSchema, ctx *ModelCtx) e
 	return nil
 }
 
-func generateApi(typeName string, ctx *ModelCtx) error {
+func generateApi(typeSnakeName string, ctx *ModelCtx) error {
 	generator := gen.NewGenerator(
-		gen.NewFile(filepath.Join("modules/api/controllers", typeName+"_controllers.go"), ModelControllerTmpl, ctx),
+		gen.NewFile(filepath.Join("modules/api/controllers", typeSnakeName+"_controllers.go"), ModelControllerTmpl, ctx),
 		gen.ModifyFile("modules/api/content_types/models.go", `import \(`, ModelsImportTmpl, ctx),
 		gen.ModifyFile("modules/api/content_types/models.go", `var Models = map\[string\]common\.Model\{`, ModelsStructTmpl, ctx),
 		gen.ModifyFile("modules/api/controllers/controllers.go", `var Controllers = map\[string\]common\.Controller\{`, ControllersStructTmpl, ctx),
@@ -109,10 +108,10 @@ func schemaFromArgs(collectionName string, displayName string, singularName stri
 	description string, attrStrings []string) (*common.ModelSchema, error) {
 	modelSchema := &common.ModelSchema{
 		ModelType:      "collectionType",
-		CollectionName: collectionName,
+		CollectionName: strcase.ToLowerCamel(collectionName),
 		DisplayName:    displayName,
-		SingularName:   singularName,
-		PluralName:     pluralName,
+		SingularName:   strcase.ToLowerCamel(singularName),
+		PluralName:     strcase.ToLowerCamel(pluralName),
 		Description:    description,
 		Attributes: []*common.AttributeSchema{
 			&common.IdSchema,
@@ -126,7 +125,7 @@ func schemaFromArgs(collectionName string, displayName string, singularName stri
 		if len(split) < 2 {
 			return nil, fmt.Errorf("invalid attribute format: %s", attrString)
 		}
-		attrName := split[0]
+		attrName := strcase.ToLowerCamel(split[0])
 		attrType := split[1]
 
 		attrSchema, err := common.NewAttributeSchema(attrName, attrType)
@@ -197,42 +196,58 @@ func schemaFromArgs(collectionName string, displayName string, singularName stri
 }
 
 type ModelCtx struct {
-	ModFile           string
-	CollectionName    string
-	SingularName      string
-	SingularNameCamel string
-	PluralName        string
-	Attributes        []*AttributeCtx
+	DBName             string
+	DisplayName        string
+	SingularCamelName  string
+	PluralCamelName    string
+	SingularPascalName string
+	PluralPascalName   string
+	SingularSnakeName  string
+	PluralSnakeName    string
+	SingularKebabName  string
+	PluralKebabName    string
+	SingularHumanName  string
+	PluralHumanName    string
+
+	ModFile    string
+	Attributes []*AttributeCtx
 }
 
 type AttributeCtx struct {
 	TypeLower  string
 	TypeUpper  string
-	NameCamel  string
-	NamePascal string
+	CamelName  string
+	PascalName string
 }
 
 func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
-	caser := cases.Title(language.English)
-
 	modFile, err := getModFile()
 	if err != nil {
 		return nil, err
 	}
 
 	modelCtx := ModelCtx{
-		ModFile:           modFile,
-		CollectionName:    schema.CollectionName,
-		SingularName:      caser.String(schema.SingularName),
-		SingularNameCamel: schema.SingularName,
-		PluralName:        caser.String(schema.PluralName),
-		Attributes:        []*AttributeCtx{},
+		DBName:             schema.CollectionName,
+		DisplayName:        schema.DisplayName,
+		SingularCamelName:  schema.SingularName,
+		PluralCamelName:    schema.PluralName,
+		SingularPascalName: strcase.ToCamel(schema.SingularName),
+		PluralPascalName:   strcase.ToCamel(schema.PluralName),
+		SingularSnakeName:  strcase.ToSnake(schema.SingularName),
+		PluralSnakeName:    strcase.ToSnake(schema.PluralName),
+		SingularKebabName:  strcase.ToKebab(schema.SingularName),
+		PluralKebabName:    strcase.ToKebab(schema.PluralName),
+		SingularHumanName:  strcase.ToDelimited(schema.SingularName, ' '),
+		PluralHumanName:    strcase.ToDelimited(schema.PluralName, ' '),
+
+		ModFile:    modFile,
+		Attributes: []*AttributeCtx{},
 	}
 
 	for _, attr := range schema.Attributes {
 		attrCtx := AttributeCtx{
-			NameCamel:  attr.Name,
-			NamePascal: caser.String(attr.Name),
+			CamelName:  attr.Name,
+			PascalName: strcase.ToCamel(attr.Name),
 		}
 
 		switch attr.SimplifiedDataType {
@@ -253,7 +268,7 @@ func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
 	return &modelCtx, nil
 }
 
-var ModelTmpl = `package {{.CollectionName}}
+var ModelTmpl = `package {{.PluralCamelName}}
 	
 import (
 	"log"
@@ -266,59 +281,55 @@ var (
 
 func init() {
 	var err error
-	Schema, err = common.GetSchema("modules/api/content_types/{{.CollectionName}}/schema.yaml")
+	Schema, err = common.GetSchema("modules/api/content_types/{{.PluralSnakeName}}/schema.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-type {{.SingularName}} struct {
-{{range .Attributes}}    {{.NamePascal}} {{.TypeLower}} ` + "`" + `json:"{{.NameCamel}}"` + "`" + `
+type {{.SingularPascalName}} struct {
+{{range .Attributes}}    {{.PascalName}} {{.TypeLower}} ` + "`" + `json:"{{.CamelName}}"` + "`" + `
 {{end}}}
 
 
-type {{.PluralName}}Model struct {
-	schema    *common.ModelSchema
+type {{.PluralPascalName}}Model struct {
+	common.ModelBase
 	lifecycle common.Lifecycle
 
-{{range .Attributes}}    {{.NamePascal}} *common.{{.TypeUpper}}Attribute
+{{range .Attributes}}    {{.PascalName}} *common.{{.TypeUpper}}Attribute
 {{end}}}
 
-var {{.PluralName}} = {{.PluralName}}Model{
-	Schema,
+var {{.PluralPascalName}} = {{.PluralPascalName}}Model{
+	common.NewModelBase("{{.DBName}}", "{{.DisplayName}}", "{{.SingularCamelName}}", "{{.PluralCamelName}}"),
 	Lifecycle,
 
-{{range .Attributes}}    common.New{{.TypeUpper}}Attribute("{{.NameCamel}}", "{{.NamePascal}}"),
+{{range .Attributes}}    common.New{{.TypeUpper}}Attribute("{{.CamelName}}"),
 {{end}}}
 
-func (m {{.PluralName}}Model) Name_() string {
-	return "{{.CollectionName}}"
+func (m {{.PluralPascalName}}Model) New_() common.Entity {
+	return &{{.SingularPascalName}}{}
 }
 
-func (m {{.PluralName}}Model) New_() common.Entity {
-	return &{{.SingularName}}{}
-}
-
-{{$Model := .PluralName}}
-func (m {{.PluralName}}Model) All_() []common.Attribute {
+{{$Model := .PluralPascalName}}
+func (m {{.PluralPascalName}}Model) All_() []common.Attribute {
 	return []common.Attribute{
-{{range .Attributes}}        {{$Model}}.{{.NamePascal}},
+{{range .Attributes}}        {{$Model}}.{{.PascalName}},
 {{end}}}
 }
 
-func (m {{.PluralName}}Model) Id_() *common.IntAttribute {
-	return {{.PluralName}}.Id
+func (m {{.PluralPascalName}}Model) Id_() *common.IntAttribute {
+	return {{.PluralPascalName}}.Id
 }
 
-func (m {{.PluralName}}Model) Schema_() *common.ModelSchema {
+func (m {{.PluralPascalName}}Model) Schema_() *common.ModelSchema {
 	return Schema
 }
 
-func (m {{.PluralName}}Model) Lifecycle_() common.Lifecycle {
+func (m {{.PluralPascalName}}Model) Lifecycle_() common.Lifecycle {
 	return m.lifecycle
 }`
 
-var LifecycleTmpl = `package {{.CollectionName}}
+var LifecycleTmpl = `package {{.PluralCamelName}}
 
 import "github.com/cosys-io/cosys/common"
 
@@ -358,15 +369,15 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-var {{.PluralName}}Controller = map[string]common.Action{
-	"findMany": findMany{{.PluralName}},
-	"findOne": findOne{{.SingularName}},
-	"create":  create{{.SingularName}},
-	"update":  update{{.SingularName}},
-	"delete":  delete{{.SingularName}},
+var {{.PluralPascalName}}Controller = map[string]common.Action{
+	"findMany": findMany{{.PluralPascalName}},
+	"findOne": findOne{{.SingularPascalName}},
+	"create":  create{{.SingularPascalName}},
+	"update":  update{{.SingularPascalName}},
+	"delete":  delete{{.SingularPascalName}},
 }
 
-func findMany{{.PluralName}}(cs common.Cosys) http.HandlerFunc {
+func findMany{{.PluralPascalName}}(cs common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params, err := common.ReadParams(r)
 		if err != nil {
@@ -374,7 +385,7 @@ func findMany{{.PluralName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		model, ok := cs.Models["api.{{.CollectionName}}"]
+		model, ok := cs.Models["api.{{.PluralCamelName}}"]
 		if !ok {
 			common.RespondInternalError(w)
 			return
@@ -424,7 +435,7 @@ func findMany{{.PluralName}}(cs common.Cosys) http.HandlerFunc {
 				var sortAttr common.Attribute
 
 				for _, attr := range attrSlice {
-					if attr.Name() == sortString {
+					if attr.CamelName() == sortString {
 						sortAttr = attr
 					}
 				}
@@ -449,7 +460,7 @@ func findMany{{.PluralName}}(cs common.Cosys) http.HandlerFunc {
 				var fieldAttr common.Attribute
 
 				for _, attr := range attrSlice {
-					if attr.Name() == fieldString {
+					if attr.CamelName() == fieldString {
 						fieldAttr = attr
 					}
 				}
@@ -470,7 +481,7 @@ func findMany{{.PluralName}}(cs common.Cosys) http.HandlerFunc {
 				var populateAttr common.Attribute
 
 				for _, attr := range attrSlice {
-					if attr.Name() == populateString {
+					if attr.CamelName() == populateString {
 						populateAttr = attr
 					}
 				}
@@ -492,9 +503,9 @@ func findMany{{.PluralName}}(cs common.Cosys) http.HandlerFunc {
 			GetField(fields...).
 			Populate(populate...).
 			Build()
-		entities, err := cs.ModuleService().FindMany("api.{{.CollectionName}}", msParams)
+		entities, err := cs.ModuleService().FindMany("api.{{.PluralPascalName}}", msParams)
 		if err != nil {
-			common.RespondError(w, "Could not find {{.CollectionName}}.", http.StatusBadRequest)
+			common.RespondError(w, "Could not find {{.PluralHumanName}}.", http.StatusBadRequest)
 			return
 		}
 
@@ -502,7 +513,7 @@ func findMany{{.PluralName}}(cs common.Cosys) http.HandlerFunc {
 	}
 }
 
-func findOne{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
+func findOne{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params, err := common.ReadParams(r)
 		if err != nil {
@@ -522,9 +533,9 @@ func findOne{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		entity, err := cs.ModuleService().FindOne("api.{{.CollectionName}}", id, common.NewMSParams())
+		entity, err := cs.ModuleService().FindOne("api.{{.PluralCamelName}}", id, common.NewMSParams())
 		if err != nil {
-			common.RespondError(w, "Could not find {{.SingularNameCamel}}.", http.StatusBadRequest)
+			common.RespondError(w, "Could not find {{.SingularHumanName}}.", http.StatusBadRequest)
 			return
 		}
 
@@ -532,9 +543,9 @@ func findOne{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 	}
 }
 
-func create{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
+func create{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		model, ok := cs.Models["api.{{.CollectionName}}"]
+		model, ok := cs.Models["api.{{.PluralCamelName}}"]
 		if !ok {
 			common.RespondInternalError(w)
 			return
@@ -546,9 +557,9 @@ func create{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		newEntity, err := cs.ModuleService().Create("api.{{.CollectionName}}", entity, common.NewMSParams())
+		newEntity, err := cs.ModuleService().Create("api.{{.PluralCamelName}}", entity, common.NewMSParams())
 		if err != nil {
-			common.RespondError(w, "Could not create {{.SingularNameCamel}}.", http.StatusBadRequest)
+			common.RespondError(w, "Could not create {{.SingularHumanName}}.", http.StatusBadRequest)
 			return
 		}
 
@@ -556,7 +567,7 @@ func create{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 	}
 }
 
-func update{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
+func update{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params, err := common.ReadParams(r)
 		if err != nil {
@@ -576,7 +587,7 @@ func update{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		model, ok := cs.Models["api.{{.CollectionName}}"]
+		model, ok := cs.Models["api.{{.PluralCamelName}}"]
 		if !ok {
 			common.RespondInternalError(w)
 			return
@@ -588,9 +599,9 @@ func update{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		newEntity, err := cs.ModuleService().Update("api.{{.CollectionName}}", entity, id, common.NewMSParams())
+		newEntity, err := cs.ModuleService().Update("api.{{.PluralCamelName}}", entity, id, common.NewMSParams())
 		if err != nil {
-			common.RespondError(w, "Could not update {{.SingularNameCamel}}.", http.StatusBadRequest)
+			common.RespondError(w, "Could not update {{.SingularHumanName}}.", http.StatusBadRequest)
 			return
 		}
 
@@ -598,7 +609,7 @@ func update{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 	}
 }
 
-func delete{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
+func delete{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params, err := common.ReadParams(r)
 		if err != nil {
@@ -618,9 +629,9 @@ func delete{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		oldEntity, err := cs.ModuleService().Delete("api.{{.CollectionName}}", id, common.NewMSParams())
+		oldEntity, err := cs.ModuleService().Delete("api.{{.PluralCamelName}}", id, common.NewMSParams())
 		if err != nil {
-			common.RespondError(w, "Could not delete {{.SingularNameCamel}}.", http.StatusBadRequest)
+			common.RespondError(w, "Could not delete {{.SingularHumanName}}.", http.StatusBadRequest)
 			return
 		}
 
@@ -629,17 +640,17 @@ func delete{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 }`
 
 var ModelsImportTmpl = `import (
-	"{{.ModFile}}/modules/api/content_types/{{.CollectionName}}"`
+	"{{.ModFile}}/modules/api/content_types/{{.PluralSnakeName}}"`
 
 var ModelsStructTmpl = `var Models = map[string]common.Model{
-	"api.{{.CollectionName}}": {{.CollectionName}}.{{.PluralName}},`
+	"api.{{.PluralCamelName}}": {{.PluralCamelName}}.{{.PluralPascalName}},`
 
 var ControllersStructTmpl = `var Controllers = map[string]common.Controller{
-	"{{.CollectionName}}": {{.PluralName}}Controller,`
+	"{{.PluralCamelName}}": {{.PluralPascalName}}Controller,`
 
 var RoutesStructTmpl = `var Routes = []*common.Route{
-	common.NewRoute("GET", ` + "`/api/{{.CollectionName}}`" + `, "{{.CollectionName}}.findMany"),
-	common.NewRoute("GET", ` + "`/api/{{.CollectionName}}/{documentId}`" + `, "{{.CollectionName}}.findOne"),
-	common.NewRoute("POST", ` + "`/api/{{.CollectionName}}`" + `, "{{.CollectionName}}.create"),
-	common.NewRoute("PUT", ` + "`/api/{{.CollectionName}}/{documentId}`" + `, "{{.CollectionName}}.update"),
-	common.NewRoute("DELETE", ` + "`/api/{{.CollectionName}}/{documentId}`" + `, "{{.CollectionName}}.delete"),`
+	common.NewRoute("GET", ` + "`/api/{{.PluralKebabName}}`" + `, "{{.PluralCamelName}}.findMany"),
+	common.NewRoute("GET", ` + "`/api/{{.PluralKebabName}}/{documentId}`" + `, "{{.PluralCamelName}}.findOne"),
+	common.NewRoute("POST", ` + "`/api/{{.PluralKebabName}}`" + `, "{{.PluralCamelName}}.create"),
+	common.NewRoute("PUT", ` + "`/api/{{.PluralKebabName}}/{documentId}`" + `, "{{.PluralCamelName}}.update"),
+	common.NewRoute("DELETE", ` + "`/api/{{.PluralKebabName}}/{documentId}`" + `, "{{.PluralCamelName}}.delete"),`

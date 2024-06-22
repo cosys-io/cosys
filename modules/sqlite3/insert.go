@@ -16,7 +16,7 @@ func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
 
 	sb.WriteString("INSERT INTO ")
 
-	sb.WriteString(model.Name_())
+	sb.WriteString(model.DBName_())
 
 	insert := params.Columns
 	num := len(params.Columns)
@@ -27,7 +27,7 @@ func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
 
 	sb.WriteString(" ( ")
 	for index, col := range insert {
-		insertString := col.Name()
+		insertString := col.SnakeName()
 
 		sb.WriteString(insertString)
 		if index < num-1 {

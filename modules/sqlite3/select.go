@@ -23,7 +23,7 @@ func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
 		for index, col := range params.Select {
 			sb.WriteString(" ")
 
-			colString := col.Name()
+			colString := col.SnakeName()
 
 			sb.WriteString(colString)
 
@@ -34,7 +34,7 @@ func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
 	}
 
 	sb.WriteString(" FROM ")
-	sb.WriteString(model.Name_())
+	sb.WriteString(model.DBName_())
 
 	num = len(params.Where)
 	if num > 0 {

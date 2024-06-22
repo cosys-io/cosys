@@ -3,10 +3,10 @@ module github.com/cosys-io/cosys
 go 1.22.3
 
 require (
+	github.com/iancoleman/strcase v0.3.0
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/otiai10/copy v1.14.0
-	github.com/pasztorpisti/qs v0.0.0-20171216220353-8d6c33ee906c
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v3 v3.0.1

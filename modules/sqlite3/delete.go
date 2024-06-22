@@ -16,7 +16,7 @@ func DeleteQuery(params *common.DBParams, model common.Model) (string, error) {
 
 	sb.WriteString("DELETE FROM ")
 
-	sb.WriteString(model.Name_())
+	sb.WriteString(model.DBName_())
 
 	num := len(params.Where)
 	if num > 0 {

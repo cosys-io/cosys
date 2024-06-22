@@ -16,7 +16,7 @@ func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 
 	sb.WriteString("UPDATE ")
 
-	sb.WriteString(model.Name_())
+	sb.WriteString(model.DBName_())
 
 	sb.WriteString(" SET ")
 
@@ -28,7 +28,7 @@ func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 	}
 
 	for i := range num {
-		sb.WriteString(update[i].Name())
+		sb.WriteString(update[i].SnakeName())
 		sb.WriteString(" = ?")
 		if i < num-1 {
 			sb.WriteString(", ")

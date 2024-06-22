@@ -29,23 +29,24 @@ func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 		return fmt.Errorf("admin module not found")
 	}
 
-	modelName := model.Name_()
+	modelApiName := model.PluralKebabName_()
+	modelName := model.PluralCamelName_()
 
 	controller := map[string]common.Action{
-		"findMany": findManyEntity(modelUid, model.Schema_().PluralName),
-		"findOne":  findOneEntity(modelUid, model.Schema_().SingularName),
-		"create":   createEntity(modelUid, model.Schema_().SingularName),
-		"update":   updateEntity(modelUid, model.Schema_().SingularName),
-		"delete":   deleteEntity(modelUid, model.Schema_().SingularName),
+		"findMany": findManyEntity(modelUid, model.PluralHumanName_()),
+		"findOne":  findOneEntity(modelUid, model.SingularHumanName_()),
+		"create":   createEntity(modelUid, model.SingularHumanName_()),
+		"update":   updateEntity(modelUid, model.SingularHumanName_()),
+		"delete":   deleteEntity(modelUid, model.SingularHumanName_()),
 	}
 	adminModule.Controllers[modelName+"Admin"] = controller
 
 	routes := []*common.Route{
-		common.NewRoute("GET", fmt.Sprintf(`/admin/%s`, modelName), modelName+"Admin.findMany"),
-		common.NewRoute("GET", fmt.Sprintf(`/admin/%s/{documentId}`, modelName), modelName+"Admin.findOne"),
-		common.NewRoute("POST", fmt.Sprintf(`/admin/%s`, modelName), modelName+"Admin.create"),
-		common.NewRoute("PUT", fmt.Sprintf(`/admin/%s/{documentId}`, modelName), modelName+"Admin.update"),
-		common.NewRoute("DELETE", fmt.Sprintf(`/admin/%s/{documentId}`, modelName), modelName+"Admin.delete"),
+		common.NewRoute("GET", fmt.Sprintf(`/admin/%s`, modelApiName), modelName+"Admin.findMany"),
+		common.NewRoute("GET", fmt.Sprintf(`/admin/%s/{documentId}`, modelApiName), modelName+"Admin.findOne"),
+		common.NewRoute("POST", fmt.Sprintf(`/admin/%s`, modelApiName), modelName+"Admin.create"),
+		common.NewRoute("PUT", fmt.Sprintf(`/admin/%s/{documentId}`, modelApiName), modelName+"Admin.update"),
+		common.NewRoute("DELETE", fmt.Sprintf(`/admin/%s/{documentId}`, modelApiName), modelName+"Admin.delete"),
 	}
 	adminModule.Routes = append(adminModule.Routes, routes...)
 
@@ -111,7 +112,7 @@ func findManyEntity(modelUid, modelName string) func(common.Cosys) http.HandlerF
 					var sortAttr common.Attribute
 
 					for _, attr := range attrs {
-						if attr.Name() == sortString {
+						if attr.CamelName() == sortString {
 							sortAttr = attr
 						}
 					}
@@ -136,7 +137,7 @@ func findManyEntity(modelUid, modelName string) func(common.Cosys) http.HandlerF
 					var fieldAttr common.Attribute
 
 					for _, attr := range attrs {
-						if attr.Name() == fieldString {
+						if attr.CamelName() == fieldString {
 							fieldAttr = attr
 						}
 					}
@@ -157,7 +158,7 @@ func findManyEntity(modelUid, modelName string) func(common.Cosys) http.HandlerF
 					var populateAttr common.Attribute
 
 					for _, attr := range attrs {
-						if attr.Name() == populateString {
+						if attr.CamelName() == populateString {
 							populateAttr = attr
 						}
 					}

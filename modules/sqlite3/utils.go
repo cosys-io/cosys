@@ -33,7 +33,7 @@ func Extract(data common.Entity, params *common.DBParams, model common.Model) ([
 		return nil, fmt.Errorf("data is not a struct")
 	}
 	for _, col := range columns {
-		attrName := col.FieldName()
+		attrName := col.PascalName()
 
 		attributeValue := dataValue.FieldByName(attrName)
 		if attributeValue == (reflect.Value{}) {
@@ -74,7 +74,7 @@ func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.E
 	numCols := len(selects)
 	columns := make([]any, numCols)
 	for index, attribute := range selects {
-		field := entityValue.FieldByName(attribute.FieldName())
+		field := entityValue.FieldByName(attribute.PascalName())
 		columns[index] = field.Addr().Interface()
 	}
 
@@ -97,7 +97,7 @@ func StringCondition(where common.Condition) (string, error) {
 	case *common.ExpressionCondition:
 		return StringExpressions(where)
 	case *common.BoolAttribute:
-		return where.Name(), nil
+		return where.SnakeName(), nil
 	default:
 		return "", fmt.Errorf("invalid where condition")
 	}
@@ -153,7 +153,7 @@ func StringExpressions(where *common.ExpressionCondition) (string, error) {
 	if where.Left == nil {
 		return "", fmt.Errorf("right operand not found")
 	} else {
-		left = where.Left.Name()
+		left = where.Left.SnakeName()
 	}
 
 	switch where.Op {
@@ -194,7 +194,7 @@ func StringOrder(orderBy *common.Order) (string, error) {
 	}
 
 	if orderBy.Order == common.Asc || orderBy.Order == common.Desc {
-		return fmt.Sprintf("%s %s", orderBy.Attribute.Name(), orderBy.Order), nil
+		return fmt.Sprintf("%s %s", orderBy.Attribute.SnakeName(), orderBy.Order), nil
 	}
 	return "", fmt.Errorf("illegal operation for order condition: %s", orderBy.Order)
 }
