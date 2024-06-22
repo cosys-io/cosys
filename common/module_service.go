@@ -35,17 +35,39 @@ type ModuleService interface {
 }
 
 type MSParams struct {
-	GetFields []Attribute
-	SetFields []Attribute
-	Filters   []Condition
-	StartVal  int64
-	LimitVal  int64
-	Sorts     []*Order
-	Populates []Attribute
+	Select   []Attribute
+	Fields   []Attribute
+	Filter   []Condition
+	Start    int64
+	Limit    int64
+	Sort     []*Order
+	Populate []Attribute
 }
 
-func MSParam() MSParams {
+func NewMSParams() MSParams {
 	return MSParams{
+		Select:   []Attribute{},
+		Fields:   []Attribute{},
+		Filter:   []Condition{},
+		Start:    0,
+		Limit:    -1,
+		Sort:     []*Order{},
+		Populate: []Attribute{},
+	}
+}
+
+type MSParamsBuilder struct {
+	selectFields []Attribute
+	fields       []Attribute
+	filter       []Condition
+	start        int64
+	limit        int64
+	sort         []*Order
+	populate     []Attribute
+}
+
+func NewMSParamsBuilder() MSParamsBuilder {
+	return MSParamsBuilder{
 		[]Attribute{},
 		[]Attribute{},
 		[]Condition{},
@@ -56,37 +78,49 @@ func MSParam() MSParams {
 	}
 }
 
-func (p MSParams) GetField(fields ...Attribute) MSParams {
-	p.GetFields = append(p.GetFields, fields...)
+func (p MSParamsBuilder) GetField(fields ...Attribute) MSParamsBuilder {
+	p.selectFields = append(p.selectFields, fields...)
 	return p
 }
 
-func (p MSParams) SetField(fields ...Attribute) MSParams {
-	p.SetFields = append(p.SetFields, fields...)
+func (p MSParamsBuilder) SetField(fields ...Attribute) MSParamsBuilder {
+	p.fields = append(p.fields, fields...)
 	return p
 }
 
-func (p MSParams) Filter(filters ...Condition) MSParams {
-	p.Filters = append(p.Filters, filters...)
+func (p MSParamsBuilder) Filter(filters ...Condition) MSParamsBuilder {
+	p.filter = append(p.filter, filters...)
 	return p
 }
 
-func (p MSParams) Limit(limit int64) MSParams {
-	p.LimitVal = limit
+func (p MSParamsBuilder) Limit(limit int64) MSParamsBuilder {
+	p.limit = limit
 	return p
 }
 
-func (p MSParams) Start(start int64) MSParams {
-	p.StartVal = start
+func (p MSParamsBuilder) Start(start int64) MSParamsBuilder {
+	p.start = start
 	return p
 }
 
-func (p MSParams) Sort(sorts ...*Order) MSParams {
-	p.Sorts = append(p.Sorts, sorts...)
+func (p MSParamsBuilder) Sort(sorts ...*Order) MSParamsBuilder {
+	p.sort = append(p.sort, sorts...)
 	return p
 }
 
-func (p MSParams) Populate(populates ...Attribute) MSParams {
-	p.Populates = append(p.Populates, populates...)
+func (p MSParamsBuilder) Populate(populates ...Attribute) MSParamsBuilder {
+	p.populate = append(p.populate, populates...)
 	return p
+}
+
+func (p MSParamsBuilder) Build() MSParams {
+	return MSParams{
+		Select:   p.selectFields,
+		Fields:   p.fields,
+		Filter:   p.filter,
+		Start:    p.start,
+		Limit:    p.limit,
+		Sort:     p.sort,
+		Populate: p.populate,
+	}
 }

@@ -171,13 +171,14 @@ func findManyEntity(modelUid, modelName string) func(common.Cosys) http.HandlerF
 				}
 			}
 
-			msParams := common.MSParam().
+			msParams := common.NewMSParamsBuilder().
 				Start(pageSize * (int64(page) - 1)).
 				Limit(pageSize).
 				Sort(sort...).
 				Filter(filter...).
 				GetField(fields...).
-				Populate(populate...)
+				Populate(populate...).
+				Build()
 			entities, err := cosys.ModuleService().FindMany(modelUid, msParams)
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not find %s.", modelName), http.StatusBadRequest)
@@ -210,7 +211,7 @@ func findOneEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFu
 				return
 			}
 
-			entity, err := cs.ModuleService().FindOne(modelUid, id, common.MSParam())
+			entity, err := cs.ModuleService().FindOne(modelUid, id, common.NewMSParams())
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not find %s.", modelName), http.StatusBadRequest)
 				return
@@ -236,7 +237,7 @@ func createEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFun
 				return
 			}
 
-			newEntity, err := cs.ModuleService().Create(modelUid, entity, common.MSParam())
+			newEntity, err := cs.ModuleService().Create(modelUid, entity, common.NewMSParams())
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not create %s.", modelName), http.StatusBadRequest)
 				return
@@ -280,7 +281,7 @@ func updateEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFun
 				return
 			}
 
-			newEntity, err := cs.ModuleService().Update(modelUid, entity, id, common.MSParam())
+			newEntity, err := cs.ModuleService().Update(modelUid, entity, id, common.NewMSParams())
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not update %s.", modelName), http.StatusBadRequest)
 				return
@@ -312,7 +313,7 @@ func deleteEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFun
 				return
 			}
 
-			oldEntity, err := cs.ModuleService().Delete(modelUid, id, common.MSParam())
+			oldEntity, err := cs.ModuleService().Delete(modelUid, id, common.NewMSParams())
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not delete %s.", modelName), http.StatusBadRequest)
 				return

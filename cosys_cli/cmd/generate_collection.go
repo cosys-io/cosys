@@ -484,13 +484,14 @@ func findMany{{.PluralName}}(cs common.Cosys) http.HandlerFunc {
 			}
 		}
 
-		msParams := common.MSParam().
+		msParams := common.NewMSParamsBuilder().
 			Start(pageSize * (int64(page) - 1)).
 			Limit(pageSize).
 			Sort(sort...).
 			Filter(filter...).
 			GetField(fields...).
-			Populate(populate...)
+			Populate(populate...).
+			Build()
 		entities, err := cs.ModuleService().FindMany("api.{{.CollectionName}}", msParams)
 		if err != nil {
 			common.RespondError(w, "Could not find {{.CollectionName}}.", http.StatusBadRequest)
@@ -521,7 +522,7 @@ func findOne{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		entity, err := cs.ModuleService().FindOne("api.{{.CollectionName}}", id, common.MSParam())
+		entity, err := cs.ModuleService().FindOne("api.{{.CollectionName}}", id, common.NewMSParams())
 		if err != nil {
 			common.RespondError(w, "Could not find {{.SingularNameCamel}}.", http.StatusBadRequest)
 			return
@@ -545,7 +546,7 @@ func create{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		newEntity, err := cs.ModuleService().Create("api.{{.CollectionName}}", entity, common.MSParam())
+		newEntity, err := cs.ModuleService().Create("api.{{.CollectionName}}", entity, common.NewMSParams())
 		if err != nil {
 			common.RespondError(w, "Could not create {{.SingularNameCamel}}.", http.StatusBadRequest)
 			return
@@ -587,7 +588,7 @@ func update{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		newEntity, err := cs.ModuleService().Update("api.{{.CollectionName}}", entity, id, common.MSParam())
+		newEntity, err := cs.ModuleService().Update("api.{{.CollectionName}}", entity, id, common.NewMSParams())
 		if err != nil {
 			common.RespondError(w, "Could not update {{.SingularNameCamel}}.", http.StatusBadRequest)
 			return
@@ -617,7 +618,7 @@ func delete{{.SingularName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		oldEntity, err := cs.ModuleService().Delete("api.{{.CollectionName}}", id, common.MSParam())
+		oldEntity, err := cs.ModuleService().Delete("api.{{.CollectionName}}", id, common.NewMSParams())
 		if err != nil {
 			common.RespondError(w, "Could not delete {{.SingularNameCamel}}.", http.StatusBadRequest)
 			return

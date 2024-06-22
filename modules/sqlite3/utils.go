@@ -57,8 +57,8 @@ func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.E
 
 	entity := model.New_()
 
-	selects := params.Selects
-	if len(params.Selects) == 0 {
+	selects := params.Select
+	if len(params.Select) == 0 {
 		selects = model.All_()
 	}
 

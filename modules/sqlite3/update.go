@@ -35,10 +35,10 @@ func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 		}
 	}
 
-	num = len(params.Wheres)
+	num = len(params.Where)
 	if num > 0 {
 		sb.WriteString(" WHERE")
-		for index, where := range params.Wheres {
+		for index, where := range params.Where {
 			sb.WriteString(" ")
 
 			whereString, err := StringCondition(where)
