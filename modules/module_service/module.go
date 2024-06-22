@@ -6,13 +6,13 @@ import (
 )
 
 func init() {
-	msFunc := func(cosys *common.Cosys) common.ModuleService {
+	msCtor := func(cosys *common.Cosys) common.ModuleService {
 		return ModuleService{
 			Cosys: cosys,
 		}
 	}
 
-	if err := common.RegisterModuleService("default", msFunc); err != nil {
+	if err := common.RegisterModuleService("default", msCtor); err != nil {
 		log.Fatal(err)
 	}
 }

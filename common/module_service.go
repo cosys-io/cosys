@@ -6,23 +6,23 @@ import (
 )
 
 var (
-	msMutex sync.RWMutex
-	msMap   = make(map[string]func(*Cosys) ModuleService)
+	msMutex    sync.RWMutex
+	msRegister = make(map[string]func(*Cosys) ModuleService)
 )
 
-func RegisterModuleService(name string, moduleService func(*Cosys) ModuleService) error {
+func RegisterModuleService(msName string, msCtor func(*Cosys) ModuleService) error {
 	msMutex.Lock()
 	defer msMutex.Unlock()
 
-	if moduleService == nil {
-		return fmt.Errorf("module service is nil")
+	if msCtor == nil {
+		return fmt.Errorf("module service is nil: %s", msName)
 	}
 
-	if _, dup := msMap[name]; dup {
-		return fmt.Errorf("duplicate module service:" + name)
+	if _, dup := msRegister[msName]; dup {
+		return fmt.Errorf("duplicate module service: %s", msName)
 	}
 
-	msMap[name] = moduleService
+	msRegister[msName] = msCtor
 	return nil
 }
 

@@ -10,16 +10,16 @@ import (
 )
 
 func OnRegister(cosys common.Cosys) (common.Cosys, error) {
-	for uid, model := range cosys.Models {
-		if err := AddRoutes(uid, model, &cosys); err != nil {
-			return cosys, err
+	for modelUid, model := range cosys.Models {
+		if err := AddRoutes(modelUid, model, &cosys); err != nil {
+			return common.Cosys{}, err
 		}
 	}
 
 	return cosys, nil
 }
 
-func AddRoutes(uid string, model common.Model, cosys *common.Cosys) error {
+func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 	adminModule, ok := cosys.Modules["admin"]
 	if !ok {
 		return fmt.Errorf("admin module not found")
@@ -28,11 +28,11 @@ func AddRoutes(uid string, model common.Model, cosys *common.Cosys) error {
 	modelName := model.Name_()
 
 	controller := map[string]common.Action{
-		"findMany": findMany(uid, model),
-		"findOne":  findOne(uid, model),
-		"create":   create(uid, model),
-		"update":   update(uid, model),
-		"delete":   delete(uid, model),
+		"findMany": findManyEntity(modelUid, model.Schema_().PluralName),
+		"findOne":  findOneEntity(modelUid, model.Schema_().SingularName),
+		"create":   createEntity(modelUid, model.Schema_().SingularName),
+		"update":   updateEntity(modelUid, model.Schema_().SingularName),
+		"delete":   deleteEntity(modelUid, model.Schema_().SingularName),
 	}
 	adminModule.Controllers[modelName+"Admin"] = controller
 
@@ -48,7 +48,7 @@ func AddRoutes(uid string, model common.Model, cosys *common.Cosys) error {
 	return nil
 }
 
-func findMany(uid string, contentModel common.Model) func(common.Cosys) http.HandlerFunc {
+func findManyEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFunc {
 	return func(cosys common.Cosys) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			params, err := common.ReadParams(r)
@@ -57,19 +57,19 @@ func findMany(uid string, contentModel common.Model) func(common.Cosys) http.Han
 				return
 			}
 
-			model, ok := cosys.Models[uid]
+			model, ok := cosys.Models[modelUid]
 			if !ok {
 				common.RespondInternalError(w)
 				return
 			}
-			attrSlice := model.All_()
+			attrs := model.All_()
 
 			page := 1
 			pageSize := int64(20)
-			sort := []*common.Order{}
-			filter := []common.Condition{}
-			fields := []common.Attribute{}
-			populate := []common.Attribute{}
+			var sort []*common.Order
+			var filter []common.Condition
+			var fields []common.Attribute
+			var populate []common.Attribute
 
 			pageSizeString, ok := params["pageSize"]
 			if ok {
@@ -91,8 +91,8 @@ func findMany(uid string, contentModel common.Model) func(common.Cosys) http.Han
 
 			sortSliceString, ok := params["sort"]
 			if ok {
-				sortSlice := strings.Split(sortSliceString, ",")
-				for _, sortString := range sortSlice {
+				sortStrings := strings.Split(sortSliceString, ",")
+				for _, sortString := range sortStrings {
 					if len(sortString) == 0 {
 						common.RespondError(w, "Bad request.", http.StatusBadRequest)
 						return
@@ -106,7 +106,7 @@ func findMany(uid string, contentModel common.Model) func(common.Cosys) http.Han
 
 					var sortAttr common.Attribute
 
-					for _, attr := range attrSlice {
+					for _, attr := range attrs {
 						if attr.Name() == sortString {
 							sortAttr = attr
 						}
@@ -127,11 +127,11 @@ func findMany(uid string, contentModel common.Model) func(common.Cosys) http.Han
 
 			fieldSliceString, ok := params["fields"]
 			if ok {
-				fieldSlice := strings.Split(fieldSliceString, ",")
-				for _, fieldString := range fieldSlice {
+				fieldStrings := strings.Split(fieldSliceString, ",")
+				for _, fieldString := range fieldStrings {
 					var fieldAttr common.Attribute
 
-					for _, attr := range attrSlice {
+					for _, attr := range attrs {
 						if attr.Name() == fieldString {
 							fieldAttr = attr
 						}
@@ -148,11 +148,11 @@ func findMany(uid string, contentModel common.Model) func(common.Cosys) http.Han
 
 			populateSliceString, ok := params["populate"]
 			if ok {
-				populateSlice := strings.Split(populateSliceString, ",")
-				for _, populateString := range populateSlice {
+				populateStrings := strings.Split(populateSliceString, ",")
+				for _, populateString := range populateStrings {
 					var populateAttr common.Attribute
 
-					for _, attr := range attrSlice {
+					for _, attr := range attrs {
 						if attr.Name() == populateString {
 							populateAttr = attr
 						}
@@ -174,9 +174,9 @@ func findMany(uid string, contentModel common.Model) func(common.Cosys) http.Han
 				Filter(filter...).
 				GetField(fields...).
 				Populate(populate...)
-			entities, err := cosys.ModuleService().FindMany(uid, msParams)
+			entities, err := cosys.ModuleService().FindMany(modelUid, msParams)
 			if err != nil {
-				common.RespondError(w, fmt.Sprintf("Could not find %s.", contentModel.Schema_().PluralName), http.StatusBadRequest)
+				common.RespondError(w, fmt.Sprintf("Could not find %s.", modelName), http.StatusBadRequest)
 				return
 			}
 
@@ -185,7 +185,7 @@ func findMany(uid string, contentModel common.Model) func(common.Cosys) http.Han
 	}
 }
 
-func findOne(uid string, contentModel common.Model) func(common.Cosys) http.HandlerFunc {
+func findOneEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFunc {
 	return func(cs common.Cosys) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			params, err := common.ReadParams(r)
@@ -206,9 +206,9 @@ func findOne(uid string, contentModel common.Model) func(common.Cosys) http.Hand
 				return
 			}
 
-			entity, err := cs.ModuleService().FindOne(uid, id, common.MSParam())
+			entity, err := cs.ModuleService().FindOne(modelUid, id, common.MSParam())
 			if err != nil {
-				common.RespondError(w, fmt.Sprintf("Could not find %s.", contentModel.Schema_().SingularName), http.StatusBadRequest)
+				common.RespondError(w, fmt.Sprintf("Could not find %s.", modelName), http.StatusBadRequest)
 				return
 			}
 
@@ -217,10 +217,10 @@ func findOne(uid string, contentModel common.Model) func(common.Cosys) http.Hand
 	}
 }
 
-func create(uid string, contentModel common.Model) func(common.Cosys) http.HandlerFunc {
+func createEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFunc {
 	return func(cs common.Cosys) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			model, ok := cs.Models[uid]
+			model, ok := cs.Models[modelUid]
 			if !ok {
 				common.RespondInternalError(w)
 				return
@@ -232,9 +232,9 @@ func create(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 				return
 			}
 
-			newEntity, err := cs.ModuleService().Create(uid, entity, common.MSParam())
+			newEntity, err := cs.ModuleService().Create(modelUid, entity, common.MSParam())
 			if err != nil {
-				common.RespondError(w, fmt.Sprintf("Could not create %s.", contentModel.Schema_().SingularName), http.StatusBadRequest)
+				common.RespondError(w, fmt.Sprintf("Could not create %s.", modelName), http.StatusBadRequest)
 				return
 			}
 
@@ -243,7 +243,7 @@ func create(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 	}
 }
 
-func update(uid string, contentModel common.Model) func(common.Cosys) http.HandlerFunc {
+func updateEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFunc {
 	return func(cs common.Cosys) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			params, err := common.ReadParams(r)
@@ -264,7 +264,7 @@ func update(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 				return
 			}
 
-			model, ok := cs.Models[uid]
+			model, ok := cs.Models[modelUid]
 			if !ok {
 				common.RespondInternalError(w)
 				return
@@ -276,9 +276,9 @@ func update(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 				return
 			}
 
-			newEntity, err := cs.ModuleService().Update(uid, entity, id, common.MSParam())
+			newEntity, err := cs.ModuleService().Update(modelUid, entity, id, common.MSParam())
 			if err != nil {
-				common.RespondError(w, fmt.Sprintf("Could not update %s.", contentModel.Schema_().SingularName), http.StatusBadRequest)
+				common.RespondError(w, fmt.Sprintf("Could not update %s.", modelName), http.StatusBadRequest)
 				return
 			}
 
@@ -287,7 +287,7 @@ func update(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 	}
 }
 
-func delete(uid string, contentModel common.Model) func(common.Cosys) http.HandlerFunc {
+func deleteEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFunc {
 	return func(cs common.Cosys) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			params, err := common.ReadParams(r)
@@ -308,9 +308,9 @@ func delete(uid string, contentModel common.Model) func(common.Cosys) http.Handl
 				return
 			}
 
-			oldEntity, err := cs.ModuleService().Delete(uid, id, common.MSParam())
+			oldEntity, err := cs.ModuleService().Delete(modelUid, id, common.MSParam())
 			if err != nil {
-				common.RespondError(w, fmt.Sprintf("Could not delete %s.", contentModel.Schema_().SingularName), http.StatusBadRequest)
+				common.RespondError(w, fmt.Sprintf("Could not delete %s.", modelName), http.StatusBadRequest)
 				return
 			}
 

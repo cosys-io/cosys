@@ -105,20 +105,21 @@ func generateApi(typeName string, ctx *ModelCtx) error {
 	return nil
 }
 
-func schemaFromArgs(collection string, display string, singular string, plural string, description string, attrStrings []string) (*common.ModelSchema, error) {
+func schemaFromArgs(collectionName string, displayName string, singularName string, pluralName string,
+	description string, attrStrings []string) (*common.ModelSchema, error) {
 	modelSchema := &common.ModelSchema{
 		ModelType:      "collectionType",
-		CollectionName: collection,
-		DisplayName:    display,
-		SingularName:   singular,
-		PluralName:     plural,
+		CollectionName: collectionName,
+		DisplayName:    displayName,
+		SingularName:   singularName,
+		PluralName:     pluralName,
 		Description:    description,
 		Attributes: []*common.AttributeSchema{
 			&common.IdSchema,
 		},
 	}
 
-	attrs := map[string]bool{}
+	attrs := make(map[string]bool)
 
 	for _, attrString := range attrStrings {
 		split := strings.Split(attrString, ":")
@@ -183,7 +184,7 @@ func schemaFromArgs(collection string, display string, singular string, plural s
 			}
 		}
 
-		if _, ok := attrs[attrName]; ok {
+		if _, dup := attrs[attrName]; dup {
 			return nil, fmt.Errorf("duplicate attribute: %s", attrName)
 		}
 		attrs[attrName] = true
@@ -214,13 +215,13 @@ type AttributeCtx struct {
 func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
 	caser := cases.Title(language.English)
 
-	modfile, err := getModfile()
+	modFile, err := getModFile()
 	if err != nil {
 		return nil, err
 	}
 
-	modelCtx := &ModelCtx{
-		ModFile:           modfile,
+	modelCtx := ModelCtx{
+		ModFile:           modFile,
 		CollectionName:    schema.CollectionName,
 		SingularName:      caser.String(schema.SingularName),
 		SingularNameCamel: schema.SingularName,
@@ -229,12 +230,12 @@ func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
 	}
 
 	for _, attr := range schema.Attributes {
-		attrCtx := &AttributeCtx{
+		attrCtx := AttributeCtx{
 			NameCamel:  attr.Name,
 			NamePascal: caser.String(attr.Name),
 		}
 
-		switch attr.SimpleType {
+		switch attr.SimplifiedDataType {
 		case "Number":
 			attrCtx.TypeLower = "int"
 			attrCtx.TypeUpper = "Int"
@@ -246,10 +247,10 @@ func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
 			attrCtx.TypeUpper = "Bool"
 		}
 
-		modelCtx.Attributes = append(modelCtx.Attributes, attrCtx)
+		modelCtx.Attributes = append(modelCtx.Attributes, &attrCtx)
 	}
 
-	return modelCtx, nil
+	return &modelCtx, nil
 }
 
 var ModelTmpl = `package {{.CollectionName}}
@@ -321,7 +322,7 @@ var LifecycleTmpl = `package {{.CollectionName}}
 
 import "github.com/cosys-io/cosys/common"
 
-var Lifecycle = common.NewLifeCycle()`
+var Lifecycle = common.NewLifecycle()`
 
 var SchemaYamlTmpl = `modelType: {{.ModelType}}
 collectionName: {{.CollectionName}}
@@ -331,8 +332,8 @@ pluralName: {{.PluralName}}
 description: {{.Description}}
 attributes:
 {{range .Attributes}}  - name: {{.Name}}
-    simplifiedDataType: {{.SimpleType}}
-    detailedDataType: {{.DetailedType}}{{if not .ShownInTable}}
+    simplifiedDataType: {{.SimplifiedDataType}}
+    detailedDataType: {{.DetailedDataType}}{{if not .ShownInTable}}
     shownInTable: false{{end}}{{if .Required}}
     required: true{{end}}{{if ne .Max 2147483647}}
     max: {{.Max}}{{end}}{{if ne .Min -2147483648}}

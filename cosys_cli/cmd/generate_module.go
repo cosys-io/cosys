@@ -20,24 +20,24 @@ var generateModuleCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		moduleName := args[0]
 
-		modfile, err := getModfile()
+		modFile, err := getModFile()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if err := generateModule(filepath.Join("modules/", moduleName), moduleName, modfile); err != nil {
+		if err := generateModule(filepath.Join("modules/", moduleName), moduleName, modFile); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-func generateModule(moduleDir, moduleName, modfile string) error {
+func generateModule(moduleDir, moduleName, modFile string) error {
 	ctx := struct {
 		ModuleName string
-		Modfile    string
+		ModFile    string
 	}{
 		moduleName,
-		modfile,
+		modFile,
 	}
 
 	generator := gen.NewGenerator(
@@ -67,11 +67,11 @@ var ModuleTmpl = `package {{.ModuleName}}
 
 import (
 	"github.com/cosys-io/cosys/common"
-	"{{.Modfile}}/modules/{{.ModuleName}}/controllers"
-	"{{.Modfile}}/modules/{{.ModuleName}}/middlewares"
-	"{{.Modfile}}/modules/{{.ModuleName}}/policies"
-	"{{.Modfile}}/modules/{{.ModuleName}}/routes"
-	"{{.Modfile}}/modules/{{.ModuleName}}/content_types"
+	"{{.ModFile}}/modules/{{.ModuleName}}/controllers"
+	"{{.ModFile}}/modules/{{.ModuleName}}/middlewares"
+	"{{.ModFile}}/modules/{{.ModuleName}}/policies"
+	"{{.ModFile}}/modules/{{.ModuleName}}/routes"
+	"{{.ModFile}}/modules/{{.ModuleName}}/content_types"
 )
 
 var Module = &common.Module{

@@ -8,23 +8,23 @@ import (
 )
 
 var (
-	svMutex sync.RWMutex
-	svMap   = make(map[string]func(*Cosys) Server)
+	svMutex    sync.RWMutex
+	svRegister = make(map[string]func(*Cosys) Server)
 )
 
-func RegisterServer(name string, server func(*Cosys) Server) error {
+func RegisterServer(svName string, svCtor func(*Cosys) Server) error {
 	svMutex.Lock()
 	defer svMutex.Unlock()
 
-	if server == nil {
-		return fmt.Errorf("server is nil")
+	if svCtor == nil {
+		return fmt.Errorf("server is nil: %s", svName)
 	}
 
-	if _, dup := svMap[name]; dup {
-		return fmt.Errorf("duplicate server:" + name)
+	if _, dup := svRegister[svName]; dup {
+		return fmt.Errorf("duplicate server:" + svName)
 	}
 
-	svMap[name] = server
+	svRegister[svName] = svCtor
 	return nil
 }
 
@@ -32,13 +32,13 @@ type Server interface {
 	Start() error
 }
 
-type ResponseContextKey struct{}
+type ResponseCtxKey struct{}
 
-type StateContextKey struct{}
+type StateCtxKey struct{}
 
 var (
-	ResponseKey ResponseContextKey
-	StateKey    StateContextKey
+	ResponseKey ResponseCtxKey
+	StateKey    StateCtxKey
 )
 
 type ResponseWriter struct {
@@ -65,21 +65,21 @@ func ReadState(r *http.Request, stateName string) (any, error) {
 		return nil, fmt.Errorf("context not found")
 	}
 
-	stateMap := ctx.Value(StateKey)
-	if stateMap == nil {
-		return nil, fmt.Errorf("state not found")
+	states := ctx.Value(StateKey)
+	if states == nil {
+		return nil, fmt.Errorf("state map not found")
 	}
 
-	switch stateMap.(type) {
+	switch states.(type) {
 	case map[string]any:
 
 	default:
 		return nil, fmt.Errorf("state has wrong type")
 	}
 
-	state, ok := stateMap.(map[string]any)[stateName]
+	state, ok := states.(map[string]any)[stateName]
 	if !ok {
-		return nil, fmt.Errorf("state not found: " + stateName)
+		return nil, fmt.Errorf("state not found: %s", stateName)
 	}
 
 	return state, nil

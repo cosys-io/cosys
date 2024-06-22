@@ -1,28 +1,28 @@
 package common
 
-type Lifecycle map[string]LifecycleFunc
+type Lifecycle map[string]LifecycleHook
 
-type LifecycleFunc func(params DBParams, result any, state any) (afterState any, err error)
+type LifecycleHook func(params DBParams, result any, state any) (afterState any, err error)
 
-func NewLifeCycle() Lifecycle {
+func NewLifecycle() Lifecycle {
 	return Lifecycle{
-		"beforeFindOne":    noop,
-		"beforeFindMany":   noop,
-		"afterFindOne":     noop,
-		"afterFindMany":    noop,
-		"beforeCreate":     noop,
-		"beforeCreateMany": noop,
-		"afterCreate":      noop,
-		"afterCreateMany":  noop,
-		"beforeUpdate":     noop,
-		"beforeUpdateMany": noop,
-		"afterUpdate":      noop,
-		"afterUpdateMany":  noop,
-		"beforeDelete":     noop,
-		"beforeDeleteMany": noop,
-		"afterDelete":      noop,
-		"afterDeleteMany":  noop,
+		"beforeFindOne":    nullLifecycleHook,
+		"beforeFindMany":   nullLifecycleHook,
+		"afterFindOne":     nullLifecycleHook,
+		"afterFindMany":    nullLifecycleHook,
+		"beforeCreate":     nullLifecycleHook,
+		"beforeCreateMany": nullLifecycleHook,
+		"afterCreate":      nullLifecycleHook,
+		"afterCreateMany":  nullLifecycleHook,
+		"beforeUpdate":     nullLifecycleHook,
+		"beforeUpdateMany": nullLifecycleHook,
+		"afterUpdate":      nullLifecycleHook,
+		"afterUpdateMany":  nullLifecycleHook,
+		"beforeDelete":     nullLifecycleHook,
+		"beforeDeleteMany": nullLifecycleHook,
+		"afterDelete":      nullLifecycleHook,
+		"afterDeleteMany":  nullLifecycleHook,
 	}
 }
 
-func noop(params DBParams, result any, state any) (any, error) { return nil, nil }
+func nullLifecycleHook(params DBParams, result any, state any) (any, error) { return nil, nil }

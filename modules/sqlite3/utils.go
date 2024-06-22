@@ -10,29 +10,29 @@ import (
 )
 
 func Extract(data common.Entity, params *common.DBParams, model common.Model) ([]any, error) {
-	attributes := []any{}
+	var attrs []any
 
 	columns := params.Columns
 	if len(params.Columns) == 0 {
 		columns = model.All_()[1:]
 	}
 
-	var dataValue reflect.Value = reflect.ValueOf(data)
+	dataValue := reflect.ValueOf(data)
 	if reflect.TypeOf(data).Kind() == reflect.Pointer {
 		dataValue = reflect.Indirect(dataValue)
 	}
 	for _, col := range columns {
-		name := col.FieldName()
+		attrName := col.FieldName()
 
-		attributeValue := dataValue.FieldByName(name)
+		attributeValue := dataValue.FieldByName(attrName)
 		if attributeValue == (reflect.Value{}) {
-			return nil, fmt.Errorf("attribute %s not found", name)
+			return nil, fmt.Errorf("attribute not found: %s", attrName)
 		}
 
-		attributes = append(attributes, attributeValue.Interface())
+		attrs = append(attrs, attributeValue.Interface())
 	}
 
-	return attributes, nil
+	return attrs, nil
 }
 
 func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.Entity, error) {

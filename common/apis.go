@@ -4,8 +4,6 @@ import (
 	"net/http"
 )
 
-// Routes
-
 type Route struct {
 	Method      string
 	Path        string
@@ -15,19 +13,19 @@ type Route struct {
 }
 
 func NewRoute(method string, path string, action string, options ...RouteOption) *Route {
-	newRoute := &Route{
-		method,
-		path,
-		action,
-		[]string{},
-		[]string{},
+	newRoute := Route{
+		Method:      method,
+		Path:        path,
+		Action:      action,
+		Middlewares: []string{},
+		Policies:    []string{},
 	}
 
 	for _, option := range options {
-		option(newRoute)
+		option(&newRoute)
 	}
 
-	return newRoute
+	return &newRoute
 }
 
 type RouteOption func(*Route)
@@ -44,16 +42,10 @@ func UsePolicies(policies ...string) RouteOption {
 	}
 }
 
-// Controllers
-
 type Controller map[string]Action
 
 type Action func(Cosys) http.HandlerFunc
 
-// Middlewares
-
 type Middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc
-
-// Policies
 
 type Policy func(Cosys, *http.Request) bool

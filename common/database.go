@@ -6,23 +6,23 @@ import (
 )
 
 var (
-	dbMutex sync.RWMutex
-	dbMap   = make(map[string]func(*Cosys) Database)
+	dbMutex    sync.RWMutex
+	dbRegister = make(map[string]func(*Cosys) Database)
 )
 
-func RegisterDatabase(name string, database func(*Cosys) Database) error {
+func RegisterDatabase(dbName string, dbCtor func(*Cosys) Database) error {
 	dbMutex.Lock()
 	defer dbMutex.Unlock()
 
-	if database == nil {
-		return fmt.Errorf("database is nil")
+	if dbCtor == nil {
+		return fmt.Errorf("database is nil: %s", dbName)
 	}
 
-	if _, dup := dbMap[name]; dup {
-		return fmt.Errorf("duplicate database:" + name)
+	if _, dup := dbRegister[dbName]; dup {
+		return fmt.Errorf("duplicate database: %s", dbName)
 	}
 
-	dbMap[name] = database
+	dbRegister[dbName] = dbCtor
 	return nil
 }
 

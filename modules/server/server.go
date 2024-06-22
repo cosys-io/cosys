@@ -19,8 +19,8 @@ func (s Server) Start() error {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		for _, module := range s.Cosys.Modules {
 			for _, route := range module.Routes {
-				match, params := matchPattern(r.URL.Path, route.Path)
-				if match {
+				isMatch, params := matchPattern(r.URL.Path, route.Path)
+				if isMatch {
 					if r.Method != route.Method {
 						continue
 					}
@@ -32,13 +32,13 @@ func (s Server) Start() error {
 					}
 
 					queryParams := r.URL.Query()
-					for name, value := range queryParams {
-						if _, ok := params[name]; ok {
+					for paramName, param := range queryParams {
+						if _, ok := params[paramName]; ok {
 							common.RespondInternalError(w)
 							return
 						}
-						if len(value) > 0 {
-							params[name] = value[0]
+						if len(param) > 0 {
+							params[paramName] = param[0]
 						}
 					}
 
@@ -59,33 +59,33 @@ func (s Server) Start() error {
 						}
 					}
 
-					uidString := route.Action
-					uidSplit := strings.Split(uidString, ".")
-					if len(uidSplit) != 2 {
+					actionUid := route.Action
+					actionUidSplit := strings.Split(actionUid, ".")
+					if len(actionUidSplit) != 2 {
 						common.RespondInternalError(w)
 						return
 					}
-					controllerName := uidSplit[0]
-					actionName := uidSplit[1]
+					controllerName := actionUidSplit[0]
+					actionName := actionUidSplit[1]
 					controller, ok := module.Controllers[controllerName]
 					if !ok {
 						common.RespondInternalError(w)
 						return
 					}
-					actionFunc, ok := controller[actionName]
+					actionCtor, ok := controller[actionName]
 					if !ok {
 						common.RespondInternalError(w)
 						return
 					}
-					action := actionFunc(*s.Cosys)
+					action := actionCtor(*s.Cosys)
 
 					for _, middlewareName := range route.Middlewares {
-						middlewareFunc, ok := module.Middlewares[middlewareName]
+						middlewareCtor, ok := module.Middlewares[middlewareName]
 						if !ok {
 							common.RespondInternalError(w)
 							return
 						}
-						middleware := middlewareFunc(*s.Cosys)
+						middleware := middlewareCtor(*s.Cosys)
 
 						action = middleware(action)
 					}
