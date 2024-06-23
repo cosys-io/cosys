@@ -61,3 +61,13 @@ Flags:
 ```
 
 Generate files and boilerplate code for a new collection type
+
+### Install/Uninstall
+
+```yaml
+cosys_cli install [module_names]
+
+cosys_cli uninstall [module_names]
+```
+
+Install and uninstall modules

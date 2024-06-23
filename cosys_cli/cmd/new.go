@@ -48,11 +48,11 @@ func generateProject(projectName, pf, db, tmpl string) error {
 		return err
 	}
 
-	if err := installModules(projectName, db, "server", "module_service", "content_builder"); err != nil {
+	if err := generateModfile(projectName, pf); err != nil {
 		return err
 	}
 
-	if err := generateModfile(projectName, pf); err != nil {
+	if err := installModules([]string{db, "server", "module_service", "content_builder"}, Dir(projectName), Quiet); err != nil {
 		return err
 	}
 
@@ -100,13 +100,13 @@ func generateModules(projectName, pf, db, tmpl string) error {
 }
 
 func generateModfile(projectName, pf string) error {
-	if err := RunCommand(projectName, "go", "mod", "init", fmt.Sprintf("github.com/%s/%s", pf, projectName)); err != nil {
+	if err := RunCommand(fmt.Sprintf("go mod init github.com/%s/%s", pf, projectName), Dir(projectName)); err != nil {
 		return err
 	}
 
-	if err := RunCommand(projectName, "go", "get", "github.com/cosys-io/cosys"); err != nil {
-		return err
-	}
+	//if err := RunCommand("go mod tidy", Dir(projectName)); err != nil {
+	//	return err
+	//}
 
 	return nil
 }

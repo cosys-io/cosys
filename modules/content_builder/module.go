@@ -4,8 +4,8 @@ import "github.com/cosys-io/cosys/common"
 
 var Module = &common.Module{
 	Routes: []*common.Route{
-		common.NewRoute("GET", `/admin/get/([a-zA-Z]+)`, "admin.get"),
-		common.NewRoute("POST", `/admin/build/([a-zA-Z]+)`, "admin.build"),
+		common.NewRoute("GET", `/admin/schema`, "admin.schema"),
+		common.NewRoute("POST", `/admin/schema`, "admin.build"),
 	},
 	Controllers: map[string]common.Controller{
 		"admin": Controller,

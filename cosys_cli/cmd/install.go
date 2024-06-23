@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func init() {
@@ -18,45 +19,51 @@ var installCmd = &cobra.Command{
 	Long:  "Install modules.",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := installModules("", args...); err != nil {
+		if err := installModules(args); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-func installModules(dir string, modules ...string) error {
-	cmdArgs := []string{
-		"sparse-checkout",
-		"set",
-		"--no-cone",
+func installModules(modules []string, options ...RunOption) error {
+	cfg := &RunConfigs{
+		Dir:    "",
+		Quiet:  false,
+		Cancel: nil,
 	}
+
+	for _, option := range options {
+		option(cfg)
+	}
+
+	sb := strings.Builder{}
 	for _, moduleName := range modules {
-		cmdArgs = append(cmdArgs, "modules/"+moduleName)
+		sb.WriteString(" modules/" + moduleName)
 	}
 
-	if err := RunCommand(dir, "git", "clone", "--depth", "1", "--filter=blob:none", "--no-checkout", "git@github.com:cosys-io/cosys.git", ".clone"); err != nil {
+	if err := RunCommand("git clone --depth 1 --filter=blob:none --no-checkout git@github.com:cosys-io/cosys.git .clone", options...); err != nil {
 		return err
 	}
 
-	defer os.RemoveAll(filepath.Join(dir, ".clone"))
+	defer os.RemoveAll(filepath.Join(cfg.Dir, ".clone"))
 
-	if err := RunCommand(filepath.Join(dir, ".clone"), "git", cmdArgs...); err != nil {
+	if err := RunCommand("git sparse-checkout set --no-cone"+sb.String(), append(options, Dir(filepath.Join(cfg.Dir, ".clone")))...); err != nil {
 		return err
 	}
 
-	if err := RunCommand(filepath.Join(dir, ".clone"), "git", "checkout"); err != nil {
+	if err := RunCommand("git checkout", append(options, Dir(filepath.Join(cfg.Dir, ".clone")))...); err != nil {
 		return err
 	}
 
 	for _, moduleName := range modules {
-		if err := cp.Copy(filepath.Join(dir, ".clone", "modules", moduleName), filepath.Join(dir, "modules", moduleName)); err != nil {
+		if err := cp.Copy(filepath.Join(cfg.Dir, ".clone", "modules", moduleName), filepath.Join(cfg.Dir, "modules", moduleName)); err != nil {
 			return err
 		}
 	}
 
-	if err := RunCommand(dir, "go", "mod", "tidy"); err != nil {
-		return err
-	}
+	//if err := RunCommand("go mod tidy", options...); err != nil {
+	//	return err
+	//}
 
 	return nil
 }

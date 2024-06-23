@@ -21,7 +21,7 @@ var startCmd = &cobra.Command{
 }
 
 func startServer() error {
-	if err := RunCommand("", "bin/cosys"); err != nil {
+	if err := RunCommand("bin/cosys"); err != nil {
 		return err
 	}
 

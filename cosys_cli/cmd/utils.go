@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func getModfile() (string, error) {
@@ -28,16 +31,76 @@ func getModfile() (string, error) {
 	return "", errors.New("module not found")
 }
 
-func RunCommand(dir string, name string, args ...string) error {
-	cmd := exec.Command(name, args...)
-	if dir != "" {
-		cmd.Dir = dir
+func RunCommand(command string, options ...RunOption) error {
+	cfg := &RunConfigs{
+		Dir:    "",
+		Quiet:  false,
+		Cancel: nil,
 	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
+	for _, option := range options {
+		option(cfg)
+	}
+
+	ctx := context.Background()
+	var cmd *exec.Cmd
+
+	args := strings.Split(command, " ")
+	if len(args) == 0 {
+		return fmt.Errorf("no command specified")
+	}
+
+	if cfg.Cancel == nil {
+		if len(args) == 1 {
+			cmd = exec.Command(args[0])
+		} else {
+			cmd = exec.Command(args[0], args[1:]...)
+		}
+	} else {
+		if len(args) == 1 {
+			cmd = exec.CommandContext(ctx, args[0])
+		} else {
+			cmd = exec.CommandContext(ctx, args[0], args[1:]...)
+		}
+		cmd.Cancel = cfg.Cancel(ctx)
+	}
+
+	if cfg.Dir != "" {
+		cmd.Dir = cfg.Dir
+	}
+
+	if !cfg.Quiet {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
 	if err := cmd.Run(); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+type RunConfigs struct {
+	Dir    string
+	Quiet  bool
+	Cancel func(context.Context) func() error
+}
+
+type RunOption func(*RunConfigs)
+
+func Dir(dir string) RunOption {
+	return func(cfg *RunConfigs) {
+		cfg.Dir = dir
+	}
+}
+
+func Quiet(cfg *RunConfigs) {
+	cfg.Quiet = true
+}
+
+func Cancel(cancelFunc func(context.Context) func() error) RunOption {
+	return func(cfg *RunConfigs) {
+		cfg.Cancel = cancelFunc
+	}
 }

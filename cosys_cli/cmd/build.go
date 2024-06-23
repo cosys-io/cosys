@@ -68,7 +68,7 @@ func generateMain(modfile string, modules []string) error {
 
 	defer os.Remove("main.go")
 
-	if err := RunCommand("", "go", "build", "-o", "bin/cosys", "main.go"); err != nil {
+	if err := RunCommand("go build -o bin/cosys main.go"); err != nil {
 		return err
 	}
 

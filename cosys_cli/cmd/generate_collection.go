@@ -49,17 +49,19 @@ var generateCollectionCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if err := GenerateType(collectionName, schema); err != nil {
+		if err := GenerateType(schema); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-func GenerateType(typeName string, schema *common.ModelSchema) error {
+func GenerateType(schema *common.ModelSchema) error {
 	ctx, err := ctxFromSchema(schema)
 	if err != nil {
 		return err
 	}
+
+	typeName := schema.CollectionName
 
 	if err = generateModel(typeName, schema, ctx); err != nil {
 		return err
@@ -78,7 +80,6 @@ func generateModel(typeName string, schema *common.ModelSchema, ctx *ModelCtx) e
 	generator := gen.NewGenerator(
 		gen.NewDir(typeDir, gen.GenHeadOnly),
 		gen.NewFile(filepath.Join(typeDir, "schema.yaml"), SchemaYamlTmpl, schema),
-		gen.NewFile(filepath.Join(typeDir, "schema.go"), SchemaGoTmpl, schema),
 		gen.NewFile(filepath.Join(typeDir, "lifecycle.go"), LifecycleTmpl, ctx),
 		gen.NewFile(filepath.Join(typeDir, "model.go"), ModelTmpl, ctx),
 	)
@@ -104,9 +105,171 @@ func generateApi(typeName string, ctx *ModelCtx) error {
 	return nil
 }
 
+func schemaFromArgs(collection string, display string, singular string, plural string, description string, attrStrings []string) (*common.ModelSchema, error) {
+	modelSchema := &common.ModelSchema{
+		ModelType:      "collectionType",
+		CollectionName: collection,
+		DisplayName:    display,
+		SingularName:   singular,
+		PluralName:     plural,
+		Description:    description,
+		Attributes: []*common.AttributeSchema{
+			&common.IdSchema,
+		},
+	}
+
+	attrs := map[string]bool{}
+
+	for _, attrString := range attrStrings {
+		split := strings.Split(attrString, ":")
+		if len(split) < 2 {
+			return nil, fmt.Errorf("invalid attribute format: %s", attrString)
+		}
+		attrName := split[0]
+		attrType := split[1]
+
+		attrSchema, err := common.NewAttributeSchema(attrName, attrType)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, option := range split[2:] {
+			switch {
+			case option == "notshown":
+				attrSchema.ShownInTable = false
+			case option == "required":
+				attrSchema.Required = true
+			case regexp.MustCompile(`^max=([-0-9]+)$`).MatchString(option):
+				matches := regexp.MustCompile(`^max=([-0-9]+)$`).FindStringSubmatch(option)
+				val, err := strconv.ParseInt(matches[1], 10, 64)
+				if err != nil {
+					return nil, err
+				}
+				attrSchema.Max = val
+			case regexp.MustCompile(`^min=([-0-9]+)$`).MatchString(option):
+				matches := regexp.MustCompile(`^min=([-0-9]+)$`).FindStringSubmatch(option)
+				val, err := strconv.ParseInt(matches[1], 10, 64)
+				if err != nil {
+					return nil, err
+				}
+				attrSchema.Min = val
+			case regexp.MustCompile(`^maxlength=(\d+)$`).MatchString(option):
+				matches := regexp.MustCompile(`^maxlength=(\d+)$`).FindStringSubmatch(option)
+				val, err := strconv.Atoi(matches[1])
+				if err != nil {
+					return nil, err
+				}
+				attrSchema.MaxLength = val
+			case regexp.MustCompile(`^minlength=(\d+)$`).MatchString(option):
+				matches := regexp.MustCompile(`^minlength=(\d+)$`).FindStringSubmatch(option)
+				val, err := strconv.Atoi(matches[1])
+				if err != nil {
+					return nil, err
+				}
+				attrSchema.MinLength = val
+			case option == "private":
+				attrSchema.Private = true
+			case option == "noteditable":
+				attrSchema.Editable = false
+			case regexp.MustCompile(`^default=(.+)=$`).MatchString(option):
+				matches := regexp.MustCompile(`^default=(.+)$`).FindStringSubmatch(option)
+				attrSchema.Default = matches[1]
+			case option == "notnullable":
+				attrSchema.Nullable = false
+			case option == "unique":
+				attrSchema.Unique = true
+			default:
+				return nil, fmt.Errorf("invalid option: %s", option)
+			}
+		}
+
+		if _, ok := attrs[attrName]; ok {
+			return nil, fmt.Errorf("duplicate attribute: %s", attrName)
+		}
+		attrs[attrName] = true
+
+		modelSchema.Attributes = append(modelSchema.Attributes, attrSchema)
+
+	}
+
+	return modelSchema, nil
+}
+
+type ModelCtx struct {
+	ModFile           string
+	CollectionName    string
+	SingularName      string
+	SingularNameCamel string
+	PluralName        string
+	Attributes        []*AttributeCtx
+}
+
+type AttributeCtx struct {
+	TypeLower  string
+	TypeUpper  string
+	NameCamel  string
+	NamePascal string
+}
+
+func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
+	caser := cases.Title(language.English)
+
+	modfile, err := getModfile()
+	if err != nil {
+		return nil, err
+	}
+
+	modelCtx := &ModelCtx{
+		ModFile:           modfile,
+		CollectionName:    schema.CollectionName,
+		SingularName:      caser.String(schema.SingularName),
+		SingularNameCamel: schema.SingularName,
+		PluralName:        caser.String(schema.PluralName),
+		Attributes:        []*AttributeCtx{},
+	}
+
+	for _, attr := range schema.Attributes {
+		attrCtx := &AttributeCtx{
+			NameCamel:  attr.Name,
+			NamePascal: caser.String(attr.Name),
+		}
+
+		switch attr.SimpleType {
+		case "Number":
+			attrCtx.TypeLower = "int"
+			attrCtx.TypeUpper = "Int"
+		case "String":
+			attrCtx.TypeLower = "string"
+			attrCtx.TypeUpper = "String"
+		case "Boolean":
+			attrCtx.TypeLower = "bool"
+			attrCtx.TypeUpper = "Bool"
+		}
+
+		modelCtx.Attributes = append(modelCtx.Attributes, attrCtx)
+	}
+
+	return modelCtx, nil
+}
+
 var ModelTmpl = `package {{.CollectionName}}
 	
-import "github.com/cosys-io/cosys/common"
+import (
+	"log"
+	"github.com/cosys-io/cosys/common"
+)
+
+var (
+	Schema = &common.ModelSchema{}
+)
+
+func init() {
+	var err error
+	Schema, err = common.GetSchema("modules/api/content_types/{{.CollectionName}}/schema.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 type {{.SingularName}} struct {
 {{range .Attributes}}    {{.NamePascal}} {{.TypeLower}} ` + "`" + `json:"{{.NameCamel}}"` + "`" + `
@@ -147,7 +310,7 @@ func (m {{.PluralName}}Model) Id_() *common.IntAttribute {
 }
 
 func (m {{.PluralName}}Model) Schema_() *common.ModelSchema {
-	return m.schema
+	return Schema
 }
 
 func (m {{.PluralName}}Model) Lifecycle_() common.Lifecycle {
@@ -160,38 +323,6 @@ import "github.com/cosys-io/cosys/common"
 
 var Lifecycle = common.NewLifeCycle()`
 
-var SchemaGoTmpl = `package {{.CollectionName}}
-
-import "github.com/cosys-io/cosys/common"
-
-var Schema = &common.ModelSchema{
-	ModelType:      "collectiontype",
-	CollectionName: "{{.CollectionName}}",
-	DisplayName:    "{{.DisplayName}}",
-	SingularName:   "{{.SingularName}}",
-	PluralName:     "{{.PluralName}}",
-	Description:    "{{.Description}}",
-	Attributes: []*common.AttributeSchema{
-{{range .Attributes}}        {
-			Name: "{{.Name}}",
-			Type: "{{.Type}}",
-			
-			Required: {{.Required}},
-			Max: {{.Max}},
-			Min: {{.Min}},
-			MaxLength: {{.MaxLength}},
-			MinLength: {{.MinLength}},
-			Private: {{.Private}},
-			NotConfigurable: {{.NotConfigurable}},
-			
-			Default: "{{.Default}}",
-			NotNullable: {{.NotNullable}},
-			Unsigned: {{.Unsigned}},
-			Unique: {{.Unique}},
-		},
-{{end}}    },
-}`
-
 var SchemaYamlTmpl = `modelType: {{.ModelType}}
 collectionName: {{.CollectionName}}
 displayName: {{.DisplayName}}
@@ -200,17 +331,18 @@ pluralName: {{.PluralName}}
 description: {{.Description}}
 attributes:
 {{range .Attributes}}  - name: {{.Name}}
-    type: {{.Type}}{{if .Required}}
+    simplifiedDataType: {{.SimpleType}}
+    detailedDataType: {{.DetailedType}}{{if not .ShownInTable}}
+    shownInTable: false{{end}}{{if .Required}}
     required: true{{end}}{{if ne .Max 2147483647}}
     max: {{.Max}}{{end}}{{if ne .Min -2147483648}}
     min: {{.Min}}{{end}}{{if ne .MaxLength -1}}
     maxLength: {{.MaxLength}}{{end}}{{if ne .MinLength -1}}
     minLength: {{.MinLength}}{{end}}{{if .Private}}
-    private: true{{end}}{{if .NotConfigurable}}
-    notConfigurable: true{{end}}{{if .Default}}
-    default: {{.Default}}{{end}}{{if .NotNullable}}
-    notNullable: true{{end}}{{if .Unsigned}}
-    unsigned: true{{end}}{{if .Unique}}
+    private: true{{end}}{{if not .Editable}}
+    editable: false{{end}}{{if .Default}}
+    default: {{.Default}}{{end}}{{if not .Nullable}}
+    nullable: false{{end}}{{if .Unique}}
     unique: true{{end}}
 {{end}}`
 
@@ -368,172 +500,3 @@ var RoutesStructTmpl = `var Routes = []*common.Route{
 	common.NewRoute("POST", ` + "`/{{.CollectionName}}`" + `, "{{.CollectionName}}.create"),
 	common.NewRoute("PUT", ` + "`/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.update"),
 	common.NewRoute("DELETE", ` + "`/{{.CollectionName}}/([0-9]+)`" + `, "{{.CollectionName}}.delete"),`
-
-func schemaFromArgs(collection string, display string, singular string, plural string, description string, attrStrings []string) (*common.ModelSchema, error) {
-	modelSchema := &common.ModelSchema{
-		ModelType:      "collectionType",
-		CollectionName: collection,
-		DisplayName:    display,
-		SingularName:   singular,
-		PluralName:     plural,
-		Description:    description,
-		Attributes: []*common.AttributeSchema{
-			{
-				Name:            "id",
-				Type:            "integer",
-				Required:        true,
-				Max:             2147483647,
-				Min:             -2147483648,
-				MaxLength:       -1,
-				MinLength:       -1,
-				Private:         false,
-				NotConfigurable: false,
-				NotNullable:     true,
-				Unsigned:        true,
-				Unique:          true,
-			},
-		},
-	}
-
-	attrs := map[string]bool{}
-
-	for _, attrString := range attrStrings {
-		split := strings.Split(attrString, ":")
-		if len(split) < 2 {
-			return nil, fmt.Errorf("invalid attribute format: %s", attrString)
-		}
-		attrName := split[0]
-		attrType := split[1]
-
-		attrSchema := &common.AttributeSchema{
-			Name:            attrName,
-			Type:            attrType,
-			Required:        false,
-			Max:             2147483647,
-			Min:             -2147483648,
-			MaxLength:       -1,
-			MinLength:       -1,
-			Private:         false,
-			NotConfigurable: false,
-			Default:         "",
-			NotNullable:     false,
-			Unsigned:        false,
-			Unique:          false,
-		}
-
-		for _, option := range split[2:] {
-			switch {
-			case option == "required":
-				attrSchema.Required = true
-			case regexp.MustCompile(`^max=([-0-9]+)$`).MatchString(option):
-				matches := regexp.MustCompile(`^max=([-0-9]+)$`).FindStringSubmatch(option)
-				val, err := strconv.ParseInt(matches[1], 10, 64)
-				if err != nil {
-					return nil, err
-				}
-				attrSchema.Max = val
-			case regexp.MustCompile(`^min=([-0-9]+)$`).MatchString(option):
-				matches := regexp.MustCompile(`^min=([-0-9]+)$`).FindStringSubmatch(option)
-				val, err := strconv.ParseInt(matches[1], 10, 64)
-				if err != nil {
-					return nil, err
-				}
-				attrSchema.Min = val
-			case regexp.MustCompile(`^maxlength=(\d+)$`).MatchString(option):
-				matches := regexp.MustCompile(`^maxlength=(\d+)$`).FindStringSubmatch(option)
-				val, err := strconv.Atoi(matches[1])
-				if err != nil {
-					return nil, err
-				}
-				attrSchema.MaxLength = val
-			case regexp.MustCompile(`^minlength=(\d+)$`).MatchString(option):
-				matches := regexp.MustCompile(`^minlength=(\d+)$`).FindStringSubmatch(option)
-				val, err := strconv.Atoi(matches[1])
-				if err != nil {
-					return nil, err
-				}
-				attrSchema.MinLength = val
-			case option == "private":
-				attrSchema.Private = true
-			case option == "notconfigurable":
-				attrSchema.NotConfigurable = true
-			case regexp.MustCompile(`^default=(.+)=$`).MatchString(option):
-				matches := regexp.MustCompile(`^default=(.+)$`).FindStringSubmatch(option)
-				attrSchema.Default = matches[1]
-			case option == "notnullable":
-				attrSchema.NotNullable = true
-			case option == "unsigned":
-				attrSchema.Unsigned = true
-			case option == "unique":
-				attrSchema.Unique = true
-			}
-		}
-
-		if _, ok := attrs[attrName]; ok {
-			return nil, fmt.Errorf("duplicate attribute: %s", attrName)
-		}
-		attrs[attrName] = true
-
-		modelSchema.Attributes = append(modelSchema.Attributes, attrSchema)
-
-	}
-
-	return modelSchema, nil
-}
-
-type ModelCtx struct {
-	ModFile           string
-	CollectionName    string
-	SingularName      string
-	SingularNameCamel string
-	PluralName        string
-	Attributes        []*AttributeCtx
-}
-
-type AttributeCtx struct {
-	TypeLower  string
-	TypeUpper  string
-	NameCamel  string
-	NamePascal string
-}
-
-func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
-	caser := cases.Title(language.English)
-
-	modfile, err := getModfile()
-	if err != nil {
-		return nil, err
-	}
-
-	modelCtx := &ModelCtx{
-		ModFile:           modfile,
-		CollectionName:    schema.CollectionName,
-		SingularName:      caser.String(schema.SingularName),
-		SingularNameCamel: schema.SingularName,
-		PluralName:        caser.String(schema.PluralName),
-		Attributes:        []*AttributeCtx{},
-	}
-
-	for _, attr := range schema.Attributes {
-		attrCtx := &AttributeCtx{
-			NameCamel:  attr.Name,
-			NamePascal: caser.String(attr.Name),
-		}
-
-		switch attr.Type {
-		case "integer":
-			attrCtx.TypeLower = "int"
-			attrCtx.TypeUpper = "Int"
-		case "string":
-			attrCtx.TypeLower = "string"
-			attrCtx.TypeUpper = "String"
-		case "boolean":
-			attrCtx.TypeLower = "bool"
-			attrCtx.TypeUpper = "Bool"
-		}
-
-		modelCtx.Attributes = append(modelCtx.Attributes, attrCtx)
-	}
-
-	return modelCtx, nil
-}

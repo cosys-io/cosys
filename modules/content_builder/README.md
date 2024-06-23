@@ -5,25 +5,29 @@ This module is responsible for handling the creation of new content types.
 
 ```yaml
 paths:
-  /admin/get/{contentTypeName}:
+  /admin/schema:
     get:
-      summary: Returns a content type schema by name
-      parameters:
-        - in: path
-          name: contentTypeName
-          description: Name of the content type schema to return
-          required: true
-          schema:
-            type: string
-  /admin/build/{contentTypeName}:
+      summary: Returns all schemas
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schema'
     post:
       summary: Create a new content type
       requestBody:
         content:
-          application/x-yaml:
+          application/json:
             schema:
               $ref: '#/components/schemas/Schema'
         required: true
+      responses:
+        '200':
+          description: ok
 components:
   schemas:
     Schema:
@@ -58,41 +62,52 @@ components:
       type: object
       required:
         - name
-        - type
+        - simplifiedDataType
+        - detailedDataType
       properties:
         name:
           type: string
-          example: username
-        type:
+          example: age
+        simplifiedDataType:
           type: string
-          example: string
+          example: Number
+        detailedDataType:
+          type: string
+          example: Int
+        shownInTable:
+          type: boolean
+          default: true
         required:
           type: boolean
+          default: false
         max:
           type: integer
           format: int64
+          default: 2147483647
         min:
           type: integer
           format: int64
+          default: -2147483648
         maxLength:
           type: integer
           format: int32
+          default: -1
         minLength:
           type: integer
           format: int32
+          default: -1
         private:
           type: boolean
-        notConfigurable:
+          default: false
+        editable:
           type: boolean
+          default: true
         default:
           type: string
-        notNullable:
+          default: ""
+        nullable:
           type: boolean
-        unsigned:
-          type: boolean
+          default: true
         unique:
           type: boolean
-    
-
-          
-          
+          default: false

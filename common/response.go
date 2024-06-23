@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"reflect"
 )
 
 type Response struct {
@@ -39,13 +40,20 @@ func RespondOne(w http.ResponseWriter, data any, code int) {
 	}
 }
 
-func RespondMany(w http.ResponseWriter, data []any, page int, code int) {
+func RespondMany(w http.ResponseWriter, data any, page int, code int) {
+	var size int
+	if reflect.TypeOf(data).Kind() != reflect.Slice && reflect.TypeOf(data).Kind() != reflect.Array {
+		size = reflect.ValueOf(data).Len()
+	} else {
+		size = 1
+	}
+
 	resp := Response{
 		Data: data,
 		Meta: Meta{
 			Pagination: Pagination{
 				Page:     page,
-				PageSize: len(data),
+				PageSize: size,
 			},
 		},
 	}
