@@ -21,6 +21,15 @@ func (c Cosys) Database() Database {
 	return database(&c)
 }
 
+func (c Cosys) Logger() Logger {
+	logger, ok := loggerRegister["default"]
+	if !ok {
+		log.Fatal("logger not found: " + "default")
+	}
+
+	return logger
+}
+
 func (c Cosys) ModuleService() ModuleService {
 	moduleService, ok := msRegister["default"]
 	if !ok {
