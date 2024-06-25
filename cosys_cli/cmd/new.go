@@ -131,7 +131,6 @@ pass: ENV.DBPASS`
 
 var ModuleCfgTmpl = `modules: 
   - api
-  - module_service
   - server
   - admin
   - sqlite3`

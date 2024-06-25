@@ -495,15 +495,15 @@ func findMany{{.PluralPascalName}}(cs common.Cosys) http.HandlerFunc {
 			}
 		}
 
-		msParams := common.NewMSParamsBuilder().
-			Start(pageSize * (int64(page) - 1)).
+		dbParams := common.NewDBParamsBuilder().
+			Offset(pageSize * (int64(page) - 1)).
 			Limit(pageSize).
-			Sort(sort...).
-			Filter(filter...).
-			GetField(fields...).
+			OrderBy(sort...).
+			Where(filter...).
+			Select(fields...).
 			Populate(populate...).
 			Build()
-		entities, err := cs.ModuleService().FindMany("api.{{.PluralPascalName}}", msParams)
+		entities, err := cs.Database().FindMany("api.{{.PluralCamelName}}", dbParams)
 		if err != nil {
 			common.RespondError(w, "Could not find {{.PluralHumanName}}.", http.StatusBadRequest)
 			return
@@ -533,7 +533,17 @@ func findOne{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		entity, err := cs.ModuleService().FindOne("api.{{.PluralCamelName}}", id, common.NewMSParams())
+		model, ok := cs.Models["api.{{.PluralCamelName}}"]
+		if !ok {
+			common.RespondInternalError(w)
+			return
+		}
+		
+		dbParams := common.NewDBParamsBuilder().
+			Where(model.Id_().Eq(id)).
+			Build()
+
+		entity, err := cs.Database().FindOne("api.{{.PluralCamelName}}", dbParams)
 		if err != nil {
 			common.RespondError(w, "Could not find {{.SingularHumanName}}.", http.StatusBadRequest)
 			return
@@ -557,7 +567,7 @@ func create{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		newEntity, err := cs.ModuleService().Create("api.{{.PluralCamelName}}", entity, common.NewMSParams())
+		newEntity, err := cs.Database().Create("api.{{.PluralCamelName}}", entity, common.NewDBParams())
 		if err != nil {
 			common.RespondError(w, "Could not create {{.SingularHumanName}}.", http.StatusBadRequest)
 			return
@@ -599,7 +609,11 @@ func update{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		newEntity, err := cs.ModuleService().Update("api.{{.PluralCamelName}}", entity, id, common.NewMSParams())
+		dbParams := common.NewDBParamsBuilder().
+			Where(model.Id_().Eq(id)).
+			Build()
+
+		newEntity, err := cs.Database().Update("api.{{.PluralCamelName}}", entity, dbParams)
 		if err != nil {
 			common.RespondError(w, "Could not update {{.SingularHumanName}}.", http.StatusBadRequest)
 			return
@@ -629,7 +643,17 @@ func delete{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		oldEntity, err := cs.ModuleService().Delete("api.{{.PluralCamelName}}", id, common.NewMSParams())
+		model, ok := cs.Models["api.{{.PluralCamelName}}"]
+		if !ok {
+			common.RespondInternalError(w)
+			return
+		}
+
+		dbParams := common.NewDBParamsBuilder().
+			Where(model.Id_().Eq(id)).
+			Build()
+
+		oldEntity, err := cs.Database().Delete("api.{{.PluralCamelName}}", dbParams)
 		if err != nil {
 			common.RespondError(w, "Could not delete {{.SingularHumanName}}.", http.StatusBadRequest)
 			return

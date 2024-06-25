@@ -30,15 +30,6 @@ func (c Cosys) Logger() Logger {
 	return logger
 }
 
-func (c Cosys) ModuleService() ModuleService {
-	moduleService, ok := msRegister["default"]
-	if !ok {
-		log.Fatal("module service not found: " + "default")
-	}
-
-	return moduleService(&c)
-}
-
 func (c Cosys) Server() Server {
 	server, ok := svRegister["default"]
 	if !ok {
