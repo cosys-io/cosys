@@ -18,7 +18,7 @@ func (d Database) FindOne(uid string, params common.DBParams) (common.Entity, er
 		return nil, fmt.Errorf("model not found: %s", uid)
 	}
 
-	params = params.Limit(1)
+	params.Limit = 1
 
 	lifecycle := model.Lifecycle_()
 	before, ok := lifecycle["beforeFindOne"]
@@ -204,7 +204,7 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 }
 
 func (d Database) Update(uid string, data common.Entity, params common.DBParams) (common.Entity, error) {
-	params = params.Limit(1)
+	params.Limit = 1
 
 	model, ok := d.cosys.Models[uid]
 	if !ok {
@@ -294,7 +294,7 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 }
 
 func (d Database) Delete(uid string, params common.DBParams) (common.Entity, error) {
-	params = params.Limit(1)
+	params.Limit = 1
 
 	model, ok := d.cosys.Models[uid]
 	if !ok {

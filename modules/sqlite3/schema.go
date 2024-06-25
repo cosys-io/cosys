@@ -30,7 +30,7 @@ func schemaToSQL(schema common.ModelSchema) string {
 	for index, attr := range schema.Attributes[1:] {
 		sb.WriteString(attr.Name)
 		sb.WriteString(" ")
-		sb.WriteString(attr.DetailedType)
+		sb.WriteString(attr.DetailedDataType)
 
 		var checks []string
 		if attr.Max != 2147483647 {

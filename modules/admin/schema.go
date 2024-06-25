@@ -1,4 +1,4 @@
-package content_builder
+package admin
 
 import (
 	"encoding/json"
@@ -7,14 +7,19 @@ import (
 	"net/http"
 )
 
-var Controller = map[string]common.Action{
+var SchemaRoutes = []*common.Route{
+	common.NewRoute("GET", `/admin/schema`, "admin.schema"),
+	common.NewRoute("POST", `/admin/schema`, "admin.build"),
+}
+
+var SchemaController = map[string]common.Action{
 	"schema": schema,
 	"build":  build,
 }
 
 func schema(cosys common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		schemas := []common.ModelSchema{}
+		var schemas []common.ModelSchema
 
 		for _, model := range cosys.Models {
 			schemas = append(schemas, *model.Schema_())
@@ -26,9 +31,9 @@ func schema(cosys common.Cosys) http.HandlerFunc {
 
 func build(cosys common.Cosys) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		schemaParsed := &common.ModelSchemaParsed{}
+		schemaParsed := common.ModelSchemaParsed{}
 
-		if err := json.NewDecoder(r.Body).Decode(schemaParsed); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&schemaParsed); err != nil {
 			common.RespondError(w, "Bad request.", http.StatusBadRequest)
 			return
 		}
@@ -45,6 +50,6 @@ func build(cosys common.Cosys) http.HandlerFunc {
 			return
 		}
 
-		common.RespondOne(w, "Content type successfully created.", 200)
+		common.RespondOne(w, "Content type successfully created.", http.StatusOK)
 	}
 }

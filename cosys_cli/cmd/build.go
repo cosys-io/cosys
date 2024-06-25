@@ -16,7 +16,7 @@ var buildCmd = &cobra.Command{
 	Short: "Build Golang binaries and Content Management UI deployment",
 	Long:  `Build Golang binaries and Content Management UI deployment`,
 	Run: func(cmd *cobra.Command, args []string) {
-		modfile, err := getModfile()
+		modFile, err := getModFile()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -26,7 +26,7 @@ var buildCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if err := generateMain(modfile, modules); err != nil {
+		if err := generateMain(modFile, modules); err != nil {
 			log.Fatal(err)
 		}
 	},
@@ -49,16 +49,16 @@ func getModules() ([]string, error) {
 	return modules, nil
 }
 
-func generateMain(modfile string, modules []string) error {
+func generateMain(modFile string, modules []string) error {
 	if err := gen.NewDir("bin", gen.GenHeadOnly, gen.SkipIfExists).Act(); err != nil {
 		return err
 	}
 
 	ctx := struct {
-		Modfile string
+		ModFile string
 		Modules []string
 	}{
-		Modfile: modfile,
+		ModFile: modFile,
 		Modules: modules,
 	}
 
@@ -77,12 +77,12 @@ func generateMain(modfile string, modules []string) error {
 
 var MainTmpl = `package main
 
-{{$modfile := .Modfile}}
+{{$modFile := .ModFile}}
 import (
 	"log"	
 
 	"github.com/cosys-io/cosys/common"
-{{range .Modules}}	"{{$modfile}}/modules/{{.}}"
+{{range .Modules}}	"{{$modFile}}/modules/{{.}}"
 {{end}})
 
 func main() {
@@ -92,7 +92,7 @@ func main() {
 {{range .Modules}}		"{{.}}": {{.}}.Module,
 {{end}}}
 
-	cfg, err := common.GetConfigs()
+	cfg, err := common.GetConfigs("configs")
 	if err != nil {
 		log.Fatal(err)	
 	}

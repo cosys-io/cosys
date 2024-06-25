@@ -8,16 +8,20 @@ import (
 )
 
 func DeleteQuery(params *common.DBParams, model common.Model) (string, error) {
+	if model == nil {
+		return "", fmt.Errorf("model is nil")
+	}
+
 	var sb strings.Builder
 
 	sb.WriteString("DELETE FROM ")
 
-	sb.WriteString(model.Name_())
+	sb.WriteString(model.DBName_())
 
-	num := len(params.Wheres)
+	num := len(params.Where)
 	if num > 0 {
 		sb.WriteString(" WHERE")
-		for index, where := range params.Wheres {
+		for index, where := range params.Where {
 			sb.WriteString(" ")
 
 			whereString, err := StringCondition(where)

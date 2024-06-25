@@ -8,18 +8,22 @@ import (
 )
 
 func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
+	if model == nil {
+		return "", fmt.Errorf("model is nil")
+	}
+
 	var sb strings.Builder
 
 	sb.WriteString("SELECT")
 
-	num := len(params.Selects)
+	num := len(params.Select)
 	if num == 0 {
 		sb.WriteString(" *")
 	} else {
-		for index, col := range params.Selects {
+		for index, col := range params.Select {
 			sb.WriteString(" ")
 
-			colString := col.Name()
+			colString := col.SnakeName()
 
 			sb.WriteString(colString)
 
@@ -30,12 +34,12 @@ func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
 	}
 
 	sb.WriteString(" FROM ")
-	sb.WriteString(model.Name_())
+	sb.WriteString(model.DBName_())
 
-	num = len(params.Wheres)
+	num = len(params.Where)
 	if num > 0 {
 		sb.WriteString(" WHERE ")
-		for index, where := range params.Wheres {
+		for index, where := range params.Where {
 			sb.WriteString("( ")
 
 			whereString, err := StringCondition(where)
@@ -52,10 +56,10 @@ func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
 		}
 	}
 
-	num = len(params.OrderBys)
+	num = len(params.OrderBy)
 	if num > 0 {
 		sb.WriteString(" ORDER BY ")
-		for index, orderBy := range params.OrderBys {
+		for index, orderBy := range params.OrderBy {
 
 			orderString, err := StringOrder(orderBy)
 			if err != nil {
@@ -70,10 +74,10 @@ func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
 	}
 
 	sb.WriteString(" LIMIT ")
-	sb.WriteString(fmt.Sprint(params.LimitVal))
+	sb.WriteString(fmt.Sprint(params.Limit))
 
 	sb.WriteString(" OFFSET ")
-	sb.WriteString(fmt.Sprint(params.OffsetVal))
+	sb.WriteString(fmt.Sprint(params.Offset))
 
 	return sb.String(), nil
 }

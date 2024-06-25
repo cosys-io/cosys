@@ -6,23 +6,23 @@ import (
 )
 
 var (
-	dbMutex sync.RWMutex
-	dbMap   = make(map[string]func(*Cosys) Database)
+	dbMutex    sync.RWMutex
+	dbRegister = make(map[string]func(*Cosys) Database)
 )
 
-func RegisterDatabase(name string, database func(*Cosys) Database) error {
+func RegisterDatabase(dbName string, dbCtor func(*Cosys) Database) error {
 	dbMutex.Lock()
 	defer dbMutex.Unlock()
 
-	if database == nil {
-		return fmt.Errorf("database is nil")
+	if dbCtor == nil {
+		return fmt.Errorf("database is nil: %s", dbName)
 	}
 
-	if _, dup := dbMap[name]; dup {
-		return fmt.Errorf("duplicate database:" + name)
+	if _, dup := dbRegister[dbName]; dup {
+		return fmt.Errorf("duplicate database: %s", dbName)
 	}
 
-	dbMap[name] = database
+	dbRegister[dbName] = dbCtor
 	return nil
 }
 
@@ -38,17 +38,39 @@ type Database interface {
 }
 
 type DBParams struct {
-	Selects   []Attribute
-	Columns   []Attribute
-	Wheres    []Condition
-	LimitVal  int64
-	OffsetVal int64
-	OrderBys  []*Order
-	Populates []Attribute
+	Select   []Attribute
+	Columns  []Attribute
+	Where    []Condition
+	Limit    int64
+	Offset   int64
+	OrderBy  []*Order
+	Populate []Attribute
 }
 
-func DBParam() DBParams {
+func NewDBParams() DBParams {
 	return DBParams{
+		Select:   []Attribute{},
+		Columns:  []Attribute{},
+		Where:    []Condition{},
+		Limit:    -1,
+		Offset:   0,
+		OrderBy:  []*Order{},
+		Populate: []Attribute{},
+	}
+}
+
+type DBParamsBuilder struct {
+	selectFields []Attribute
+	columns      []Attribute
+	where        []Condition
+	limit        int64
+	offset       int64
+	orderBy      []*Order
+	populate     []Attribute
+}
+
+func NewDBParamsBuilder() DBParamsBuilder {
+	return DBParamsBuilder{
 		[]Attribute{},
 		[]Attribute{},
 		[]Condition{},
@@ -59,42 +81,54 @@ func DBParam() DBParams {
 	}
 }
 
-func (p DBParams) Select(selects ...Attribute) DBParams {
-	p.Selects = append(p.Selects, selects...)
+func (p DBParamsBuilder) Select(selects ...Attribute) DBParamsBuilder {
+	p.selectFields = append(p.selectFields, selects...)
 	return p
 }
 
-func (p DBParams) Insert(columns ...Attribute) DBParams {
-	p.Columns = append(p.Columns, columns...)
+func (p DBParamsBuilder) Insert(columns ...Attribute) DBParamsBuilder {
+	p.columns = append(p.columns, columns...)
 	return p
 }
 
-func (p DBParams) Update(columns ...Attribute) DBParams {
-	p.Columns = append(p.Columns, columns...)
+func (p DBParamsBuilder) Update(columns ...Attribute) DBParamsBuilder {
+	p.columns = append(p.columns, columns...)
 	return p
 }
 
-func (p DBParams) Where(where ...Condition) DBParams {
-	p.Wheres = append(p.Wheres, where...)
+func (p DBParamsBuilder) Where(where ...Condition) DBParamsBuilder {
+	p.where = append(p.where, where...)
 	return p
 }
 
-func (p DBParams) Limit(limit int64) DBParams {
-	p.LimitVal = limit
+func (p DBParamsBuilder) Limit(limit int64) DBParamsBuilder {
+	p.limit = limit
 	return p
 }
 
-func (p DBParams) Offset(offset int64) DBParams {
-	p.OffsetVal = offset
+func (p DBParamsBuilder) Offset(offset int64) DBParamsBuilder {
+	p.offset = offset
 	return p
 }
 
-func (p DBParams) OrderBy(orderBy ...*Order) DBParams {
-	p.OrderBys = append(p.OrderBys, orderBy...)
+func (p DBParamsBuilder) OrderBy(orderBy ...*Order) DBParamsBuilder {
+	p.orderBy = append(p.orderBy, orderBy...)
 	return p
 }
 
-func (p DBParams) Populate(populate ...Attribute) DBParams {
-	p.Populates = append(p.Populates, populate...)
+func (p DBParamsBuilder) Populate(populate ...Attribute) DBParamsBuilder {
+	p.populate = append(p.populate, populate...)
 	return p
+}
+
+func (p DBParamsBuilder) Build() DBParams {
+	return DBParams{
+		Select:   p.selectFields,
+		Columns:  p.columns,
+		Where:    p.where,
+		Limit:    p.limit,
+		Offset:   p.offset,
+		OrderBy:  p.orderBy,
+		Populate: p.populate,
+	}
 }

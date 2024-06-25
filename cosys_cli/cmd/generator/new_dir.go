@@ -11,19 +11,19 @@ type NewDirAction struct {
 }
 
 func NewDir(path string, options ...genOption) *NewDirAction {
-	opts := &genOptions{
+	opts := genOptions{
 		false,
 		false,
 		false,
 	}
 
 	for _, option := range options {
-		option(opts)
+		option(&opts)
 	}
 
 	return &NewDirAction{
 		path: path,
-		opts: *opts,
+		opts: opts,
 	}
 }
 

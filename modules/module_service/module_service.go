@@ -18,8 +18,8 @@ func (e ModuleService) FindOne(uid string, id int, params common.MSParams) (comm
 		return nil, fmt.Errorf("model not found: %s", uid)
 	}
 
-	queryParams = queryParams.Where(model.Id_().Eq(id))
-	queryParams = queryParams.Limit(1)
+	queryParams.Where = append(queryParams.Where, model.Id_().Eq(id))
+	queryParams.Limit = 1
 
 	return e.Cosys.Database().FindOne(uid, queryParams)
 }
@@ -44,7 +44,7 @@ func (e ModuleService) Update(uid string, entity common.Entity, id int, params c
 		return nil, fmt.Errorf("model not found: %s", uid)
 	}
 
-	queryParams = queryParams.Where(model.Id_().Eq(id))
+	queryParams.Where = append(queryParams.Where, model.Id_().Eq(id))
 
 	return e.Cosys.Database().Update(uid, entity, queryParams)
 }
@@ -57,18 +57,19 @@ func (e ModuleService) Delete(uid string, id int, params common.MSParams) (commo
 		return nil, fmt.Errorf("model not found: %s", uid)
 	}
 
-	queryParams = queryParams.Where(model.Id_().Eq(id))
+	queryParams.Where = append(queryParams.Where, model.Id_().Eq(id))
 
 	return e.Cosys.Database().Delete(uid, queryParams)
 }
 
 func transformParams(params common.MSParams) common.DBParams {
-	return common.DBParam().
-		Select(params.GetFields...).
-		Insert(params.SetFields...).
-		Where(params.Filters...).
-		Limit(params.LimitVal).
-		Offset(params.StartVal).
-		OrderBy(params.Sorts...).
-		Populate(params.Populates...)
+	return common.NewDBParamsBuilder().
+		Select(params.Select...).
+		Insert(params.Fields...).
+		Where(params.Filter...).
+		Limit(params.Limit).
+		Offset(params.Start).
+		OrderBy(params.Sort...).
+		Populate(params.Populate...).
+		Build()
 }

@@ -9,18 +9,18 @@ import (
 )
 
 type ModifyFileAction struct {
-	path       string
-	patternStr string
-	tmplStr    string
-	ctx        any
+	path          string
+	patternString string
+	tmplString    string
+	ctx           any
 }
 
-func ModifyFile(path, patternStr, tmplStr string, ctx any) *ModifyFileAction {
+func ModifyFile(path, patternString, tmplString string, ctx any) *ModifyFileAction {
 	return &ModifyFileAction{
-		path:       path,
-		patternStr: patternStr,
-		tmplStr:    tmplStr,
-		ctx:        ctx,
+		path:          path,
+		patternString: patternString,
+		tmplString:    tmplString,
+		ctx:           ctx,
 	}
 }
 
@@ -39,12 +39,12 @@ func (a ModifyFileAction) Act() error {
 		return err
 	}
 
-	pattern, err := regexp.Compile(a.patternStr)
+	pattern, err := regexp.Compile(a.patternString)
 	if err != nil {
 		return err
 	}
 
-	tmpl, err := template.New("tmpl").Parse(a.tmplStr)
+	tmpl, err := template.New("tmpl").Parse(a.tmplString)
 	if err != nil {
 		return err
 	}

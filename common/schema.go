@@ -13,9 +13,9 @@ type ModelSchema struct {
 }
 
 type AttributeSchema struct {
-	Name         string `yaml:"name" json:"name"`
-	SimpleType   string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
-	DetailedType string `yaml:"detailedDataType" json:"detailedDataType"`
+	Name               string `yaml:"name" json:"name"`
+	SimplifiedDataType string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
+	DetailedDataType   string `yaml:"detailedDataType" json:"detailedDataType"`
 
 	ShownInTable bool  `yaml:"shownInTable" json:"shownInTable"`
 	Required     bool  `yaml:"required" json:"required"`
@@ -32,80 +32,81 @@ type AttributeSchema struct {
 }
 
 func NewAttributeSchema(attrName, attrType string) (*AttributeSchema, error) {
-	attrSchema := &AttributeSchema{
-		Name:         attrName,
-		SimpleType:   "",
-		DetailedType: "",
-		ShownInTable: true,
-		Required:     false,
-		Max:          2147483647,
-		Min:          -2147483648,
-		MaxLength:    -1,
-		MinLength:    -1,
-		Private:      false,
-		Editable:     true,
-		Default:      "",
-		Nullable:     true,
-		Unique:       false,
+	if attrName == "" {
+		return nil, fmt.Errorf("invalid attribute name: %s", attrName)
 	}
+
+	var simpleType string
+	var detailedType string
 
 	switch attrType {
 	case "string":
-		attrSchema.SimpleType = "String"
-		attrSchema.DetailedType = "String"
+		simpleType = "String"
+		detailedType = "String"
 	case "int":
-		attrSchema.SimpleType = "Number"
-		attrSchema.DetailedType = "Int"
+		simpleType = "Number"
+		detailedType = "Int"
 	case "float":
-		attrSchema.SimpleType = "Number"
-		attrSchema.DetailedType = "Float"
+		simpleType = "Number"
+		detailedType = "Float"
 	case "boolean":
-		attrSchema.SimpleType = "Boolean"
-		attrSchema.DetailedType = "Boolean"
+		simpleType = "Boolean"
+		detailedType = "Boolean"
 	case "date":
-		attrSchema.SimpleType = "Date"
-		attrSchema.DetailedType = "Date"
+		simpleType = "Date"
+		detailedType = "Date"
 	case "datetime":
-		attrSchema.SimpleType = "DateTime"
-		attrSchema.DetailedType = "DateTime"
+		simpleType = "DateTime"
+		detailedType = "DateTime"
 	case "timestamp":
-		attrSchema.SimpleType = "TimeStamp"
-		attrSchema.DetailedType = "TimeStamp"
+		simpleType = "TimeStamp"
+		detailedType = "TimeStamp"
 	default:
 		return nil, fmt.Errorf("invalid attribute type: %s", attrType)
 	}
 
-	return attrSchema, nil
+	return &AttributeSchema{
+		Name:               attrName,
+		SimplifiedDataType: simpleType,
+		DetailedDataType:   detailedType,
+		ShownInTable:       true,
+		Required:           false,
+		Max:                2147483647,
+		Min:                -2147483648,
+		MaxLength:          -1,
+		MinLength:          -1,
+		Private:            false,
+		Editable:           true,
+		Default:            "",
+		Nullable:           true,
+		Unique:             false,
+	}, nil
 }
 
 var IdSchema = AttributeSchema{
-	Name:         "id",
-	SimpleType:   "Number",
-	DetailedType: "Int",
-	ShownInTable: true,
-	Required:     true,
-	Max:          2147483647,
-	Min:          -2147483648,
-	MaxLength:    -1,
-	MinLength:    -1,
-	Private:      false,
-	Editable:     false,
-	Nullable:     false,
-	Unique:       true,
+	Name:               "id",
+	SimplifiedDataType: "Number",
+	DetailedDataType:   "Int",
+	ShownInTable:       true,
+	Required:           true,
+	Max:                2147483647,
+	Min:                -2147483648,
+	MaxLength:          -1,
+	MinLength:          -1,
+	Private:            false,
+	Editable:           false,
+	Nullable:           false,
+	Unique:             true,
 }
 
 func GetSchema(path string) (*ModelSchema, error) {
-	schemaParsed := &ModelSchemaParsed{}
+	schemaParsed := ModelSchemaParsed{}
 
-	if err := ParseFile(path, schemaParsed, false); err != nil {
+	if err := ParseFile(path, &schemaParsed, false); err != nil {
 		return nil, err
 	}
 
-	schema, err := schemaParsed.Schema()
-	if err != nil {
-		return nil, err
-	}
-	return schema, nil
+	return schemaParsed.Schema()
 }
 
 type ModelSchemaParsed struct {
@@ -123,19 +124,19 @@ func (m ModelSchemaParsed) Schema() (*ModelSchema, error) {
 		return nil, fmt.Errorf("model has no display name")
 	}
 	if m.ModelType == "" {
-		return nil, fmt.Errorf("model %s has no model type", m.DisplayName)
+		return nil, fmt.Errorf("model has no model type: %s", m.DisplayName)
 	}
 	if m.CollectionName == "" {
-		return nil, fmt.Errorf("model %s has no collection name", m.DisplayName)
+		return nil, fmt.Errorf("model has no collection name: %s", m.DisplayName)
 	}
 	if m.SingularName == "" {
-		return nil, fmt.Errorf("model %s has no singular name", m.DisplayName)
+		return nil, fmt.Errorf("model has no singular name: %s", m.DisplayName)
 	}
 	if m.PluralName == "" {
-		return nil, fmt.Errorf("model %s has no plural name", m.DisplayName)
+		return nil, fmt.Errorf("model has no plural name: %s", m.DisplayName)
 	}
 
-	attrs := []*AttributeSchema{}
+	var attrs []*AttributeSchema
 
 	for _, attr := range m.Attributes {
 		attrSchema, err := attr.Schema()
@@ -157,9 +158,9 @@ func (m ModelSchemaParsed) Schema() (*ModelSchema, error) {
 }
 
 type AttributeSchemaParsed struct {
-	Name         string `yaml:"name" json:"name"`
-	SimpleType   string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
-	DetailedType string `yaml:"detailedDataType" json:"detailedDataType"`
+	Name               string `yaml:"name" json:"name"`
+	SimplifiedDataType string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
+	DetailedDataType   string `yaml:"detailedDataType" json:"detailedDataType"`
 
 	ShownInTable *bool  `yaml:"shownInTable" json:"shownInTable"`
 	Required     *bool  `yaml:"required" json:"required"`
@@ -179,17 +180,17 @@ func (a AttributeSchemaParsed) Schema() (*AttributeSchema, error) {
 	if a.Name == "" {
 		return nil, fmt.Errorf("attribute has no name")
 	}
-	if a.SimpleType == "" {
-		return nil, fmt.Errorf("attribute %s has no simple type", a.Name)
+	if a.SimplifiedDataType == "" {
+		return nil, fmt.Errorf("attribute has no simple type: %s", a.Name)
 	}
-	if a.DetailedType == "" {
-		return nil, fmt.Errorf("attribute %s has no detailed type", a.Name)
+	if a.DetailedDataType == "" {
+		return nil, fmt.Errorf("attribute has no detailed type: %s", a.Name)
 	}
 
 	return &AttributeSchema{
-		Name:         a.Name,
-		SimpleType:   a.SimpleType,
-		DetailedType: a.DetailedType,
+		Name:               a.Name,
+		SimplifiedDataType: a.SimplifiedDataType,
+		DetailedDataType:   a.DetailedDataType,
 
 		ShownInTable: checkDefault(true, a.ShownInTable),
 		Required:     checkDefault(false, a.Required),
@@ -202,7 +203,7 @@ func (a AttributeSchemaParsed) Schema() (*AttributeSchema, error) {
 
 		Default:  checkDefault("", a.Default),
 		Nullable: checkDefault(true, a.Nullable),
-		Unique:   checkDefault(true, a.Unique),
+		Unique:   checkDefault(false, a.Unique),
 	}, nil
 }
 

@@ -10,36 +10,55 @@ import (
 )
 
 func Extract(data common.Entity, params *common.DBParams, model common.Model) ([]any, error) {
-	attributes := []any{}
+	if data == nil {
+		return nil, fmt.Errorf("data is nil")
+	}
+
+	if model == nil {
+		return nil, fmt.Errorf("model is nil")
+	}
+
+	var attrs []any
 
 	columns := params.Columns
 	if len(params.Columns) == 0 {
 		columns = model.All_()[1:]
 	}
 
-	var dataValue reflect.Value = reflect.ValueOf(data)
+	dataValue := reflect.ValueOf(data)
 	if reflect.TypeOf(data).Kind() == reflect.Pointer {
 		dataValue = reflect.Indirect(dataValue)
 	}
+	if dataValue.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("data is not a struct")
+	}
 	for _, col := range columns {
-		name := col.FieldName()
+		attrName := col.PascalName()
 
-		attributeValue := dataValue.FieldByName(name)
+		attributeValue := dataValue.FieldByName(attrName)
 		if attributeValue == (reflect.Value{}) {
-			return nil, fmt.Errorf("attribute %s not found", name)
+			return nil, fmt.Errorf("attribute not found: %s", attrName)
 		}
 
-		attributes = append(attributes, attributeValue.Interface())
+		attrs = append(attrs, attributeValue.Interface())
 	}
 
-	return attributes, nil
+	return attrs, nil
 }
 
 func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.Entity, error) {
+	if rows == nil {
+		return nil, fmt.Errorf("rows is nil")
+	}
+
+	if model == nil {
+		return nil, fmt.Errorf("model is nil")
+	}
+
 	entity := model.New_()
 
-	selects := params.Selects
-	if len(params.Selects) == 0 {
+	selects := params.Select
+	if len(params.Select) == 0 {
 		selects = model.All_()
 	}
 
@@ -48,11 +67,14 @@ func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.E
 	if entityType.Kind() == reflect.Pointer {
 		entityValue = reflect.Indirect(entityValue)
 	}
+	if entityValue.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("entity is not a struct")
+	}
 
 	numCols := len(selects)
 	columns := make([]any, numCols)
 	for index, attribute := range selects {
-		field := entityValue.FieldByName(attribute.FieldName())
+		field := entityValue.FieldByName(attribute.PascalName())
 		columns[index] = field.Addr().Interface()
 	}
 
@@ -65,19 +87,27 @@ func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.E
 }
 
 func StringCondition(where common.Condition) (string, error) {
+	if where == nil {
+		return "", fmt.Errorf("where is nil")
+	}
+
 	switch where := where.(type) {
 	case *common.NestedCondition:
 		return StringNested(where)
 	case *common.ExpressionCondition:
 		return StringExpressions(where)
 	case *common.BoolAttribute:
-		return where.Name(), nil
+		return where.SnakeName(), nil
 	default:
 		return "", fmt.Errorf("invalid where condition")
 	}
 }
 
 func StringNested(where *common.NestedCondition) (string, error) {
+	if where == nil {
+		return "", fmt.Errorf("where is nil")
+	}
+
 	var err error
 
 	var left string
@@ -115,11 +145,15 @@ func StringNested(where *common.NestedCondition) (string, error) {
 }
 
 func StringExpressions(where *common.ExpressionCondition) (string, error) {
+	if where == nil {
+		return "", fmt.Errorf("where is nil")
+	}
+
 	var left string
 	if where.Left == nil {
 		return "", fmt.Errorf("right operand not found")
 	} else {
-		left = where.Left.Name()
+		left = where.Left.SnakeName()
 	}
 
 	switch where.Op {
@@ -155,8 +189,12 @@ func StringExpressions(where *common.ExpressionCondition) (string, error) {
 }
 
 func StringOrder(orderBy *common.Order) (string, error) {
+	if orderBy == nil {
+		return "", fmt.Errorf("order is nil")
+	}
+
 	if orderBy.Order == common.Asc || orderBy.Order == common.Desc {
-		return fmt.Sprintf("%s %s", orderBy.Attribute.Name(), orderBy.Order), nil
+		return fmt.Sprintf("%s %s", orderBy.Attribute.SnakeName(), orderBy.Order), nil
 	}
 	return "", fmt.Errorf("illegal operation for order condition: %s", orderBy.Order)
 }

@@ -9,28 +9,28 @@ import (
 )
 
 type NewFileAction struct {
-	path    string
-	tmplStr string
-	ctx     any
-	opts    genOptions
+	path       string
+	tmplString string
+	ctx        any
+	opts       genOptions
 }
 
-func NewFile(path string, tmplStr string, ctx any, options ...genOption) *NewFileAction {
-	opts := &genOptions{
+func NewFile(path string, tmplString string, ctx any, options ...genOption) *NewFileAction {
+	opts := genOptions{
 		false,
 		false,
 		false,
 	}
 
 	for _, option := range options {
-		option(opts)
+		option(&opts)
 	}
 
 	return &NewFileAction{
-		path:    path,
-		tmplStr: tmplStr,
-		ctx:     ctx,
-		opts:    *opts,
+		path:       path,
+		tmplString: tmplString,
+		ctx:        ctx,
+		opts:       opts,
 	}
 }
 
@@ -64,7 +64,7 @@ func (a NewFileAction) Act() error {
 		return err
 	}
 
-	tmpl, err := template.New("tmpl").Parse(a.tmplStr)
+	tmpl, err := template.New("tmpl").Parse(a.tmplString)
 	if err != nil {
 		return err
 	}

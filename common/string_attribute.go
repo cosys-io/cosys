@@ -4,13 +4,11 @@ type StringAttribute struct {
 	*AttributeBase
 }
 
-func NewStringAttribute(name, fieldName string) *StringAttribute {
+func NewStringAttribute(name string) *StringAttribute {
+	base := NewAttributeBase(name)
+
 	return &StringAttribute{
-		&AttributeBase{
-			name,
-			fieldName,
-			nil,
-		},
+		&base,
 	}
 }
 

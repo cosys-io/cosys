@@ -52,7 +52,7 @@ func generateProject(projectName, pf, db, tmpl string) error {
 		return err
 	}
 
-	if err := installModules([]string{db, "server", "module_service", "content_builder"}, Dir(projectName), Quiet); err != nil {
+	if err := installModules([]string{db, "server", "module_service", "admin"}, Dir(projectName), Quiet); err != nil {
 		return err
 	}
 
@@ -133,7 +133,7 @@ var ModuleCfgTmpl = `modules:
   - api
   - module_service
   - server
-  - content_builder
+  - admin
   - sqlite3`
 
 var ServerCfgTmpl = `host: ENV.HOST

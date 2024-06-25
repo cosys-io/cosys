@@ -5,7 +5,7 @@ import (
 	"context"
 	"github.com/cosys-io/cosys/common"
 	"net/http"
-	"regexp"
+	"strings"
 )
 
 type Server struct {
@@ -19,8 +19,8 @@ func (s Server) Start() error {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		for _, module := range s.Cosys.Modules {
 			for _, route := range module.Routes {
-				matches := route.Regex.FindStringSubmatch(r.URL.Path)
-				if len(matches) > 0 {
+				isMatch, params := matchPattern(r.URL.Path, route.Path)
+				if isMatch {
 					if r.Method != route.Method {
 						continue
 					}
@@ -30,9 +30,21 @@ func (s Server) Start() error {
 						Writer: w,
 						Log:    log,
 					}
+
+					queryParams := r.URL.Query()
+					for paramName, param := range queryParams {
+						if _, ok := params[paramName]; ok {
+							common.RespondInternalError(w)
+							return
+						}
+						if len(param) > 0 {
+							params[paramName] = param[0]
+						}
+					}
+
 					ctx := context.WithValue(r.Context(), common.ResponseKey, &log)
 					ctx = context.WithValue(ctx, common.StateKey, map[string]any{
-						"query_params": matches[1:],
+						"queryParams": params,
 					})
 
 					for _, policyName := range route.Policies {
@@ -47,34 +59,33 @@ func (s Server) Start() error {
 						}
 					}
 
-					uidRegex := regexp.MustCompile(`(.+)\.(.+)`)
 					actionUid := route.Action
-					uidMatches := uidRegex.FindStringSubmatch(actionUid)
-					if len(uidMatches) != 3 {
+					actionUidSplit := strings.Split(actionUid, ".")
+					if len(actionUidSplit) != 2 {
 						common.RespondInternalError(w)
 						return
 					}
-					controllerName := uidMatches[1]
-					actionName := uidMatches[2]
+					controllerName := actionUidSplit[0]
+					actionName := actionUidSplit[1]
 					controller, ok := module.Controllers[controllerName]
 					if !ok {
 						common.RespondInternalError(w)
 						return
 					}
-					actionFunc, ok := controller[actionName]
+					actionCtor, ok := controller[actionName]
 					if !ok {
 						common.RespondInternalError(w)
 						return
 					}
-					action := actionFunc(*s.Cosys)
+					action := actionCtor(*s.Cosys)
 
 					for _, middlewareName := range route.Middlewares {
-						middlewareFunc, ok := module.Middlewares[middlewareName]
+						middlewareCtor, ok := module.Middlewares[middlewareName]
 						if !ok {
 							common.RespondInternalError(w)
 							return
 						}
-						middleware := middlewareFunc(*s.Cosys)
+						middleware := middlewareCtor(*s.Cosys)
 
 						action = middleware(action)
 					}
@@ -92,4 +103,54 @@ func (s Server) Start() error {
 	}
 
 	return nil
+}
+
+func matchPattern(path, pattern string) (bool, map[string]string) {
+	params := map[string]string{}
+
+	questionIndex := strings.IndexByte(pattern, '?')
+	if questionIndex != -1 {
+		path = pattern[:questionIndex]
+	}
+
+	if len(path) != 0 && path[0] == '/' {
+		path = path[1:]
+	}
+	if path[len(path)-1] == '/' {
+		path = path[:len(path)-1]
+	}
+
+	if len(pattern) != 0 && pattern[0] == '/' {
+		pattern = pattern[1:]
+	}
+	if pattern[len(pattern)-1] == '/' {
+		pattern = pattern[:len(pattern)-1]
+	}
+
+	for ; pattern != "" && path != ""; pattern = pattern[1:] {
+		switch pattern[0] {
+		case '{':
+			paramNameEnd := strings.IndexByte(pattern, '}')
+			paramName := pattern[1:paramNameEnd]
+			pattern = pattern[paramNameEnd:]
+
+			paramValueEnd := strings.IndexByte(path, '/')
+			if paramValueEnd == -1 {
+				paramValueEnd = len(path)
+			}
+			paramValue := path[:paramValueEnd]
+			path = path[paramValueEnd:]
+
+			params[paramName] = paramValue
+		case path[0]:
+			path = path[1:]
+		default:
+			return false, nil
+		}
+	}
+	if path == "" && pattern == "" {
+		return true, params
+	} else {
+		return false, nil
+	}
 }

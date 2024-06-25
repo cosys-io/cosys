@@ -1,20 +1,17 @@
-package content_builder
+package admin
 
 import "github.com/cosys-io/cosys/common"
 
 var Module = &common.Module{
-	Routes: []*common.Route{
-		common.NewRoute("GET", `/admin/schema`, "admin.schema"),
-		common.NewRoute("POST", `/admin/schema`, "admin.build"),
-	},
+	Routes: SchemaRoutes,
 	Controllers: map[string]common.Controller{
-		"admin": Controller,
+		"admin": SchemaController,
 	},
 	Middlewares: nil,
 	Policies:    nil,
 	Models:      nil,
 	Services:    nil,
 
-	OnRegister: nil,
+	OnRegister: OnRegister,
 	OnDestroy:  nil,
 }

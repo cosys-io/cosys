@@ -1,17 +1,22 @@
 package sqlite3
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/cosys-io/cosys/common"
 )
 
 func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
+	if model == nil {
+		return "", fmt.Errorf("model is nil")
+	}
+
 	var sb strings.Builder
 
 	sb.WriteString("INSERT INTO ")
 
-	sb.WriteString(model.Name_())
+	sb.WriteString(model.DBName_())
 
 	insert := params.Columns
 	num := len(params.Columns)
@@ -22,7 +27,7 @@ func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
 
 	sb.WriteString(" ( ")
 	for index, col := range insert {
-		insertString := col.Name()
+		insertString := col.SnakeName()
 
 		sb.WriteString(insertString)
 		if index < num-1 {
@@ -40,10 +45,10 @@ func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
 	}
 	sb.WriteString(" )")
 
-	num = len(params.Wheres)
+	num = len(params.Where)
 	if num > 0 {
 		sb.WriteString(" WHERE")
-		for index, where := range params.Wheres {
+		for index, where := range params.Where {
 			sb.WriteString(" ")
 
 			whereString, err := StringCondition(where)

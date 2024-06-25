@@ -13,7 +13,7 @@ type Cosys struct {
 }
 
 func (c Cosys) Database() Database {
-	database, ok := dbMap["sqlite3"]
+	database, ok := dbRegister["sqlite3"]
 	if !ok {
 		log.Fatal("database not found: " + "sqlite3")
 	}
@@ -22,7 +22,7 @@ func (c Cosys) Database() Database {
 }
 
 func (c Cosys) ModuleService() ModuleService {
-	moduleService, ok := msMap["default"]
+	moduleService, ok := msRegister["default"]
 	if !ok {
 		log.Fatal("module service not found: " + "default")
 	}
@@ -31,7 +31,7 @@ func (c Cosys) ModuleService() ModuleService {
 }
 
 func (c Cosys) Server() Server {
-	server, ok := svMap["default"]
+	server, ok := svRegister["default"]
 	if !ok {
 		log.Fatal("server not found: " + "default")
 	}
@@ -39,55 +39,59 @@ func (c Cosys) Server() Server {
 	return server(&c)
 }
 
-func NewCosys(configs Configs) *Cosys {
-	cosys := &Cosys{
-		Configs:  configs,
-		Modules:  map[string]*Module{},
-		Services: map[string]Service{},
-		Models:   map[string]Model{},
+func NewCosys(cfg Configs) *Cosys {
+	return &Cosys{
+		Configs:  cfg,
+		Modules:  make(map[string]*Module),
+		Services: make(map[string]Service),
+		Models:   make(map[string]Model),
 	}
-
-	return cosys
 }
 
 func (c Cosys) Register(modules map[string]*Module) (*Cosys, error) {
-	cosys := c
+	newCosys := c
 	var err error
 
-	cosys.Modules = map[string]*Module{}
+	if modules == nil {
+		modules = make(map[string]*Module)
+	}
 
-	for _, moduleName := range c.Configs.Module.Modules {
+	newCosys.Modules = make(map[string]*Module)
+
+	for _, moduleName := range newCosys.Configs.Module.Modules {
 		module, ok := modules[moduleName]
 		if !ok {
-			return nil, fmt.Errorf("module %s not found", moduleName)
+			return nil, fmt.Errorf("module not found: %s", moduleName)
 		}
 
-		cosys.Modules[moduleName] = module
+		newCosys.Modules[moduleName] = module
 
-		for name, model := range module.Models {
-			if _, ok := cosys.Models[name]; ok {
-				return nil, fmt.Errorf("model already exists: %s", name)
+		for modelUid, model := range module.Models {
+			if _, dup := newCosys.Models[modelUid]; dup {
+				return nil, fmt.Errorf("model already exists: %s", modelUid)
 			}
-			cosys.Models[name] = model
+			newCosys.Models[modelUid] = model
 		}
 
-		for name, service := range module.Services {
-			if _, ok := cosys.Services[name]; ok {
-				return nil, fmt.Errorf("service already exists: %s", name)
+		for serviceUid, service := range module.Services {
+			if _, dup := newCosys.Services[serviceUid]; dup {
+				return nil, fmt.Errorf("service already exists: %s", serviceUid)
 			}
-			cosys.Services[name] = service
+			newCosys.Services[serviceUid] = service
 		}
+	}
 
+	for _, module := range newCosys.Modules {
 		if module.OnRegister == nil {
 			continue
 		}
-		cosys, err = module.OnRegister(cosys)
+		newCosys, err = module.OnRegister(newCosys)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return &cosys, nil
+	return &newCosys, nil
 }
 
 func (c Cosys) Start() error {
@@ -99,18 +103,18 @@ func (c Cosys) Start() error {
 }
 
 func (c Cosys) Destroy() (*Cosys, error) {
-	cosys := c
+	newCosys := c
 	var err error
 
-	for _, module := range c.Modules {
+	for _, module := range newCosys.Modules {
 		if module.OnDestroy == nil {
 			continue
 		}
-		cosys, err = module.OnDestroy(cosys)
+		newCosys, err = module.OnDestroy(newCosys)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return &cosys, nil
+	return &newCosys, nil
 }

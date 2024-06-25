@@ -8,11 +8,15 @@ import (
 )
 
 func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
+	if model == nil {
+		return "", fmt.Errorf("model is nil")
+	}
+
 	var sb strings.Builder
 
 	sb.WriteString("UPDATE ")
 
-	sb.WriteString(model.Name_())
+	sb.WriteString(model.DBName_())
 
 	sb.WriteString(" SET ")
 
@@ -24,17 +28,17 @@ func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 	}
 
 	for i := range num {
-		sb.WriteString(update[i].Name())
+		sb.WriteString(update[i].SnakeName())
 		sb.WriteString(" = ?")
 		if i < num-1 {
 			sb.WriteString(", ")
 		}
 	}
 
-	num = len(params.Wheres)
+	num = len(params.Where)
 	if num > 0 {
 		sb.WriteString(" WHERE")
-		for index, where := range params.Wheres {
+		for index, where := range params.Where {
 			sb.WriteString(" ")
 
 			whereString, err := StringCondition(where)
