@@ -3,11 +3,14 @@ package common
 import (
 	"fmt"
 	"log"
+
+	"github.com/spf13/cobra"
 )
 
 type Cosys struct {
 	Configs  Configs
 	Api      *Api
+	Command  *cobra.Command
 	Services map[string]Service
 	Models   map[string]Model
 }
@@ -40,17 +43,37 @@ func (c Cosys) Server() Server {
 }
 
 func NewCosys() *Cosys {
-	return &Cosys{
-		Configs: NewConfigs(),
-		Api: &Api{
-			Routes:      []*Route{},
-			Controllers: map[string]Controller{},
-			Middlewares: map[string]Middleware{},
-			Policies:    map[string]Policy{},
-		},
+	api := &Api{
+		Routes:      []*Route{},
+		Controllers: map[string]Controller{},
+		Middlewares: map[string]Middleware{},
+		Policies:    map[string]Policy{},
+	}
+
+	rootCmd := &cobra.Command{
+		Use: "",
+		Run: func(cmd *cobra.Command, args []string) {},
+	}
+
+	cosys := &Cosys{
+		Configs:  NewConfigs(),
+		Api:      api,
+		Command:  rootCmd,
 		Services: make(map[string]Service),
 		Models:   make(map[string]Model),
 	}
+
+	serveCmd := &cobra.Command{
+		Use: "serve",
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := cosys.serve(); err != nil {
+				log.Fatal(err)
+			}
+		},
+	}
+	cosys.Command.AddCommand(serveCmd)
+
+	return cosys
 }
 
 func (c Cosys) AddRoutes(routes ...*Route) (*Cosys, error) {
@@ -102,6 +125,10 @@ func (c Cosys) AddPolicies(policies map[string]Policy) (*Cosys, error) {
 	}
 
 	return newCosys, nil
+}
+
+func (c Cosys) Start() error {
+	return c.Command.Execute()
 }
 
 func (c Cosys) register() (*Cosys, error) {
@@ -161,7 +188,7 @@ func (c Cosys) register() (*Cosys, error) {
 	return &newCosys, nil
 }
 
-func (c Cosys) Start() error {
+func (c Cosys) serve() error {
 	cosys, err := c.register()
 	if err != nil {
 		return err
