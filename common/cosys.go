@@ -7,7 +7,7 @@ import (
 
 type Cosys struct {
 	Configs  Configs
-	Apis     map[string]Api
+	Api      *Api
 	Services map[string]Service
 	Models   map[string]Model
 }
@@ -41,22 +41,96 @@ func (c Cosys) Server() Server {
 
 func NewCosys() *Cosys {
 	return &Cosys{
-		Configs:  NewConfigs(),
+		Configs: NewConfigs(),
+		Api: &Api{
+			Routes:      []*Route{},
+			Controllers: map[string]Controller{},
+			Middlewares: map[string]Middleware{},
+			Policies:    map[string]Policy{},
+		},
 		Services: make(map[string]Service),
 		Models:   make(map[string]Model),
 	}
+}
+
+func (c Cosys) AddRoutes(routes ...*Route) (*Cosys, error) {
+	newCosys := &c
+	api := newCosys.Api
+
+	api.Routes = append(api.Routes, routes...)
+
+	return newCosys, nil
+}
+
+func (c Cosys) AddControllers(controllers map[string]Controller) (*Cosys, error) {
+	newCosys := &c
+	api := newCosys.Api
+
+	for controllerUid, controller := range controllers {
+		if _, dup := api.Controllers[controllerUid]; dup {
+			return nil, fmt.Errorf("controller already exists: %s", controllerUid)
+		}
+		api.Controllers[controllerUid] = controller
+	}
+
+	return newCosys, nil
+}
+
+func (c Cosys) AddMiddlewares(middlewares map[string]Middleware) (*Cosys, error) {
+	newCosys := &c
+	api := newCosys.Api
+
+	for middlewareUid, middleware := range middlewares {
+		if _, dup := api.Middlewares[middlewareUid]; dup {
+			return nil, fmt.Errorf("middleware already exists: %s", middlewareUid)
+		}
+		api.Middlewares[middlewareUid] = middleware
+	}
+
+	return newCosys, nil
+}
+
+func (c Cosys) AddPolicies(policies map[string]Policy) (*Cosys, error) {
+	newCosys := &c
+	api := newCosys.Api
+
+	for policyUid, policy := range policies {
+		if _, dup := api.Policies[policyUid]; dup {
+			return nil, fmt.Errorf("policy already exists: %s", policyUid)
+		}
+		api.Policies[policyUid] = policy
+	}
+
+	return newCosys, nil
 }
 
 func (c Cosys) register() (*Cosys, error) {
 	newCosys := c
 	var err error
 
-	for moduleName, module := range mdRegister {
-		newCosys.Apis[moduleName] = Api{
-			Routes:      module.Routes,
-			Controllers: module.Controllers,
-			Middlewares: module.Middlewares,
-			Policies:    module.Policies,
+	for _, module := range mdRegister {
+		api := newCosys.Api
+		api.Routes = append(api.Routes, module.Routes...)
+
+		for controllerUid, controller := range module.Controllers {
+			if _, dup := api.Controllers[controllerUid]; dup {
+				return nil, fmt.Errorf("controller already exists: %s", controllerUid)
+			}
+			api.Controllers[controllerUid] = controller
+		}
+
+		for middlewareUid, middleware := range module.Middlewares {
+			if _, dup := api.Middlewares[middlewareUid]; dup {
+				return nil, fmt.Errorf("middleware already exists: %s", middlewareUid)
+			}
+			api.Middlewares[middlewareUid] = middleware
+		}
+
+		for policyUid, policy := range module.Policies {
+			if _, dup := api.Policies[policyUid]; dup {
+				return nil, fmt.Errorf("policy already exists: %s", policyUid)
+			}
+			api.Policies[policyUid] = policy
 		}
 
 		for modelUid, model := range module.Models {
@@ -93,6 +167,13 @@ func (c Cosys) Start() error {
 		return err
 	}
 
+	defer func(cosys *Cosys) {
+		_, err := cosys.destroy()
+		if err != nil {
+
+		}
+	}(cosys)
+
 	if err = cosys.Server().Start(); err != nil {
 		return err
 	}
@@ -100,7 +181,7 @@ func (c Cosys) Start() error {
 	return nil
 }
 
-func (c Cosys) Destroy() (*Cosys, error) {
+func (c Cosys) destroy() (*Cosys, error) {
 	newCosys := c
 	var err error
 
