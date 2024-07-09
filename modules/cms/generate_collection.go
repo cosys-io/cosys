@@ -39,8 +39,6 @@ var generateCollectionCmd = &cobra.Command{
 	Long:  "Generate a collection type.",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		common.InitConfigs()
-
 		collectionName := args[0]
 		attributes := args[1:]
 
@@ -49,13 +47,15 @@ var generateCollectionCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if err := GenerateType(schema); err != nil {
+		if err := generateType(schema); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-func GenerateType(schema *common.ModelSchema) error {
+func generateType(schema *common.ModelSchema) error {
+	common.InitConfigs()
+
 	typesDir, err := common.GetPathConfig("cms_content_types_path", true)
 	if err != nil {
 		return err

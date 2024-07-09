@@ -47,7 +47,6 @@ func generateProject(projectName, modFile, db, tmpl string) error {
 		modules = []string{
 			"github.com/cosys-io/cosys/modules/" + db,
 			"github.com/cosys-io/cosys/modules/server",
-			"github.com/cosys-io/cosys/modules/admin",
 		}
 	}
 

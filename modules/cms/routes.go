@@ -1,4 +1,4 @@
-package admin
+package cms
 
 import (
 	"encoding/json"
@@ -9,9 +9,9 @@ import (
 	"strings"
 )
 
-func OnRegister(cosys common.Cosys) (common.Cosys, error) {
+func onRegister(cosys common.Cosys) (common.Cosys, error) {
 	for modelUid, model := range cosys.Models {
-		if err := AddRoutes(modelUid, model, &cosys); err != nil {
+		if err := addRoutes(modelUid, model, &cosys); err != nil {
 			return common.Cosys{}, err
 		}
 	}
@@ -19,7 +19,7 @@ func OnRegister(cosys common.Cosys) (common.Cosys, error) {
 	return cosys, nil
 }
 
-func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
+func addRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 	if cosys == nil {
 		return fmt.Errorf("cosys is nil")
 	}
