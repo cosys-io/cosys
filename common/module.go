@@ -7,7 +7,7 @@ import (
 
 var (
 	mdMutex    sync.RWMutex
-	mdRegister map[string]*Module
+	mdRegister = make(map[string]*Module)
 )
 
 func RegisterModule(moduleName string, module *Module) error {

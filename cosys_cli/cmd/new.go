@@ -55,10 +55,6 @@ func generateProject(projectName, modFile, db, tmpl string) error {
 		return err
 	}
 
-	//if err := generateModules(projectName, modFile, db, tmpl); err != nil {
-	//	return err
-	//}
-
 	if err := generateModFile(projectName, modFile); err != nil {
 		return err
 	}
@@ -86,20 +82,6 @@ func generateConfigs(projectName string) error {
 	}
 
 	if err := gen.NewFile(filepath.Join(projectName, ".cli_configs"), CliConfigTmpl, ctx).Act(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func generateModules(projectName, modFile, db, tmpl string) error {
-	modulesDir := filepath.Join(projectName, "modules")
-
-	if err := gen.NewDir(modulesDir).Act(); err != nil {
-		return err
-	}
-
-	if err := generateModule(filepath.Join(modulesDir, "api"), "api", modFile); err != nil {
 		return err
 	}
 
@@ -144,24 +126,6 @@ var CliConfigTmpl = `main_path: cmd/{{.ProjectName}}/main.go
 index_path: web/
 bin_path: bin/{{.ProjectName}}
 `
-
-var AdminCfgTmpl = ``
-
-var DbCfgTmpl = `client: {{.Database}}
-name: ENV.DBNAME
-host: ENV.DBHOST
-port: ENV.DBPORT
-user: ENV.DBUSER
-pass: ENV.DBPASS`
-
-var ModuleCfgTmpl = `modules: 
-  - api
-  - server
-  - admin
-  - sqlite3`
-
-var ServerCfgTmpl = `host: ENV.HOST
-port: ENV.PORT`
 
 var MainTmpl = `package main
 

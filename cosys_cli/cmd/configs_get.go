@@ -4,7 +4,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
-	"os"
 )
 
 func init() {
@@ -22,7 +21,6 @@ var configsGetCmd = &cobra.Command{
 		cfgName := args[0]
 		if !viper.InConfig(cfgName) {
 			log.Fatalf("cfg not found: %s", cfgName)
-			os.Exit(1)
 		}
 
 		cfgValue := viper.Get(cfgName)

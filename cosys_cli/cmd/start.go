@@ -24,6 +24,9 @@ var startCmd = &cobra.Command{
 func startServer() error {
 	initConfigs()
 
+	if !viper.InConfig("bin_path") {
+		log.Fatal("configuration not found: bin_path")
+	}
 	binPath := viper.GetString("bin_path")
 	exists, err := pathExists(binPath)
 	if err != nil {

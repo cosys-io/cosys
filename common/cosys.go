@@ -52,7 +52,9 @@ func NewCosys() *Cosys {
 
 	rootCmd := &cobra.Command{
 		Use: "",
-		Run: func(cmd *cobra.Command, args []string) {},
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Help()
+		},
 	}
 
 	cosys := &Cosys{
@@ -74,6 +76,16 @@ func NewCosys() *Cosys {
 	cosys.Command.AddCommand(serveCmd)
 
 	return cosys
+}
+
+func (c Cosys) AddModules(modules map[string]*Module) (*Cosys, error) {
+	for moduleName, module := range modules {
+		if err := RegisterModule(moduleName, module); err != nil {
+			return nil, err
+		}
+	}
+
+	return &c, nil
 }
 
 func (c Cosys) AddRoutes(routes ...*Route) (*Cosys, error) {
@@ -127,13 +139,31 @@ func (c Cosys) AddPolicies(policies map[string]Policy) (*Cosys, error) {
 	return newCosys, nil
 }
 
+func (c Cosys) AddCommands(commands ...*cobra.Command) (*Cosys, error) {
+	newCosys := &c
+	for _, command := range commands {
+		newCosys.Command.AddCommand(command)
+	}
+
+	return newCosys, nil
+}
+
 func (c Cosys) Start() error {
-	return c.Command.Execute()
+	cosys, err := c.register()
+	if err != nil {
+		return err
+	}
+
+	return cosys.Command.Execute()
 }
 
 func (c Cosys) register() (*Cosys, error) {
 	newCosys := c
 	var err error
+
+	for _, command := range cmdRegister {
+		newCosys.Command.AddCommand(command)
+	}
 
 	for _, module := range mdRegister {
 		api := newCosys.Api
@@ -189,19 +219,14 @@ func (c Cosys) register() (*Cosys, error) {
 }
 
 func (c Cosys) serve() error {
-	cosys, err := c.register()
-	if err != nil {
-		return err
-	}
-
 	defer func(cosys *Cosys) {
 		_, err := cosys.destroy()
 		if err != nil {
 
 		}
-	}(cosys)
+	}(&c)
 
-	if err = cosys.Server().Start(); err != nil {
+	if err := c.Server().Start(); err != nil {
 		return err
 	}
 

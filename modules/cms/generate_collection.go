@@ -1,4 +1,4 @@
-package cmd
+package cms
 
 import (
 	"fmt"
@@ -39,8 +39,9 @@ var generateCollectionCmd = &cobra.Command{
 	Long:  "Generate a collection type.",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		collectionName := args[0]
+		common.InitConfigs()
 
+		collectionName := args[0]
 		attributes := args[1:]
 
 		schema, err := schemaFromArgs(collectionName, displayName, singularName, pluralName, description, attributes)
@@ -55,27 +56,39 @@ var generateCollectionCmd = &cobra.Command{
 }
 
 func GenerateType(schema *common.ModelSchema) error {
-	ctx, err := ctxFromSchema(schema)
+	typesDir, err := common.GetPathConfig("cms_content_types_path", true)
+	if err != nil {
+		return err
+	}
+	routesDir, err := common.GetPathConfig("cms_routes_path", true)
+	if err != nil {
+		return err
+	}
+	controllersDir, err := common.GetPathConfig("cms_controllers_path", true)
+	if err != nil {
+		return err
+	}
+
+	ctx, err := ctxFromSchema(schema, typesDir)
 	if err != nil {
 		return err
 	}
 
 	typeSnakeName := strcase.ToSnake(schema.PluralName)
 
-	if err = generateModel(typeSnakeName, schema, ctx); err != nil {
+	if err = generateModel(typeSnakeName, typesDir, schema, ctx); err != nil {
 		return err
 	}
 
-	if err = generateApi(typeSnakeName, ctx); err != nil {
+	if err = generateApi(typeSnakeName, typesDir, routesDir, controllersDir, ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func generateModel(typeSnakeName string, schema *common.ModelSchema, ctx *ModelCtx) error {
-	typeDir := filepath.Join("modules/api/content_types", typeSnakeName)
-
+func generateModel(typeSnakeName string, typesDir string, schema *common.ModelSchema, ctx *ModelCtx) error {
+	typeDir := filepath.Join(typesDir, typeSnakeName)
 	generator := gen.NewGenerator(
 		gen.NewDir(typeDir, gen.GenHeadOnly),
 		gen.NewFile(filepath.Join(typeDir, "schema.yaml"), SchemaYamlTmpl, schema),
@@ -89,13 +102,13 @@ func generateModel(typeSnakeName string, schema *common.ModelSchema, ctx *ModelC
 	return nil
 }
 
-func generateApi(typeSnakeName string, ctx *ModelCtx) error {
+func generateApi(typeSnakeName, typesDir, routesDir, controllersDir string, ctx *ModelCtx) error {
 	generator := gen.NewGenerator(
-		gen.NewFile(filepath.Join("modules/api/controllers", typeSnakeName+"_controllers.go"), ModelControllerTmpl, ctx),
-		gen.ModifyFile("modules/api/content_types/models.go", `import \(`, ModelsImportTmpl, ctx),
-		gen.ModifyFile("modules/api/content_types/models.go", `var Models = map\[string\]common\.Model\{`, ModelsStructTmpl, ctx),
-		gen.ModifyFile("modules/api/controllers/controllers.go", `var Controllers = map\[string\]common\.Controller\{`, ControllersStructTmpl, ctx),
-		gen.ModifyFile("modules/api/routes/routes.go", `var Routes = \[\]\*common\.Route\{`, RoutesStructTmpl, ctx),
+		gen.NewFile(filepath.Join(controllersDir, typeSnakeName+"_controllers.go"), ModelControllerTmpl, ctx),
+		gen.ModifyFile(filepath.Join(typesDir, "models.go"), `import \(`, ModelsImportTmpl, ctx),
+		gen.ModifyFile(filepath.Join(typesDir, "models.go"), `var Models = map\[string\]common\.Model\{`, ModelsStructTmpl, ctx),
+		gen.ModifyFile(filepath.Join(controllersDir, "controllers.go"), `var Controllers = map\[string\]common\.Controller\{`, ControllersStructTmpl, ctx),
+		gen.ModifyFile(filepath.Join(routesDir, "routes.go"), `var Routes = \[\]\*common\.Route\{`, RoutesStructTmpl, ctx),
 	)
 	if err := generator.Generate(); err != nil {
 		return err
@@ -210,6 +223,7 @@ type ModelCtx struct {
 	PluralHumanName    string
 
 	ModFile    string
+	TypesDir   string
 	Attributes []*AttributeCtx
 }
 
@@ -220,7 +234,7 @@ type AttributeCtx struct {
 	PascalName string
 }
 
-func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
+func ctxFromSchema(schema *common.ModelSchema, typesDir string) (*ModelCtx, error) {
 	modFile, err := getModFile()
 	if err != nil {
 		return nil, err
@@ -241,6 +255,7 @@ func ctxFromSchema(schema *common.ModelSchema) (*ModelCtx, error) {
 		PluralHumanName:    strcase.ToDelimited(schema.PluralName, ' '),
 
 		ModFile:    modFile,
+		TypesDir:   typesDir,
 		Attributes: []*AttributeCtx{},
 	}
 
@@ -281,7 +296,7 @@ var (
 
 func init() {
 	var err error
-	Schema, err = common.GetSchema("modules/api/content_types/{{.PluralSnakeName}}/schema.yaml")
+	Schema, err = common.GetSchema("{{.TypesDir}}/{{.PluralSnakeName}}/schema.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -664,7 +679,7 @@ func delete{{.SingularPascalName}}(cs common.Cosys) http.HandlerFunc {
 }`
 
 var ModelsImportTmpl = `import (
-	"{{.ModFile}}/modules/api/content_types/{{.PluralSnakeName}}"`
+	"{{.ModFile}}/{{.TypesDir}}/{{.PluralSnakeName}}"`
 
 var ModelsStructTmpl = `var Models = map[string]common.Model{
 	"api.{{.PluralCamelName}}": {{.PluralCamelName}}.{{.PluralPascalName}},`

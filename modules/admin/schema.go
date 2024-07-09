@@ -3,7 +3,7 @@ package admin
 import (
 	"encoding/json"
 	"github.com/cosys-io/cosys/common"
-	"github.com/cosys-io/cosys/cosys_cli/cmd"
+	"github.com/cosys-io/cosys/modules/cms"
 	"net/http"
 )
 
@@ -45,7 +45,7 @@ func build(cosys common.Cosys) http.HandlerFunc {
 		}
 		newSchema.Attributes = append([]*common.AttributeSchema{&common.IdSchema}, newSchema.Attributes...)
 
-		if err = cmd.GenerateType(newSchema); err != nil {
+		if err = cms.GenerateType(newSchema); err != nil {
 			common.RespondError(w, "Unable to build content type.", http.StatusBadRequest)
 			return
 		}
