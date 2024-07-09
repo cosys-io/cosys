@@ -39,9 +39,9 @@ func (c Cosys) Server() Server {
 	return server(&c)
 }
 
-func NewCosys(cfg Configs) *Cosys {
+func NewCosys() *Cosys {
 	return &Cosys{
-		Configs:  cfg,
+		Configs:  NewConfigs(),
 		Modules:  make(map[string]*Module),
 		Services: make(map[string]Service),
 		Models:   make(map[string]Model),

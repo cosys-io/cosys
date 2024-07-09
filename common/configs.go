@@ -62,3 +62,24 @@ func GetConfigs(path string) (Configs, error) {
 		Server:   &serverCfg,
 	}, nil
 }
+
+func NewConfigs() Configs {
+	return Configs{
+		Admin: &AdminConfigs{},
+		Database: &DatabaseConfigs{
+			Client: "sqlite3",
+			Host:   "localhost",
+			Port:   "4000",
+			Name:   "cosys",
+			User:   "cosys",
+			Pass:   "cosys",
+		},
+		Module: &ModuleConfigs{
+			Modules: []string{},
+		},
+		Server: &ServerConfigs{
+			Host: "localhost",
+			Port: "3000",
+		},
+	}
+}

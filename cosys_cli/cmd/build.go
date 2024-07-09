@@ -1,13 +1,25 @@
 package cmd
 
 import (
-	"github.com/cosys-io/cosys/cosys_cli/cmd/generator"
+	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"log"
-	"os"
+)
+
+var (
+	main_path  string
+	index_path string
+	bin_path   string
 )
 
 func init() {
+	buildCmd.Flags().StringVarP(&main_path, "main_path", "M", "", "location of main package")
+	buildCmd.Flags().StringVarP(&index_path, "index_path", "I", "", "location of ui index file")
+	buildCmd.Flags().StringVarP(&bin_path, "output", "O", "", "location to output binaries")
+	viper.BindPFlag("main_path", buildCmd.Flags().Lookup("main_path"))
+	viper.BindPFlag("index_path", buildCmd.Flags().Lookup("index_path"))
+	viper.BindPFlag("bin_path", buildCmd.Flags().Lookup("output"))
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -16,96 +28,12 @@ var buildCmd = &cobra.Command{
 	Short: "Build Golang binaries and Content Management UI deployment",
 	Long:  `Build Golang binaries and Content Management UI deployment`,
 	Run: func(cmd *cobra.Command, args []string) {
-		modFile, err := getModFile()
-		if err != nil {
-			log.Fatal(err)
-		}
+		initConfigs()
 
-		modules, err := getModules()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if err := generateMain(modFile, modules); err != nil {
+		mainPath := viper.GetString("main_path")
+		binPath := viper.GetString("bin_path")
+		if err := RunCommand(fmt.Sprintf("go build -o %s %s", binPath, mainPath)); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
-
-func getModules() ([]string, error) {
-	entries, err := os.ReadDir("./modules")
-	if err != nil {
-		return nil, err
-	}
-
-	var modules []string
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			modules = append(modules, entry.Name())
-		}
-	}
-
-	return modules, nil
-}
-
-func generateMain(modFile string, modules []string) error {
-	if err := gen.NewDir("bin", gen.GenHeadOnly, gen.SkipIfExists).Act(); err != nil {
-		return err
-	}
-
-	ctx := struct {
-		ModFile string
-		Modules []string
-	}{
-		ModFile: modFile,
-		Modules: modules,
-	}
-
-	if err := gen.NewFile("main.go", MainTmpl, ctx, gen.DeleteIfExists).Act(); err != nil {
-		return err
-	}
-
-	defer os.Remove("main.go")
-
-	if err := RunCommand("go build -o bin/cosys main.go"); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-var MainTmpl = `package main
-
-{{$modFile := .ModFile}}
-import (
-	"log"	
-
-	"github.com/cosys-io/cosys/common"
-{{range .Modules}}	"{{$modFile}}/modules/{{.}}"
-{{end}})
-
-func main() {
-	var err error 
-	
-	modules := map[string]*common.Module{
-{{range .Modules}}		"{{.}}": {{.}}.Module,
-{{end}}}
-
-	cfg, err := common.GetConfigs("configs")
-	if err != nil {
-		log.Fatal(err)	
-	}
-
-	cosys := common.NewCosys(cfg)
-
-	cosys, err = cosys.Register(modules)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := cosys.Start(); err != nil {
-		log.Fatal(err)
-	}
-}
-`
