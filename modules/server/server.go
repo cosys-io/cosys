@@ -17,8 +17,8 @@ func (s Server) Start() error {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		for _, module := range s.Cosys.Modules {
-			for _, route := range module.Routes {
+		for _, api := range s.Cosys.Apis {
+			for _, route := range api.Routes {
 				isMatch, params := matchPattern(r.URL.Path, route.Path)
 				if isMatch {
 					if r.Method != route.Method {
@@ -48,7 +48,7 @@ func (s Server) Start() error {
 					})
 
 					for _, policyName := range route.Policies {
-						policy, ok := module.Policies[policyName]
+						policy, ok := api.Policies[policyName]
 						if !ok {
 							common.RespondInternalError(w)
 							return
@@ -67,7 +67,7 @@ func (s Server) Start() error {
 					}
 					controllerName := actionUidSplit[0]
 					actionName := actionUidSplit[1]
-					controller, ok := module.Controllers[controllerName]
+					controller, ok := api.Controllers[controllerName]
 					if !ok {
 						common.RespondInternalError(w)
 						return
@@ -80,7 +80,7 @@ func (s Server) Start() error {
 					action := actionCtor(*s.Cosys)
 
 					for _, middlewareName := range route.Middlewares {
-						middlewareCtor, ok := module.Middlewares[middlewareName]
+						middlewareCtor, ok := api.Middlewares[middlewareName]
 						if !ok {
 							common.RespondInternalError(w)
 							return

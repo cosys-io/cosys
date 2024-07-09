@@ -7,7 +7,7 @@ import (
 
 type Cosys struct {
 	Configs  Configs
-	Modules  map[string]*Module
+	Apis     map[string]Api
 	Services map[string]Service
 	Models   map[string]Model
 }
@@ -42,29 +42,22 @@ func (c Cosys) Server() Server {
 func NewCosys() *Cosys {
 	return &Cosys{
 		Configs:  NewConfigs(),
-		Modules:  make(map[string]*Module),
 		Services: make(map[string]Service),
 		Models:   make(map[string]Model),
 	}
 }
 
-func (c Cosys) Register(modules map[string]*Module) (*Cosys, error) {
+func (c Cosys) register() (*Cosys, error) {
 	newCosys := c
 	var err error
 
-	if modules == nil {
-		modules = make(map[string]*Module)
-	}
-
-	newCosys.Modules = make(map[string]*Module)
-
-	for _, moduleName := range newCosys.Configs.Module.Modules {
-		module, ok := modules[moduleName]
-		if !ok {
-			return nil, fmt.Errorf("module not found: %s", moduleName)
+	for moduleName, module := range mdRegister {
+		newCosys.Apis[moduleName] = Api{
+			Routes:      module.Routes,
+			Controllers: module.Controllers,
+			Middlewares: module.Middlewares,
+			Policies:    module.Policies,
 		}
-
-		newCosys.Modules[moduleName] = module
 
 		for modelUid, model := range module.Models {
 			if _, dup := newCosys.Models[modelUid]; dup {
@@ -81,7 +74,7 @@ func (c Cosys) Register(modules map[string]*Module) (*Cosys, error) {
 		}
 	}
 
-	for _, module := range newCosys.Modules {
+	for _, module := range mdRegister {
 		if module.OnRegister == nil {
 			continue
 		}
@@ -95,7 +88,12 @@ func (c Cosys) Register(modules map[string]*Module) (*Cosys, error) {
 }
 
 func (c Cosys) Start() error {
-	if err := c.Server().Start(); err != nil {
+	cosys, err := c.register()
+	if err != nil {
+		return err
+	}
+
+	if err = cosys.Server().Start(); err != nil {
 		return err
 	}
 
@@ -106,7 +104,7 @@ func (c Cosys) Destroy() (*Cosys, error) {
 	newCosys := c
 	var err error
 
-	for _, module := range newCosys.Modules {
+	for _, module := range mdRegister {
 		if module.OnDestroy == nil {
 			continue
 		}

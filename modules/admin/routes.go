@@ -24,7 +24,7 @@ func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 		return fmt.Errorf("cosys is nil")
 	}
 
-	adminModule, ok := cosys.Modules["admin"]
+	adminApi, ok := cosys.Apis["admin"]
 	if !ok {
 		return fmt.Errorf("admin module not found")
 	}
@@ -39,7 +39,7 @@ func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 		"update":   updateEntity(modelUid, model.SingularHumanName_()),
 		"delete":   deleteEntity(modelUid, model.SingularHumanName_()),
 	}
-	adminModule.Controllers[modelName+"Admin"] = controller
+	adminApi.Controllers[modelName+"Admin"] = controller
 
 	routes := []*common.Route{
 		common.NewRoute("GET", fmt.Sprintf(`/admin/%s`, modelApiName), modelName+"Admin.findMany"),
@@ -48,7 +48,7 @@ func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 		common.NewRoute("PUT", fmt.Sprintf(`/admin/%s/{documentId}`, modelApiName), modelName+"Admin.update"),
 		common.NewRoute("DELETE", fmt.Sprintf(`/admin/%s/{documentId}`, modelApiName), modelName+"Admin.delete"),
 	}
-	adminModule.Routes = append(adminModule.Routes, routes...)
+	adminApi.Routes = append(adminApi.Routes, routes...)
 
 	return nil
 }

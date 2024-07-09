@@ -4,6 +4,13 @@ import (
 	"net/http"
 )
 
+type Api struct {
+	Routes      []*Route
+	Controllers map[string]Controller
+	Middlewares map[string]Middleware
+	Policies    map[string]Policy
+}
+
 type Route struct {
 	Method      string
 	Path        string
