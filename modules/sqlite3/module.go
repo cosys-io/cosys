@@ -23,6 +23,10 @@ func init() {
 	if err := common.RegisterDatabase("sqlite3", dbCtor); err != nil {
 		log.Fatal(err)
 	}
+
+	if err := common.RegisterModule("sqlite3", module); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func OnRegister(cosys common.Cosys) (common.Cosys, error) {
@@ -39,14 +43,7 @@ func OnRegister(cosys common.Cosys) (common.Cosys, error) {
 	return cosys, nil
 }
 
-var Module = &common.Module{
-	Routes:      nil,
-	Controllers: nil,
-	Middlewares: nil,
-	Policies:    nil,
-	Models:      nil,
-	Services:    nil,
-
+var module = &common.Module{
 	OnRegister: OnRegister,
 	OnDestroy:  nil,
 }

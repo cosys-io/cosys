@@ -17,82 +17,81 @@ func (s Server) Start() error {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		for _, module := range s.Cosys.Modules {
-			for _, route := range module.Routes {
-				isMatch, params := matchPattern(r.URL.Path, route.Path)
-				if isMatch {
-					if r.Method != route.Method {
-						continue
-					}
+		api := s.Cosys.Api
+		for _, route := range api.Routes {
+			isMatch, params := matchPattern(r.URL.Path, route.Path)
+			if isMatch {
+				if r.Method != route.Method {
+					continue
+				}
 
-					var log bytes.Buffer
-					w = common.ResponseWriter{
-						Writer: w,
-						Log:    log,
-					}
+				var log bytes.Buffer
+				w = common.ResponseWriter{
+					Writer: w,
+					Log:    log,
+				}
 
-					queryParams := r.URL.Query()
-					for paramName, param := range queryParams {
-						if _, ok := params[paramName]; ok {
-							common.RespondInternalError(w)
-							return
-						}
-						if len(param) > 0 {
-							params[paramName] = param[0]
-						}
-					}
-
-					ctx := context.WithValue(r.Context(), common.ResponseKey, &log)
-					ctx = context.WithValue(ctx, common.StateKey, map[string]any{
-						"queryParams": params,
-					})
-
-					for _, policyName := range route.Policies {
-						policy, ok := module.Policies[policyName]
-						if !ok {
-							common.RespondInternalError(w)
-							return
-						}
-						if !policy(*s.Cosys, r.WithContext(ctx)) {
-							common.RespondError(w, "Forbidden", http.StatusForbidden)
-							return
-						}
-					}
-
-					actionUid := route.Action
-					actionUidSplit := strings.Split(actionUid, ".")
-					if len(actionUidSplit) != 2 {
+				queryParams := r.URL.Query()
+				for paramName, param := range queryParams {
+					if _, ok := params[paramName]; ok {
 						common.RespondInternalError(w)
 						return
 					}
-					controllerName := actionUidSplit[0]
-					actionName := actionUidSplit[1]
-					controller, ok := module.Controllers[controllerName]
+					if len(param) > 0 {
+						params[paramName] = param[0]
+					}
+				}
+
+				ctx := context.WithValue(r.Context(), common.ResponseKey, &log)
+				ctx = context.WithValue(ctx, common.StateKey, map[string]any{
+					"queryParams": params,
+				})
+
+				for _, policyName := range route.Policies {
+					policy, ok := api.Policies[policyName]
 					if !ok {
 						common.RespondInternalError(w)
 						return
 					}
-					actionCtor, ok := controller[actionName]
-					if !ok {
-						common.RespondInternalError(w)
+					if !policy(*s.Cosys, r.WithContext(ctx)) {
+						common.RespondError(w, "Forbidden", http.StatusForbidden)
 						return
 					}
-					action := actionCtor(*s.Cosys)
+				}
 
-					for _, middlewareName := range route.Middlewares {
-						middlewareCtor, ok := module.Middlewares[middlewareName]
-						if !ok {
-							common.RespondInternalError(w)
-							return
-						}
-						middleware := middlewareCtor(*s.Cosys)
-
-						action = middleware(action)
-					}
-
-					action(w, r.WithContext(ctx))
+				actionUid := route.Action
+				actionUidSplit := strings.Split(actionUid, ".")
+				if len(actionUidSplit) != 2 {
+					common.RespondInternalError(w)
 					return
 				}
+				controllerName := actionUidSplit[0]
+				actionName := actionUidSplit[1]
+				controller, ok := api.Controllers[controllerName]
+				if !ok {
+					common.RespondInternalError(w)
+					return
+				}
+				actionCtor, ok := controller[actionName]
+				if !ok {
+					common.RespondInternalError(w)
+					return
+				}
+				action := actionCtor(*s.Cosys)
+
+				for _, middlewareName := range route.Middlewares {
+					middlewareCtor, ok := api.Middlewares[middlewareName]
+					if !ok {
+						common.RespondInternalError(w)
+						return
+					}
+					middleware := middlewareCtor(*s.Cosys)
+
+					action = middleware(action)
+				}
+
+				action(w, r.WithContext(ctx))
+				return
 			}
 		}
 		http.NotFound(w, r)

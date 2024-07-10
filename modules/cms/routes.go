@@ -1,4 +1,4 @@
-package admin
+package cms
 
 import (
 	"encoding/json"
@@ -9,9 +9,9 @@ import (
 	"strings"
 )
 
-func OnRegister(cosys common.Cosys) (common.Cosys, error) {
+func onRegister(cosys common.Cosys) (common.Cosys, error) {
 	for modelUid, model := range cosys.Models {
-		if err := AddRoutes(modelUid, model, &cosys); err != nil {
+		if err := addRoutes(modelUid, model, &cosys); err != nil {
 			return common.Cosys{}, err
 		}
 	}
@@ -19,15 +19,12 @@ func OnRegister(cosys common.Cosys) (common.Cosys, error) {
 	return cosys, nil
 }
 
-func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
+func addRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 	if cosys == nil {
 		return fmt.Errorf("cosys is nil")
 	}
 
-	adminModule, ok := cosys.Modules["admin"]
-	if !ok {
-		return fmt.Errorf("admin module not found")
-	}
+	api := cosys.Api
 
 	modelApiName := model.PluralKebabName_()
 	modelName := model.PluralCamelName_()
@@ -39,7 +36,7 @@ func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 		"update":   updateEntity(modelUid, model.SingularHumanName_()),
 		"delete":   deleteEntity(modelUid, model.SingularHumanName_()),
 	}
-	adminModule.Controllers[modelName+"Admin"] = controller
+	api.Controllers[modelName+"Admin"] = controller
 
 	routes := []*common.Route{
 		common.NewRoute("GET", fmt.Sprintf(`/admin/%s`, modelApiName), modelName+"Admin.findMany"),
@@ -48,7 +45,7 @@ func AddRoutes(modelUid string, model common.Model, cosys *common.Cosys) error {
 		common.NewRoute("PUT", fmt.Sprintf(`/admin/%s/{documentId}`, modelApiName), modelName+"Admin.update"),
 		common.NewRoute("DELETE", fmt.Sprintf(`/admin/%s/{documentId}`, modelApiName), modelName+"Admin.delete"),
 	}
-	adminModule.Routes = append(adminModule.Routes, routes...)
+	api.Routes = append(api.Routes, routes...)
 
 	return nil
 }
@@ -172,15 +169,15 @@ func findManyEntity(modelUid, modelName string) func(common.Cosys) http.HandlerF
 				}
 			}
 
-			msParams := common.NewMSParamsBuilder().
-				Start(pageSize * (int64(page) - 1)).
+			dbParams := common.NewDBParamsBuilder().
+				Offset(pageSize * (int64(page) - 1)).
 				Limit(pageSize).
-				Sort(sort...).
-				Filter(filter...).
-				GetField(fields...).
+				OrderBy(sort...).
+				Where(filter...).
+				Select(fields...).
 				Populate(populate...).
 				Build()
-			entities, err := cosys.ModuleService().FindMany(modelUid, msParams)
+			entities, err := cosys.Database().FindMany(modelUid, dbParams)
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not find %s.", modelName), http.StatusBadRequest)
 				return
@@ -212,7 +209,17 @@ func findOneEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFu
 				return
 			}
 
-			entity, err := cs.ModuleService().FindOne(modelUid, id, common.NewMSParams())
+			model, ok := cs.Models[modelUid]
+			if !ok {
+				common.RespondInternalError(w)
+				return
+			}
+
+			dbParams := common.NewDBParamsBuilder().
+				Where(model.Id_().Eq(id)).
+				Build()
+
+			entity, err := cs.Database().FindOne(modelUid, dbParams)
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not find %s.", modelName), http.StatusBadRequest)
 				return
@@ -238,7 +245,7 @@ func createEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFun
 				return
 			}
 
-			newEntity, err := cs.ModuleService().Create(modelUid, entity, common.NewMSParams())
+			newEntity, err := cs.Database().Create(modelUid, entity, common.NewDBParams())
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not create %s.", modelName), http.StatusBadRequest)
 				return
@@ -282,7 +289,11 @@ func updateEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFun
 				return
 			}
 
-			newEntity, err := cs.ModuleService().Update(modelUid, entity, id, common.NewMSParams())
+			dbParams := common.NewDBParamsBuilder().
+				Where(model.Id_().Eq(id)).
+				Build()
+
+			newEntity, err := cs.Database().Update(modelUid, entity, dbParams)
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not update %s.", modelName), http.StatusBadRequest)
 				return
@@ -314,7 +325,17 @@ func deleteEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFun
 				return
 			}
 
-			oldEntity, err := cs.ModuleService().Delete(modelUid, id, common.NewMSParams())
+			model, ok := cs.Models[modelUid]
+			if !ok {
+				common.RespondInternalError(w)
+				return
+			}
+
+			dbParams := common.NewDBParamsBuilder().
+				Where(model.Id_().Eq(id)).
+				Build()
+
+			oldEntity, err := cs.Database().Delete(modelUid, dbParams)
 			if err != nil {
 				common.RespondError(w, fmt.Sprintf("Could not delete %s.", modelName), http.StatusBadRequest)
 				return

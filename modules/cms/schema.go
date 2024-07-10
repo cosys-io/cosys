@@ -1,18 +1,17 @@
-package admin
+package cms
 
 import (
 	"encoding/json"
 	"github.com/cosys-io/cosys/common"
-	"github.com/cosys-io/cosys/cosys_cli/cmd"
 	"net/http"
 )
 
-var SchemaRoutes = []*common.Route{
+var schemaRoutes = []*common.Route{
 	common.NewRoute("GET", `/admin/schema`, "admin.schema"),
 	common.NewRoute("POST", `/admin/schema`, "admin.build"),
 }
 
-var SchemaController = map[string]common.Action{
+var schemaController = map[string]common.Action{
 	"schema": schema,
 	"build":  build,
 }
@@ -45,7 +44,7 @@ func build(cosys common.Cosys) http.HandlerFunc {
 		}
 		newSchema.Attributes = append([]*common.AttributeSchema{&common.IdSchema}, newSchema.Attributes...)
 
-		if err = cmd.GenerateType(newSchema); err != nil {
+		if err = generateType(newSchema); err != nil {
 			common.RespondError(w, "Unable to build content type.", http.StatusBadRequest)
 			return
 		}

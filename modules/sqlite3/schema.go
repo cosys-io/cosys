@@ -8,12 +8,10 @@ import (
 )
 
 func loadSchema(cosys common.Cosys) error {
-	for _, module := range cosys.Modules {
-		for _, model := range module.Models {
-			schema := schemaToSQL(*model.Schema_())
-			if _, err := db.Exec(schema); err != nil {
-				return err
-			}
+	for _, model := range cosys.Models {
+		schema := schemaToSQL(*model.Schema_())
+		if _, err := db.Exec(schema); err != nil {
+			return err
 		}
 	}
 

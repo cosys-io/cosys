@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/cosys-io/cosys/cosys_cli/cmd/generator"
+	"github.com/iancoleman/strcase"
 	"log"
 	"path/filepath"
 
@@ -10,14 +11,14 @@ import (
 )
 
 var (
-	profile string
+	modFile string
 	db      string
 	tmpl    string
 )
 
 func init() {
-	newCmd.Flags().StringVarP(&profile, "profile", "P", "", "profile name for the new project go module")
-	newCmd.MarkFlagRequired("profile")
+	newCmd.Flags().StringVarP(&modFile, "modfile", "M", "", "module name for go.mod file")
+	newCmd.MarkFlagRequired("modfile")
 	newCmd.Flags().StringVarP(&db, "database", "D", "sqlite3", "database system for the new project")
 	newCmd.Flags().StringVarP(&tmpl, "template", "T", "", "template for the new project")
 
@@ -30,83 +31,83 @@ var newCmd = &cobra.Command{
 	Long:  `Create a new cosys project.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := args[0]
+		projectName := strcase.ToSnake(args[0])
 
-		err := generateProject(projectName, profile, db, tmpl)
+		err := generateProject(projectName, modFile, db, tmpl)
 		if err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-func generateProject(projectName, pf, db, tmpl string) error {
-	if err := generateConfigs(projectName, db, tmpl); err != nil {
+func generateProject(projectName, modFile, db, tmpl string) error {
+	var modules []string
+	switch tmpl {
+	default:
+		modules = []string{
+			"github.com/cosys-io/cosys/modules/" + db,
+			"github.com/cosys-io/cosys/modules/server",
+		}
+	}
+
+	if err := generateConfigs(projectName); err != nil {
 		return err
 	}
 
-	if err := generateModules(projectName, pf, db, tmpl); err != nil {
+	if err := generateModFile(projectName, modFile); err != nil {
 		return err
 	}
 
-	if err := generateModfile(projectName, pf); err != nil {
+	if err := generateMain(projectName, modules); err != nil {
 		return err
 	}
 
-	if err := installModules([]string{db, "server", "module_service", "admin"}, Dir(projectName), Quiet); err != nil {
-		return err
-	}
+	//if err := installModules(modules, Dir(projectName)); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
 
-func generateConfigs(projectName, db, tmpl string) error {
-	configsDir := filepath.Join(projectName, "configs")
-
+func generateConfigs(projectName string) error {
 	ctx := struct {
-		Database string
+		ProjectName string
 	}{
-		Database: db,
+		ProjectName: projectName,
 	}
 
-	generator := gen.NewGenerator(
-		gen.NewFile(filepath.Join(projectName, ".env"), EnvTmpl, ctx),
-		gen.NewDir(configsDir),
-		gen.NewFile(filepath.Join(configsDir, "admin.yaml"), AdminCfgTmpl, ctx),
-		gen.NewFile(filepath.Join(configsDir, "database.yaml"), DbCfgTmpl, ctx),
-		gen.NewFile(filepath.Join(configsDir, "module.yaml"), ModuleCfgTmpl, ctx),
-		gen.NewFile(filepath.Join(configsDir, "server.yaml"), ServerCfgTmpl, ctx),
-	)
-	if err := generator.Generate(); err != nil {
+	if err := gen.NewFile(filepath.Join(projectName, ".env"), EnvTmpl, ctx).Act(); err != nil {
+		return err
+	}
+
+	if err := gen.NewFile(filepath.Join(projectName, ".cli_configs"), CliConfigTmpl, ctx).Act(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func generateModules(projectName, pf, db, tmpl string) error {
-	modulesDir := filepath.Join(projectName, "modules")
-
-	if err := gen.NewDir(modulesDir).Act(); err != nil {
-		return err
-	}
-
-	modfile := fmt.Sprintf("github.com/%s/%s", pf, projectName)
-
-	if err := generateModule(filepath.Join(modulesDir, "api"), "api", modfile); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func generateModfile(projectName, pf string) error {
-	if err := RunCommand(fmt.Sprintf("go mod init github.com/%s/%s", pf, projectName), Dir(projectName)); err != nil {
+func generateModFile(projectName, modFile string) error {
+	if err := RunCommand(fmt.Sprintf("go mod init %s", modFile), Dir(projectName)); err != nil {
 		return err
 	}
 
 	//if err := RunCommand("go mod tidy", Dir(projectName)); err != nil {
 	//	return err
 	//}
+
+	return nil
+}
+
+func generateMain(projectName string, modules []string) error {
+	generator := gen.NewGenerator(
+		gen.NewDir(filepath.Join(projectName, "cmd"), gen.GenHeadOnly),
+		gen.NewDir(filepath.Join(projectName, "cmd", "cosys"), gen.GenHeadOnly),
+		gen.NewFile(filepath.Join(projectName, "cmd", "cosys", "main.go"), MainTmpl, modules),
+	)
+	if err := generator.Generate(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -120,21 +121,24 @@ DBPORT = 3000
 DBUSER = cosys
 DBPASS = cosys`
 
-var AdminCfgTmpl = ``
+var CliConfigTmpl = `main_path: cmd/{{.ProjectName}}/main.go
+index_path: web/
+bin_path: bin/{{.ProjectName}}
+`
 
-var DbCfgTmpl = `client: {{.Database}}
-name: ENV.DBNAME
-host: ENV.DBHOST
-port: ENV.DBPORT
-user: ENV.DBUSER
-pass: ENV.DBPASS`
+var MainTmpl = `package main
 
-var ModuleCfgTmpl = `modules: 
-  - api
-  - module_service
-  - server
-  - admin
-  - sqlite3`
+import (
+	"log"
+{{range .}}    _ "{{.}}"
+{{end}}
+	"github.com/cosys-io/cosys/common"
+)
 
-var ServerCfgTmpl = `host: ENV.HOST
-port: ENV.PORT`
+func main() {
+	cosys := common.NewCosys()
+
+	if err := cosys.Start(); err != nil {
+		log.Fatal(err)
+	}
+}`

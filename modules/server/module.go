@@ -19,15 +19,3 @@ func init() {
 		log.Fatal(err)
 	}
 }
-
-var Module = &common.Module{
-	Routes:      nil,
-	Controllers: nil,
-	Middlewares: nil,
-	Policies:    nil,
-	Models:      nil,
-	Services:    nil,
-
-	OnRegister: nil,
-	OnDestroy:  nil,
-}
