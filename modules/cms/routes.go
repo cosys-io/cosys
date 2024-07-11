@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cosys-io/cosys/common"
+	"io"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -240,18 +242,46 @@ func createEntity(modelUid, modelName string) func(common.Cosys) http.HandlerFun
 			}
 			entity := model.New_()
 
-			if err := json.NewDecoder(r.Body).Decode(entity); err != nil {
-				common.RespondError(w, "Bad request.", http.StatusBadRequest)
-				return
-			}
-
-			newEntity, err := cs.Database().Create(modelUid, entity, common.NewDBParams())
+			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				common.RespondError(w, fmt.Sprintf("Could not create %s.", modelName), http.StatusBadRequest)
+				common.RespondInternalError(w)
 				return
 			}
 
-			common.RespondOne(w, newEntity, http.StatusOK)
+			if err := json.Unmarshal(body, entity); err == nil {
+				newEntity, err := cs.Database().Create(modelUid, entity, common.NewDBParams())
+				if err != nil {
+					common.RespondError(w, fmt.Sprintf("Could not create %s.", modelName), http.StatusBadRequest)
+					return
+				}
+
+				common.RespondOne(w, newEntity, http.StatusOK)
+				return
+			}
+
+			entityType := reflect.TypeOf(entity)
+			entitiesType := reflect.SliceOf(entityType)
+			entitiesValue := reflect.New(entitiesType)
+			entities := entitiesValue.Interface()
+			if err = json.Unmarshal(body, entities); err == nil {
+				var entitiesAsserted []common.Entity
+				entitiesValue = reflect.ValueOf(entities).Elem()
+				for i := 0; i < entitiesValue.Len(); i++ {
+					entitiesAsserted = append(entitiesAsserted, entitiesValue.Index(i).Interface().(common.Entity))
+				}
+
+				newEntities, err := cs.Database().CreateMany(modelUid, entitiesAsserted, common.NewDBParams())
+				if err != nil {
+					common.RespondError(w, fmt.Sprintf("Could not create %s.", modelName), http.StatusBadRequest)
+					return
+				}
+
+				common.RespondMany(w, newEntities, 0, http.StatusOK)
+				return
+			}
+
+			common.RespondError(w, "Bad Request.", http.StatusBadRequest)
+			return
 		}
 	}
 }

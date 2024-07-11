@@ -83,7 +83,7 @@ func (d Database) FindMany(uid string, params common.DBParams) ([]common.Entity,
 		return nil, err
 	}
 
-	var entities []common.Entity
+	entities := []common.Entity{}
 
 	rows, err := d.db.Query(query)
 	if err != nil {
