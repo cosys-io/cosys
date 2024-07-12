@@ -358,8 +358,7 @@ pluralName: {{.PluralName}}
 description: {{.Description}}
 attributes:
 {{range .Attributes}}  - name: {{.Name}}
-    simplifiedDataType: {{.SimplifiedDataType}}
-    detailedDataType: {{.DetailedDataType}}{{if not .ShownInTable}}
+    dataType: {{.DetailedDataType}}{{if not .ShownInTable}}
     shownInTable: false{{end}}{{if .Required}}
     required: true{{end}}{{if ne .Max 2147483647}}
     max: {{.Max}}{{end}}{{if ne .Min -2147483648}}

@@ -158,9 +158,8 @@ func (m ModelSchemaParsed) Schema() (*ModelSchema, error) {
 }
 
 type AttributeSchemaParsed struct {
-	Name               string `yaml:"name" json:"name"`
-	SimplifiedDataType string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
-	DetailedDataType   string `yaml:"detailedDataType" json:"detailedDataType"`
+	Name     string `yaml:"name" json:"name"`
+	DataType string `yaml:"dataType" json:"dataType"`
 
 	ShownInTable *bool  `yaml:"shownInTable" json:"shownInTable"`
 	Required     *bool  `yaml:"required" json:"required"`
@@ -180,17 +179,42 @@ func (a AttributeSchemaParsed) Schema() (*AttributeSchema, error) {
 	if a.Name == "" {
 		return nil, fmt.Errorf("attribute has no name")
 	}
-	if a.SimplifiedDataType == "" {
-		return nil, fmt.Errorf("attribute has no simple type: %s", a.Name)
+	if a.DataType == "" {
+		return nil, fmt.Errorf("attribute has no type: %s", a.Name)
 	}
-	if a.DetailedDataType == "" {
-		return nil, fmt.Errorf("attribute has no detailed type: %s", a.Name)
+
+	var simplifiedDataType string
+	var detailedDataType string
+	switch a.DataType {
+	case "Int":
+		simplifiedDataType = "Number"
+		detailedDataType = "Int"
+	case "Float":
+		simplifiedDataType = "Number"
+		detailedDataType = "Float"
+	case "String":
+		simplifiedDataType = "String"
+		detailedDataType = "String"
+	case "Boolean":
+		simplifiedDataType = "Boolean"
+		detailedDataType = "Boolean"
+	case "Date":
+		simplifiedDataType = "Date"
+		detailedDataType = "Date"
+	case "DateTime":
+		simplifiedDataType = "DateTime"
+		detailedDataType = "DateTime"
+	case "TimeStamp":
+		simplifiedDataType = "TimeStamp"
+		detailedDataType = "TimeStamp"
+	default:
+		return nil, fmt.Errorf("invalid attribute type: %s", a.DataType)
 	}
 
 	return &AttributeSchema{
 		Name:               a.Name,
-		SimplifiedDataType: a.SimplifiedDataType,
-		DetailedDataType:   a.DetailedDataType,
+		SimplifiedDataType: simplifiedDataType,
+		DetailedDataType:   detailedDataType,
 
 		ShownInTable: checkDefault(true, a.ShownInTable),
 		Required:     checkDefault(false, a.Required),
