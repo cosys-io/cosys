@@ -16,6 +16,7 @@ import (
 type options struct {
 	itemName    string
 	checkZero   bool
+	isStringer  bool
 	allowUpdate bool
 	allowRemove bool
 	mustExist   bool
@@ -29,6 +30,7 @@ func defaultOptions() options {
 		allowUpdate: false,
 		allowRemove: false,
 		mustExist:   false,
+		isStringer:  false,
 	}
 }
 
@@ -81,6 +83,10 @@ func newSingleRegister[T any](cfg ...option) *singleRegister[T] {
 		opt(&opts)
 	}
 
+	if isStringer[T]() {
+		opts.isStringer = true
+	}
+
 	return &singleRegister[T]{
 		mutex:      sync.RWMutex{},
 		register:   *new(T),
@@ -123,7 +129,7 @@ func (r *singleRegister[T]) Clone() *singleRegister[T] {
 // or if a value has already been registered.
 // Safe for concurrent use.
 func (r *singleRegister[T]) Register(item T) error {
-	if r.options.checkZero && reflect.DeepEqual(item, *new(T)) {
+	if r.options.checkZero && isZero(item) {
 		return fmt.Errorf("%s is nil", r.options.itemName)
 	}
 
@@ -150,7 +156,7 @@ func (r *singleRegister[T]) Update(item T) error {
 		return fmt.Errorf("%s cannot be updated", r.options.itemName)
 	}
 
-	if r.options.checkZero && reflect.DeepEqual(item, *new(T)) {
+	if r.options.checkZero && isZero(item) {
 		return fmt.Errorf("%s is nil", r.options.itemName)
 	}
 
@@ -204,6 +210,10 @@ func newMultiRegister[T any](cfg ...option) *multiRegister[T] {
 		opt(&opts)
 	}
 
+	if isStringer[T]() {
+		opts.isStringer = true
+	}
+
 	return &multiRegister[T]{
 		mutex:    sync.RWMutex{},
 		register: make(map[string]T),
@@ -253,14 +263,14 @@ func (r *multiRegister[T]) Clone() *multiRegister[T] {
 // of if a value has been registered under that uid.
 // Safe for concurrent use.
 func (r *multiRegister[T]) Register(uid string, item T) error {
-	if r.options.checkZero && reflect.DeepEqual(item, *new(T)) {
+	if r.options.checkZero && isZero(item) {
 		return fmt.Errorf("%s is nil: %s", r.options.itemName, uid)
 	}
 
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if _, dup := r.register[uid]; dup {
+	if isDup(r.register, uid) {
 		return fmt.Errorf("duplicate %s: %s", r.options.itemName, uid)
 	}
 
@@ -269,14 +279,70 @@ func (r *multiRegister[T]) Register(uid string, item T) error {
 	return nil
 }
 
-// RegisterRandom sets a value under a random id, and returns the id or throws an error
+// RegisterMany sets a map of values under their corresponding uid, and throws an error
+// if the checkZero configuration is true and any value is a zero-value
+// or if a value has been registered under any uid.
+// The operation is atomic, either all or no values will be set.
+// Safe for concurrent use.
+func (r *multiRegister[T]) RegisterMany(items map[string]T) error {
+	if r.options.checkZero {
+		if err := anyZero(r.options.itemName, items); err != nil {
+			return err
+		}
+	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if err := anyDup(r.options.itemName, r.register, items); err != nil {
+		return err
+	}
+
+	for uid, item := range items {
+		r.register[uid] = item
+	}
+
+	return nil
+}
+
+func (r *multiRegister[T]) RegisterStringers(items ...T) error {
+	if !r.options.isStringer {
+		return fmt.Errorf("%s is not stringer", r.options.itemName)
+	}
+
+	itemMap, err := toMap(r.options.itemName, items)
+	if err != nil {
+		return err
+	}
+
+	if r.options.checkZero {
+		if err = anyZero(r.options.itemName, itemMap); err != nil {
+			return err
+		}
+	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if err = anyDup(r.options.itemName, r.register, itemMap); err != nil {
+		return err
+	}
+
+	for uid, item := range itemMap {
+		r.register[uid] = item
+	}
+
+	return nil
+}
+
+// RegisterRandom sets a value under a random uid, and returns the uid or throws an error
 // if the checkZero configuration is true and the value is a zero-value,
-// or if it fails to generate a valid random id.
-// The generated ids are all prefixed with '$', if using both Register and RegisterRandom,
-// do not use ids prefixed by $ for Register.
+// or if it fails to generate a valid random uid.
+// The generated uid are all prefixed with '$', if using both Register and RegisterRandom,
+// do not use uid prefixed by $ for Register.
 // Safe for concurrent use.
 func (r *multiRegister[T]) RegisterRandom(item T) (string, error) {
-	if r.options.checkZero && reflect.DeepEqual(item, *new(T)) {
+	if r.options.checkZero && isZero(item) {
 		return "", fmt.Errorf("%s is nil", r.options.itemName)
 	}
 
@@ -286,7 +352,7 @@ func (r *multiRegister[T]) RegisterRandom(item T) (string, error) {
 	var uid string
 	for _ = range 1000 {
 		uid = randomString([]byte{'$'}, 8)
-		if _, dup := r.register[uid]; dup {
+		if isDup(r.register, uid) {
 			continue
 		}
 	}
@@ -310,14 +376,14 @@ func (r *multiRegister[T]) Update(uid string, item T) error {
 		return fmt.Errorf("%s cannot be updated", r.options.itemName)
 	}
 
-	if r.options.checkZero && reflect.DeepEqual(item, *new(T)) {
+	if r.options.checkZero && isZero(item) {
 		return fmt.Errorf("%s is nil: %s", r.options.itemName, uid)
 	}
 
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if _, ok := r.register[uid]; r.options.mustExist && !ok {
+	if r.options.mustExist && isMissing(r.register, uid) {
 		return fmt.Errorf("%s not found: %s", r.options.itemName, uid)
 	}
 
@@ -338,7 +404,7 @@ func (r *multiRegister[T]) Remove(uid string) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if _, ok := r.register[uid]; r.options.mustExist && !ok {
+	if r.options.mustExist && isMissing(r.register, uid) {
 		return fmt.Errorf("%s not exist: %s", r.options.itemName, uid)
 	}
 
@@ -347,7 +413,7 @@ func (r *multiRegister[T]) Remove(uid string) error {
 	return nil
 }
 
-// Random
+// Utils
 
 // chars are the possible chars used in randomString
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -379,4 +445,74 @@ func randomString(prefix []byte, num int) string {
 	}
 
 	return *(*string)(unsafe.Pointer(&buffer))
+}
+
+// isZero returns whether an item is a zero-value.
+func isZero[T any](item T) bool {
+	return reflect.DeepEqual(item, *new(T))
+}
+
+// anyZero returns whether any item in a map is a zero-value.
+func anyZero[T any](itemName string, items map[string]T) error {
+	for uid, item := range items {
+		if isZero(item) {
+			return fmt.Errorf("%s is nil: %s", itemName, uid)
+		}
+	}
+
+	return nil
+}
+
+// isDup returns whether a map already contains a key.
+func isDup[T any](items map[string]T, uid string) bool {
+	_, dup := items[uid]
+	return dup
+}
+
+// anyDup returns whether any keys in two maps are the same.
+func anyDup[T any](itemName string, items1 map[string]T, items2 map[string]T) error {
+	if len(items2) > len(items1) {
+		items1, items2 = items2, items1
+	}
+
+	for uid := range items2 {
+		if isDup(items1, uid) {
+			return fmt.Errorf("duplicate %s: %s", itemName, uid)
+		}
+	}
+
+	return nil
+}
+
+// isMissing returns if a key is missing from a map.
+func isMissing[T any](items map[string]T, uid string) bool {
+	_, exists := items[uid]
+	return !exists
+}
+
+// isStringer returns whether a type parameter is a Stringer.
+func isStringer[T any]() bool {
+	_, ok := reflect.Zero(reflect.TypeOf(*new(T))).Interface().(fmt.Stringer)
+	return ok
+}
+
+// toMap converts a generic slice into a map, and throws an error
+// if any entry is not a Stringer.
+func toMap[T any](itemName string, itemSlice []T) (map[string]T, error) {
+	itemMap := map[string]T{}
+	for _, item := range itemSlice {
+		stringer, ok := reflect.ValueOf(item).Interface().(fmt.Stringer)
+		if !ok {
+			return nil, fmt.Errorf("%s is not stringer", itemName)
+		}
+		uid := stringer.String()
+
+		if isDup(itemMap, uid) {
+			return nil, fmt.Errorf("duplicate %s: %s", itemName, uid)
+		}
+
+		itemMap[uid] = item
+	}
+
+	return itemMap, nil
 }
