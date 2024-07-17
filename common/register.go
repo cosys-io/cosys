@@ -19,7 +19,7 @@ type options struct {
 	isStringer  bool
 	allowUpdate bool
 	allowRemove bool
-	mustExist   bool
+	checkExist  bool
 }
 
 // defaultOptions returns the default configuration.
@@ -29,7 +29,7 @@ func defaultOptions() options {
 		checkZero:   true,
 		allowUpdate: false,
 		allowRemove: false,
-		mustExist:   false,
+		checkExist:  true,
 		isStringer:  false,
 	}
 }
@@ -61,9 +61,9 @@ var allowRemove option = func(opts *options) {
 	opts.allowRemove = true
 }
 
-// mustExist will cause an error to be thrown when updating or removing an unregistered value.
-var mustExist option = func(opts *options) {
-	opts.mustExist = true
+// skipCheckExist will cause an error to be thrown when updating or removing an unregistered value.
+var skipCheckExist option = func(opts *options) {
+	opts.checkExist = true
 }
 
 // Single Register
@@ -163,7 +163,7 @@ func (r *singleRegister[T]) Update(item T) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if r.options.mustExist && !r.registered {
+	if r.options.checkExist && !r.registered {
 		return fmt.Errorf("%s is not registered", r.options.itemName)
 	}
 
@@ -184,7 +184,7 @@ func (r *singleRegister[T]) Remove() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if r.options.mustExist && !r.registered {
+	if r.options.checkExist && !r.registered {
 		return fmt.Errorf("%s is not registered", r.options.itemName)
 	}
 
@@ -383,7 +383,7 @@ func (r *multiRegister[T]) Update(uid string, item T) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if r.options.mustExist && isMissing(r.register, uid) {
+	if r.options.checkExist && isMissing(r.register, uid) {
 		return fmt.Errorf("%s not found: %s", r.options.itemName, uid)
 	}
 
@@ -404,7 +404,7 @@ func (r *multiRegister[T]) Remove(uid string) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	if r.options.mustExist && isMissing(r.register, uid) {
+	if r.options.checkExist && isMissing(r.register, uid) {
 		return fmt.Errorf("%s not exist: %s", r.options.itemName, uid)
 	}
 

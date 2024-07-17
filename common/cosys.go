@@ -17,6 +17,9 @@ type Cosys struct {
 	commands *multiRegister[*cobra.Command]
 	models   *multiRegister[Model]
 	services *multiRegister[Service]
+
+	bootstrapHooks *multiRegister[*BootstrapHook]
+	cleanupHooks   *multiRegister[*CleanupHook]
 }
 
 func New() *Cosys {
@@ -32,138 +35,120 @@ func New() *Cosys {
 
 		commands: newMultiRegister[*cobra.Command](itemName("command")),
 		models:   newMultiRegister[Model](itemName("model"), allowUpdate, allowRemove),
-		services: newMultiRegister[Service](itemName("model")),
+		services: newMultiRegister[Service](itemName("service")),
+
+		bootstrapHooks: newMultiRegister[*BootstrapHook](itemName("bootstrap hook"), allowUpdate, allowRemove),
+		cleanupHooks:   newMultiRegister[*CleanupHook](itemName("cleanup hook"), allowUpdate, allowRemove),
 	}
 }
 
-func (c Cosys) Server() Server {
+func (c *Cosys) Server() Server {
 	server, _ := c.server.Get()
 
 	return server
 }
 
-func (c Cosys) Database() Database {
+func (c *Cosys) Database() Database {
 	database, _ := c.database.Get()
 
 	return database
 }
 
-func (c Cosys) Logger() Logger {
+func (c *Cosys) Logger() Logger {
 	logger, _ := c.logger.Get()
 
 	return logger
 }
 
-func (c Cosys) UseServer(serverFunc func(*Cosys) (Server, error)) error {
-	server, err := serverFunc(&c)
-	if err != nil {
-		return err
-	}
-
-	if err = c.server.Register(server); err != nil {
-		return err
-	}
-
-	return nil
+func (c *Cosys) UseServer(server Server) error {
+	return c.server.Register(server)
 }
 
-func (c Cosys) UseDatabase(databaseFunc func(*Cosys) (Database, error)) error {
-	database, err := databaseFunc(&c)
-	if err != nil {
-		return err
-	}
-
-	if err = c.database.Register(database); err != nil {
-		return err
-	}
-
-	return nil
+func (c *Cosys) UseDatabase(database Database) error {
+	return c.database.Register(database)
 }
 
-func (c Cosys) UseLogger(loggerFunc func(*Cosys) (Logger, error)) error {
-	logger, err := loggerFunc(&c)
-	if err != nil {
-		return err
-	}
-
-	if err = c.logger.Register(logger); err != nil {
-		return err
-	}
-
-	return nil
+func (c *Cosys) UseLogger(logger Logger) error {
+	return c.logger.Register(logger)
 }
 
-func (c Cosys) AddRoutes(routes map[string]*Route) (*Cosys, error) {
-	for uid, route := range routes {
-		if err := c.routes.Register(uid, route); err != nil {
-			return nil, err
-		}
-	}
-
-	return &c, nil
+func (c *Cosys) AddRoutes(routes ...*Route) error {
+	return c.routes.RegisterStringers(routes...)
 }
 
-func (c Cosys) AddControllers(controllers map[string]Controller) (*Cosys, error) {
-	for uid, controller := range controllers {
-		if err := c.controllers.Register(uid, controller); err != nil {
-			return nil, err
-		}
-	}
-
-	return &c, nil
+func (c *Cosys) UpdateRoute(uid string, route *Route) error {
+	return c.routes.Update(uid, route)
 }
 
-func (c Cosys) AddMiddlewares(middlewares map[string]Middleware) (*Cosys, error) {
-	for uid, middleware := range middlewares {
-		if err := c.middlewares.Register(uid, middleware); err != nil {
-			return nil, err
-		}
-	}
-
-	return &c, nil
+func (c *Cosys) RemoveRoute(uid string) error {
+	return c.routes.Remove(uid)
 }
 
-func (c Cosys) AddPolicies(policies map[string]Policy) (*Cosys, error) {
-	for uid, policy := range policies {
-		if err := c.policies.Register(uid, policy); err != nil {
-			return nil, err
-		}
-	}
-
-	return &c, nil
+func (c *Cosys) AddControllers(controllers ...Controller) error {
+	return c.controllers.RegisterStringers(controllers...)
 }
 
-func (c Cosys) AddCommands(commands ...*cobra.Command) (*Cosys, error) {
-	for _, command := range commands {
-		if err := c.commands.Register(command.Name(), command); err != nil {
-			return nil, err
-		}
-	}
-
-	return &c, nil
+func (c *Cosys) UpdateController(uid string, controller Controller) error {
+	return c.controllers.Update(uid, controller)
 }
 
-func (c Cosys) AddModels(models map[string]Model) (*Cosys, error) {
-	for uid, model := range models {
-		if err := c.models.Register(uid, model); err != nil {
-			return nil, err
-		}
-	}
-
-	return &c, nil
+func (c *Cosys) RemoveController(uid string) error {
+	return c.controllers.Remove(uid)
 }
 
-func (c Cosys) AddServices(services map[string]Service) (*Cosys, error) {
-	for uid, service := range services {
-		if err := c.services.Register(uid, service); err != nil {
-			return nil, err
-		}
-	}
-
-	return &c, nil
+func (c *Cosys) AddMiddlewares(middlewares ...Middleware) error {
+	return c.middlewares.RegisterStringers(middlewares...)
 }
 
-func (c Cosys) Start() error {
+func (c *Cosys) UpdateMiddleware(uid string, middleware Middleware) error {
+	return c.middlewares.Update(uid, middleware)
+}
+
+func (c *Cosys) RemoveMiddleware(uid string) error {
+	return c.middlewares.Remove(uid)
+}
+
+func (c *Cosys) AddPolicies(policies ...Policy) error {
+	return c.policies.RegisterStringers(policies...)
+}
+
+func (c *Cosys) UpdatePolicy(uid string, policy Policy) error {
+	return c.policies.Update(uid, policy)
+}
+
+func (c *Cosys) RemovePolicy(uid string) error {
+	return c.policies.Remove(uid)
+}
+
+func (c *Cosys) AddCommands(commands ...*cobra.Command) error {
+	return c.commands.RegisterStringers(commands...)
+}
+
+func (c *Cosys) AddModels(models ...Model) error {
+	return c.models.RegisterStringers(models...)
+}
+
+func (c *Cosys) UpdateModel(uid string, model Model) error {
+	return c.models.Update(uid, model)
+}
+
+func (c *Cosys) RemoveModel(uid string) error {
+	return c.models.Remove(uid)
+}
+
+func (c *Cosys) AddServices(services ...Service) error {
+	return c.services.RegisterStringers(services...)
+}
+
+func (c *Cosys) AddBootstrapHooks(hooks ...*BootstrapHook) error {
+	return c.bootstrapHooks.RegisterStringers(hooks...)
+}
+
+func (c *Cosys) AddCleanupHooks(hooks ...*CleanupHook) error {
+	return c.cleanupHooks.RegisterStringers(hooks...)
+}
+
+func (c *Cosys) Start() error {
 	cosys, err := c.register()
 	if err != nil {
 		return err
@@ -172,20 +157,32 @@ func (c Cosys) Start() error {
 	return cosys.Command.Execute()
 }
 
-func (c Cosys) register() (*Cosys, error) {
+func (c *Cosys) register() (*Cosys, error) {
 	for _, module := range mdRegister {
-		if err := module(&c); err != nil {
+		if err := module(c); err != nil {
 			return nil, err
 		}
 	}
 
-	return &c, nil
+	return c, nil
 }
 
-func (c Cosys) Bootstrap() (*Cosys, error) {
-	return &c, nil
+func (c *Cosys) Bootstrap() error {
+	for _, hook := range c.bootstrapHooks.GetAll() {
+		if err := hook.Call(c); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (c Cosys) Destroy() (*Cosys, error) {
-	return &c, nil
+func (c *Cosys) Destroy() error {
+	for _, hook := range c.cleanupHooks.GetAll() {
+		if err := hook.Call(c); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
