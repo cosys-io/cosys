@@ -16,7 +16,6 @@ import (
 type options struct {
 	itemName    string
 	checkZero   bool
-	isStringer  bool
 	allowUpdate bool
 	allowRemove bool
 	checkExist  bool
@@ -30,7 +29,6 @@ func defaultOptions() options {
 		allowUpdate: false,
 		allowRemove: false,
 		checkExist:  true,
-		isStringer:  false,
 	}
 }
 
@@ -81,10 +79,6 @@ func newSingleRegister[T any](cfg ...option) *singleRegister[T] {
 	opts := defaultOptions()
 	for _, opt := range cfg {
 		opt(&opts)
-	}
-
-	if isStringer[T]() {
-		opts.isStringer = true
 	}
 
 	return &singleRegister[T]{
@@ -210,10 +204,6 @@ func newMultiRegister[T any](cfg ...option) *multiRegister[T] {
 		opt(&opts)
 	}
 
-	if isStringer[T]() {
-		opts.isStringer = true
-	}
-
 	return &multiRegister[T]{
 		mutex:    sync.RWMutex{},
 		register: make(map[string]T),
@@ -305,36 +295,6 @@ func (r *multiRegister[T]) RegisterMany(items map[string]T) error {
 	return nil
 }
 
-func (r *multiRegister[T]) RegisterStringers(items ...T) error {
-	if !r.options.isStringer {
-		return fmt.Errorf("%s is not stringer", r.options.itemName)
-	}
-
-	itemMap, err := toMap(r.options.itemName, items)
-	if err != nil {
-		return err
-	}
-
-	if r.options.checkZero {
-		if err = anyZero(r.options.itemName, itemMap); err != nil {
-			return err
-		}
-	}
-
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	if err = anyDup(r.options.itemName, r.register, itemMap); err != nil {
-		return err
-	}
-
-	for uid, item := range itemMap {
-		r.register[uid] = item
-	}
-
-	return nil
-}
-
 // RegisterRandom sets a value under a random uid, and returns the uid or throws an error
 // if the checkZero configuration is true and the value is a zero-value,
 // or if it fails to generate a valid random uid.
@@ -409,6 +369,57 @@ func (r *multiRegister[T]) Remove(uid string) error {
 	}
 
 	delete(r.register, uid)
+
+	return nil
+}
+
+// Stringer Register
+
+// stringerRegister is a register of stringer values.
+type stringerRegister[T fmt.Stringer] multiRegister[T]
+
+// newStringerRegister returns a new stringer register with configurations.
+func newStringerRegister[T fmt.Stringer](cfg ...option) *stringerRegister[T] {
+	opts := defaultOptions()
+	for _, opt := range cfg {
+		opt(&opts)
+	}
+
+	return &stringerRegister[T]{
+		mutex:    sync.RWMutex{},
+		register: make(map[string]T),
+		options:  opts,
+	}
+}
+
+// RegisterStringers sets a slice of stringer values under their respective String() return values,
+// and throws an error if any values have the same String() return values,
+// or if the checkZero configuration is true and any value is a zero-value,
+// or if a value has been registered under any String() return value.
+// The operation is atomic, either all or no values will be set.
+// Safe for concurrent use.
+func (r *stringerRegister[T]) RegisterStringers(items ...T) error {
+	itemMap, err := toMap(r.options.itemName, items)
+	if err != nil {
+		return err
+	}
+
+	if r.options.checkZero {
+		if err = anyZero(r.options.itemName, itemMap); err != nil {
+			return err
+		}
+	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if err = anyDup(r.options.itemName, r.register, itemMap); err != nil {
+		return err
+	}
+
+	for uid, item := range itemMap {
+		r.register[uid] = item
+	}
 
 	return nil
 }
