@@ -3,8 +3,11 @@ package common
 import (
 	"fmt"
 	"maps"
+	"math/rand"
 	"reflect"
 	"sync"
+	"time"
+	"unsafe"
 )
 
 // Config
@@ -266,6 +269,37 @@ func (r *multiRegister[T]) Register(uid string, item T) error {
 	return nil
 }
 
+// RegisterRandom sets a value under a random id, and returns the id or throws an error
+// if the checkZero configuration is true and the value is a zero-value,
+// or if it fails to generate a valid random id.
+// The generated ids are all prefixed with '$', if using both Register and RegisterRandom,
+// do not use ids prefixed by $ for Register.
+// Safe for concurrent use.
+func (r *multiRegister[T]) RegisterRandom(item T) (string, error) {
+	if r.options.checkZero && reflect.DeepEqual(item, *new(T)) {
+		return "", fmt.Errorf("%s is nil", r.options.itemName)
+	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	var uid string
+	for _ = range 1000 {
+		uid = randomString([]byte{'$'}, 8)
+		if _, dup := r.register[uid]; dup {
+			continue
+		}
+	}
+
+	if uid == "" {
+		return "", fmt.Errorf("could not generate uid for %s", r.options.itemName)
+	}
+
+	r.register[uid] = item
+
+	return uid, nil
+}
+
 // Update sets a new value under the given uid, and throws an error
 // if the allowUpdate configuration is false,
 // or if the checkZero configuration is true and the value is a zero-value,
@@ -311,4 +345,38 @@ func (r *multiRegister[T]) Remove(uid string) error {
 	delete(r.register, uid)
 
 	return nil
+}
+
+// Random
+
+// chars are the possible chars used in randomString
+const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+	charsIndexLen  = 6                    // 6 bits to represent an index in chars
+	charsIndexMask = 1<<charsIndexLen - 1 // 0b111111 bit mask
+	charsIndexMax  = 63 / charsIndexLen   // # of char indices fitting in 63 bits
+)
+
+// src is a random generator
+var src = rand.NewSource(time.Now().UnixNano())
+
+// randomString generates a random string of length n
+func randomString(prefix []byte, num int) string {
+	prefixLen := len(prefix)
+	buffer := make([]byte, prefixLen+num)
+	copy(buffer, prefix)
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := prefixLen+num-1, src.Int63(), charsIndexMax; i >= prefixLen; {
+		if remain == 0 {
+			cache, remain = src.Int63(), charsIndexMax
+		}
+		if idx := int(cache & charsIndexMask); idx < len(chars) {
+			buffer[i] = chars[idx]
+			i--
+		}
+		cache >>= charsIndexLen
+		remain--
+	}
+
+	return *(*string)(unsafe.Pointer(&buffer))
 }
