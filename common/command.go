@@ -3,36 +3,11 @@ package common
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/fs"
 	"log"
 	"os"
-	"sync"
 )
-
-var (
-	cmdMutex    sync.RWMutex
-	cmdRegister = make(map[string]*cobra.Command)
-)
-
-func RegisterCommand(command *cobra.Command) error {
-	cmdMutex.Lock()
-	defer cmdMutex.Unlock()
-
-	if command == nil {
-		return fmt.Errorf("command is nil", command)
-	}
-
-	commandName := command.Name()
-
-	if _, dup := cmdRegister[commandName]; dup {
-		return fmt.Errorf("duplicate command:" + commandName)
-	}
-
-	cmdRegister[commandName] = command
-	return nil
-}
 
 func InitConfigs() {
 	dir, err := os.Getwd()

@@ -4,29 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"sync"
 )
-
-var (
-	svMutex    sync.RWMutex
-	svRegister = make(map[string]func(*Cosys) Server)
-)
-
-func RegisterServer(svName string, svCtor func(*Cosys) Server) error {
-	svMutex.Lock()
-	defer svMutex.Unlock()
-
-	if svCtor == nil {
-		return fmt.Errorf("server is nil: %s", svName)
-	}
-
-	if _, dup := svRegister[svName]; dup {
-		return fmt.Errorf("duplicate server:" + svName)
-	}
-
-	svRegister[svName] = svCtor
-	return nil
-}
 
 type Server interface {
 	Start() error

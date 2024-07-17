@@ -1,31 +1,5 @@
 package common
 
-import (
-	"fmt"
-	"sync"
-)
-
-var (
-	dbMutex    sync.RWMutex
-	dbRegister = make(map[string]func(*Cosys) Database)
-)
-
-func RegisterDatabase(dbName string, dbCtor func(*Cosys) Database) error {
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
-
-	if dbCtor == nil {
-		return fmt.Errorf("database is nil: %s", dbName)
-	}
-
-	if _, dup := dbRegister[dbName]; dup {
-		return fmt.Errorf("duplicate database: %s", dbName)
-	}
-
-	dbRegister[dbName] = dbCtor
-	return nil
-}
-
 type Database interface {
 	FindOne(uid string, params DBParams) (Entity, error)
 	FindMany(uid string, params DBParams) ([]Entity, error)
