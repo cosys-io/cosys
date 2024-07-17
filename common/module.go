@@ -7,34 +7,24 @@ import (
 
 var (
 	mdMutex    sync.RWMutex
-	mdRegister = make(map[string]*Module)
+	mdRegister = make(map[string]Module)
 )
 
-func RegisterModule(moduleName string, module *Module) error {
-	mdMutex.Lock()
-	defer mdMutex.Unlock()
-
+func RegisterModule(moduleName string, module Module) error {
 	if module == nil {
 		return fmt.Errorf("module is nil: %s", moduleName)
 	}
+
+	mdMutex.Lock()
+	defer mdMutex.Unlock()
 
 	if _, dup := mdRegister[moduleName]; dup {
 		return fmt.Errorf("duplicate module:" + moduleName)
 	}
 
 	mdRegister[moduleName] = module
+
 	return nil
 }
 
-type Module struct {
-	Routes      []*Route
-	Controllers map[string]Controller
-	Middlewares map[string]Middleware
-	Policies    map[string]Policy
-
-	Models   map[string]Model
-	Services map[string]Service
-
-	OnRegister func(Cosys) (Cosys, error)
-	OnDestroy  func(Cosys) (Cosys, error)
-}
+type Module func(*Cosys) error
