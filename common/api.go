@@ -11,12 +11,18 @@ type Api struct {
 	Policies    map[string]Policy
 }
 
+// Route
+
 type Route struct {
 	Method      string
 	Path        string
 	Action      string
 	Middlewares []string
 	Policies    []string
+}
+
+func (r *Route) String() string {
+	return r.Path
 }
 
 func NewRoute(method string, path string, action string, options ...RouteOption) *Route {
@@ -57,10 +63,72 @@ func UsePolicies(policies ...string) RouteOption {
 	}
 }
 
-type Controller map[string]Action
+// Controller
 
-type Action func(Cosys) http.HandlerFunc
+type Controller struct {
+	uid        string
+	controller map[string]Action
+}
 
-type Middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc
+func (c *Controller) String() string {
+	return c.uid
+}
 
-type Policy func(Cosys, *http.Request) bool
+func NewController(uid string, controller map[string]Action) *Controller {
+	return &Controller{
+		uid:        uid,
+		controller: controller,
+	}
+}
+
+type Action struct {
+	uid    string
+	action func(Cosys) http.HandlerFunc
+}
+
+func (a *Action) String() string {
+	return a.uid
+}
+
+func NewAction(uid string, action func(Cosys) http.HandlerFunc) *Action {
+	return &Action{
+		uid:    uid,
+		action: action,
+	}
+}
+
+// Middleware
+
+type Middleware struct {
+	uid        string
+	middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc
+}
+
+func (m *Middleware) String() string {
+	return m.uid
+}
+
+func NewMiddleware(uid string, middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc) *Middleware {
+	return &Middleware{
+		uid:        uid,
+		middleware: middleware,
+	}
+}
+
+// Policy
+
+type Policy struct {
+	uid    string
+	policy func(Cosys, *http.Request) bool
+}
+
+func (p *Policy) String() string {
+	return p.uid
+}
+
+func NewPolicy(uid string, policy func(Cosys, *http.Request) bool) *Policy {
+	return &Policy{
+		uid:    uid,
+		policy: policy,
+	}
+}
