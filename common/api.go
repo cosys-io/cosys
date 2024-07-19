@@ -21,11 +21,11 @@ type Route struct {
 	Policies    []string
 }
 
-func (r *Route) String() string {
+func (r Route) String() string {
 	return r.Path
 }
 
-func NewRoute(method string, path string, action string, options ...RouteOption) *Route {
+func NewRoute(method string, path string, action string, options ...RouteOption) Route {
 	newRoute := Route{
 		Method:      method,
 		Path:        path,
@@ -38,7 +38,7 @@ func NewRoute(method string, path string, action string, options ...RouteOption)
 		option(&newRoute)
 	}
 
-	return &newRoute
+	return newRoute
 }
 
 type RouteOption func(*Route)
@@ -70,12 +70,12 @@ type Controller struct {
 	controller map[string]Action
 }
 
-func (c *Controller) String() string {
+func (c Controller) String() string {
 	return c.uid
 }
 
-func NewController(uid string, controller map[string]Action) *Controller {
-	return &Controller{
+func NewController(uid string, controller map[string]Action) Controller {
+	return Controller{
 		uid:        uid,
 		controller: controller,
 	}
@@ -86,12 +86,12 @@ type Action struct {
 	action func(Cosys) http.HandlerFunc
 }
 
-func (a *Action) String() string {
+func (a Action) String() string {
 	return a.uid
 }
 
-func NewAction(uid string, action func(Cosys) http.HandlerFunc) *Action {
-	return &Action{
+func NewAction(uid string, action func(Cosys) http.HandlerFunc) Action {
+	return Action{
 		uid:    uid,
 		action: action,
 	}
@@ -104,12 +104,12 @@ type Middleware struct {
 	middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc
 }
 
-func (m *Middleware) String() string {
+func (m Middleware) String() string {
 	return m.uid
 }
 
-func NewMiddleware(uid string, middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc) *Middleware {
-	return &Middleware{
+func NewMiddleware(uid string, middleware func(Cosys) func(http.HandlerFunc) http.HandlerFunc) Middleware {
+	return Middleware{
 		uid:        uid,
 		middleware: middleware,
 	}
@@ -122,12 +122,12 @@ type Policy struct {
 	policy func(Cosys, *http.Request) bool
 }
 
-func (p *Policy) String() string {
+func (p Policy) String() string {
 	return p.uid
 }
 
-func NewPolicy(uid string, policy func(Cosys, *http.Request) bool) *Policy {
-	return &Policy{
+func NewPolicy(uid string, policy func(Cosys, *http.Request) bool) Policy {
+	return Policy{
 		uid:    uid,
 		policy: policy,
 	}

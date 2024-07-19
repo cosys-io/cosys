@@ -5,8 +5,12 @@ type BootstrapHook struct {
 	hook func(*Cosys) error
 }
 
-func (b *BootstrapHook) Call(cosys *Cosys) error {
+func (b BootstrapHook) Call(cosys *Cosys) error {
 	return b.hook(cosys)
+}
+
+func (b BootstrapHook) String() string {
+	return b.uid
 }
 
 type CleanupHook struct {
@@ -14,6 +18,10 @@ type CleanupHook struct {
 	hook func(*Cosys) error
 }
 
-func (c *CleanupHook) Call(cosys *Cosys) error {
+func (c CleanupHook) Call(cosys *Cosys) error {
 	return c.hook(cosys)
+}
+
+func (c CleanupHook) String() string {
+	return c.uid
 }
