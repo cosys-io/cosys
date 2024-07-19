@@ -1,9 +1,5 @@
 package common
 
-import (
-	"github.com/spf13/cobra"
-)
-
 type Cosys struct {
 	server   *singleRegister[Server]
 	database *singleRegister[Database]
@@ -14,7 +10,7 @@ type Cosys struct {
 	middlewares *stringerRegister[Middleware]
 	policies    *stringerRegister[Policy]
 
-	commands *permRegister[*cobra.Command]
+	commands *permRegister[Command]
 	models   *permRegister[Model]
 	services *permRegister[Service]
 
@@ -22,8 +18,8 @@ type Cosys struct {
 	cleanupHooks   *stringerRegister[CleanupHook]
 }
 
-func New() *Cosys {
-	return &Cosys{
+func New() (*Cosys, error) {
+	cosys := &Cosys{
 		server:   newSingleRegister[Server](itemName("server")),
 		database: newSingleRegister[Database](itemName("database")),
 		logger:   newSingleRegister[Logger](itemName("logger")),
@@ -33,13 +29,19 @@ func New() *Cosys {
 		middlewares: newStringerRegister[Middleware](itemName("middleware")),
 		policies:    newStringerRegister[Policy](itemName("policies")),
 
-		commands: newPermRegister[*cobra.Command](itemName("command")),
+		commands: newPermRegister[Command](itemName("command")),
 		models:   newPermRegister[Model](itemName("model")),
 		services: newPermRegister[Service](itemName("service")),
 
 		bootstrapHooks: newStringerRegister[BootstrapHook](itemName("bootstrap hook")),
 		cleanupHooks:   newStringerRegister[CleanupHook](itemName("cleanup hook")),
 	}
+
+	if err := cosys.register(); err != nil {
+		return nil, err
+	}
+
+	return cosys, nil
 }
 
 func (c *Cosys) Server() Server {
@@ -120,11 +122,11 @@ func (c *Cosys) RemovePolicy(uid string) error {
 	return c.policies.Remove(uid)
 }
 
-func (c *Cosys) AddCommand(uid string, command *cobra.Command) error {
+func (c *Cosys) AddCommand(uid string, command Command) error {
 	return c.commands.Register(uid, command)
 }
 
-func (c *Cosys) AddCommands(commands map[string]*cobra.Command) error {
+func (c *Cosys) AddCommands(commands map[string]Command) error {
 	return c.commands.RegisterMany(commands)
 }
 
@@ -153,22 +155,23 @@ func (c *Cosys) AddCleanupHooks(hooks ...CleanupHook) error {
 }
 
 func (c *Cosys) Start() error {
-	cosys, err := c.register()
-	if err != nil {
-		return err
+	command := rootCmd(c)
+
+	for _, cmd := range c.commands.GetAll() {
+		command.AddCommand(cmd(c))
 	}
 
-	return cosys.Command.Execute()
+	return command.Execute()
 }
 
-func (c *Cosys) register() (*Cosys, error) {
+func (c *Cosys) register() error {
 	for _, module := range mdRegister {
 		if err := module(c); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return c, nil
+	return nil
 }
 
 func (c *Cosys) Bootstrap() error {

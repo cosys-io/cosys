@@ -1,53 +1,40 @@
 package common
 
 import (
-	"errors"
-	"fmt"
-	"github.com/spf13/viper"
-	"io/fs"
+	"github.com/spf13/cobra"
 	"log"
-	"os"
 )
 
-func InitConfigs() {
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	viper.SetConfigType("yaml")
-	viper.SetConfigName(".cli_configs")
-	viper.AddConfigPath(dir)
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal(err)
-	}
+type Command func(*Cosys) *cobra.Command
+
+func (c Command) String() string {
+	return c(nil).Name()
 }
 
-func GetPathConfig(key string, checkExists bool) (string, error) {
-	if !viper.InConfig(key) {
-		return "", fmt.Errorf("configuration not found: %s", key)
-	}
-	config := viper.GetString(key)
+func rootCmd(cosys *Cosys) *cobra.Command {
+	root := &cobra.Command{}
 
-	if checkExists {
-		exists, err := pathExists(config)
-		if err != nil {
-			return "", err
-		}
-		if !exists {
-			return "", fmt.Errorf("path does not exist: %s", config)
-		}
-	}
+	root.AddCommand(serveCmd(cosys))
 
-	return config, nil
+	return root
 }
 
-func pathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
+func serveCmd(cosys *Cosys) *cobra.Command {
+	return &cobra.Command{
+		Use:   "serve",
+		Short: "Start the server",
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := cosys.Bootstrap(); err != nil {
+				log.Fatal(err)
+			}
+
+			if err := cosys.Server().Start(); err != nil {
+				log.Fatal(err)
+			}
+
+			if err := cosys.Destroy(); err != nil {
+				log.Fatal(err)
+			}
+		},
 	}
-	if errors.Is(err, fs.ErrNotExist) {
-		return false, nil
-	}
-	return false, err
 }
