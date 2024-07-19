@@ -1,6 +1,12 @@
 package common
 
+import "os"
+
 type Cosys struct {
+	environment Environment
+	state       State
+	shutdown    <-chan os.Signal
+
 	server   *singleRegister[Server]
 	database *singleRegister[Database]
 	logger   *singleRegister[Logger]
@@ -10,7 +16,7 @@ type Cosys struct {
 	middlewares *stringerRegister[Middleware]
 	policies    *stringerRegister[Policy]
 
-	commands *permRegister[Command]
+	commands *stringerRegister[Command]
 	models   *permRegister[Model]
 	services *permRegister[Service]
 
@@ -29,7 +35,7 @@ func New() (*Cosys, error) {
 		middlewares: newStringerRegister[Middleware](itemName("middleware")),
 		policies:    newStringerRegister[Policy](itemName("policies")),
 
-		commands: newPermRegister[Command](itemName("command")),
+		commands: newStringerRegister[Command](itemName("command")),
 		models:   newPermRegister[Model](itemName("model")),
 		services: newPermRegister[Service](itemName("service")),
 
@@ -37,11 +43,31 @@ func New() (*Cosys, error) {
 		cleanupHooks:   newStringerRegister[CleanupHook](itemName("cleanup hook")),
 	}
 
+	if err := cosys.AddCommands(serveCmd, devCmd, testCmd); err != nil {
+		return nil, err
+	}
+
 	if err := cosys.register(); err != nil {
 		return nil, err
 	}
 
 	return cosys, nil
+}
+
+func (c *Cosys) Environment() Environment {
+	return c.environment
+}
+
+func (c *Cosys) SetEnvironment(env Environment) {
+	c.environment = env
+}
+
+func (c *Cosys) State() State {
+	return c.state
+}
+
+func (c *Cosys) ShutdownChannel() <-chan os.Signal {
+	return c.shutdown
 }
 
 func (c *Cosys) Server() Server {
@@ -122,12 +148,12 @@ func (c *Cosys) RemovePolicy(uid string) error {
 	return c.policies.Remove(uid)
 }
 
-func (c *Cosys) AddCommand(uid string, command Command) error {
-	return c.commands.Register(uid, command)
+func (c *Cosys) AddCommand(command Command) error {
+	return c.commands.Register(command.String(), command)
 }
 
-func (c *Cosys) AddCommands(commands map[string]Command) error {
-	return c.commands.RegisterMany(commands)
+func (c *Cosys) AddCommands(commands ...Command) error {
+	return c.commands.RegisterStringers(commands...)
 }
 
 func (c *Cosys) AddModel(uid string, model Model) error {
@@ -155,8 +181,10 @@ func (c *Cosys) AddCleanupHooks(hooks ...CleanupHook) error {
 }
 
 func (c *Cosys) Start() error {
-	command := rootCmd(c)
+	c.shutdown = shutdownChannel()
+	c.state = Execution
 
+	command := rootCmd(c)
 	for _, cmd := range c.commands.GetAll() {
 		command.AddCommand(cmd(c))
 	}
