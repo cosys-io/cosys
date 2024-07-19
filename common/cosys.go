@@ -9,17 +9,17 @@ type Cosys struct {
 	database *singleRegister[Database]
 	logger   *singleRegister[Logger]
 
-	routes      *multiRegister[*Route]
-	controllers *multiRegister[Controller]
-	middlewares *multiRegister[Middleware]
-	policies    *multiRegister[Policy]
+	routes      *stringerRegister[Route]
+	controllers *stringerRegister[Controller]
+	middlewares *stringerRegister[Middleware]
+	policies    *stringerRegister[Policy]
 
-	commands *multiRegister[*cobra.Command]
-	models   *multiRegister[Model]
-	services *multiRegister[Service]
+	commands *permRegister[*cobra.Command]
+	models   *permRegister[Model]
+	services *permRegister[Service]
 
-	bootstrapHooks *multiRegister[*BootstrapHook]
-	cleanupHooks   *multiRegister[*CleanupHook]
+	bootstrapHooks *stringerRegister[BootstrapHook]
+	cleanupHooks   *stringerRegister[CleanupHook]
 }
 
 func New() *Cosys {
@@ -28,17 +28,17 @@ func New() *Cosys {
 		database: newSingleRegister[Database](itemName("database")),
 		logger:   newSingleRegister[Logger](itemName("logger")),
 
-		routes:      newMultiRegister[*Route](itemName("routes"), allowUpdate, allowRemove),
-		controllers: newMultiRegister[Controller](itemName("controller"), allowUpdate, allowRemove),
-		middlewares: newMultiRegister[Middleware](itemName("middleware"), allowUpdate, allowRemove),
-		policies:    newMultiRegister[Policy](itemName("policies"), allowUpdate, allowRemove),
+		routes:      newStringerRegister[Route](itemName("routes")),
+		controllers: newStringerRegister[Controller](itemName("controller")),
+		middlewares: newStringerRegister[Middleware](itemName("middleware")),
+		policies:    newStringerRegister[Policy](itemName("policies")),
 
-		commands: newMultiRegister[*cobra.Command](itemName("command")),
-		models:   newMultiRegister[Model](itemName("model"), allowUpdate, allowRemove),
-		services: newMultiRegister[Service](itemName("service")),
+		commands: newPermRegister[*cobra.Command](itemName("command")),
+		models:   newPermRegister[Model](itemName("model")),
+		services: newPermRegister[Service](itemName("service")),
 
-		bootstrapHooks: newMultiRegister[*BootstrapHook](itemName("bootstrap hook"), allowUpdate, allowRemove),
-		cleanupHooks:   newMultiRegister[*CleanupHook](itemName("cleanup hook"), allowUpdate, allowRemove),
+		bootstrapHooks: newStringerRegister[BootstrapHook](itemName("bootstrap hook")),
+		cleanupHooks:   newStringerRegister[CleanupHook](itemName("cleanup hook")),
 	}
 }
 
@@ -72,11 +72,11 @@ func (c *Cosys) UseLogger(logger Logger) error {
 	return c.logger.Register(logger)
 }
 
-func (c *Cosys) AddRoutes(routes ...*Route) error {
+func (c *Cosys) AddRoutes(routes ...Route) error {
 	return c.routes.RegisterStringers(routes...)
 }
 
-func (c *Cosys) UpdateRoute(uid string, route *Route) error {
+func (c *Cosys) UpdateRoute(uid string, route Route) error {
 	return c.routes.Update(uid, route)
 }
 
@@ -120,31 +120,35 @@ func (c *Cosys) RemovePolicy(uid string) error {
 	return c.policies.Remove(uid)
 }
 
-func (c *Cosys) AddCommands(commands ...*cobra.Command) error {
-	return c.commands.RegisterStringers(commands...)
+func (c *Cosys) AddCommand(uid string, command *cobra.Command) error {
+	return c.commands.Register(uid, command)
 }
 
-func (c *Cosys) AddModels(models ...Model) error {
-	return c.models.RegisterStringers(models...)
+func (c *Cosys) AddCommands(commands map[string]*cobra.Command) error {
+	return c.commands.RegisterMany(commands)
 }
 
-func (c *Cosys) UpdateModel(uid string, model Model) error {
-	return c.models.Update(uid, model)
+func (c *Cosys) AddModel(uid string, model Model) error {
+	return c.models.Register(uid, model)
 }
 
-func (c *Cosys) RemoveModel(uid string) error {
-	return c.models.Remove(uid)
+func (c *Cosys) AddModels(models map[string]Model) error {
+	return c.models.RegisterMany(models)
 }
 
-func (c *Cosys) AddServices(services ...Service) error {
-	return c.services.RegisterStringers(services...)
+func (c *Cosys) AddService(uid string, service Service) error {
+	return c.services.Register(uid, service)
 }
 
-func (c *Cosys) AddBootstrapHooks(hooks ...*BootstrapHook) error {
+func (c *Cosys) AddServices(services map[string]Service) error {
+	return c.services.RegisterMany(services)
+}
+
+func (c *Cosys) AddBootstrapHooks(hooks ...BootstrapHook) error {
 	return c.bootstrapHooks.RegisterStringers(hooks...)
 }
 
-func (c *Cosys) AddCleanupHooks(hooks ...*CleanupHook) error {
+func (c *Cosys) AddCleanupHooks(hooks ...CleanupHook) error {
 	return c.cleanupHooks.RegisterStringers(hooks...)
 }
 
