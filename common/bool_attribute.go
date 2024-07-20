@@ -4,10 +4,10 @@ type BoolAttribute struct {
 	*AttributeBase
 }
 
-func NewBoolAttribute(name string) *BoolAttribute {
+func NewBoolAttribute(name string) BoolAttribute {
 	base := NewAttributeBase(name)
 
-	return &BoolAttribute{
+	return BoolAttribute{
 		&base,
 	}
 }

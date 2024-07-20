@@ -1,16 +1,23 @@
 package common
 
-import "github.com/iancoleman/strcase"
+import (
+	"fmt"
+	"github.com/iancoleman/strcase"
+	"reflect"
+)
 
+// Model is a content model.
 type Model interface {
 	New_() Entity
-	All_() []Attribute
-	Id_() *IntAttribute
-	Schema_() *ModelSchema
-	Lifecycle_() Lifecycle
+	Attributes_() []Attribute
+	IdAttribute_() Attribute
 
-	DBName_() string
-	DisplayName_() string
+	GetLifecycleHook_(event string, uid string) (LifecycleHook, error)
+	CallLifecycle_(event string, query EventQuery) error
+	AddLifecycleHook_(event string, hook LifecycleHook) (string, error)
+	UpdateLifecycleHook_(event string, uid string, hook LifecycleHook) error
+	RemoveLifecycleHook_(event string, uid string) error
+
 	SingularCamelName_() string
 	PluralCamelName_() string
 	SingularPascalName_() string
@@ -23,9 +30,74 @@ type Model interface {
 	PluralHumanName_() string
 }
 
+// NewModel returns a new model that is built upon ModelBase.
+func NewModel[E Entity, M Model](singularName, pluralName string) (M, error) {
+	base := &ModelBase{
+		entity: *new(E),
+
+		lifecycle: NewLifecycle(),
+
+		singularCamelName:  strcase.ToLowerCamel(singularName),
+		pluralCamelName:    strcase.ToLowerCamel(pluralName),
+		singularPascalName: strcase.ToCamel(singularName),
+		pluralPascalName:   strcase.ToCamel(pluralName),
+		singularSnakeName:  strcase.ToSnake(singularName),
+		pluralSnakeName:    strcase.ToSnake(pluralName),
+		singularKebabName:  strcase.ToKebab(singularName),
+		pluralKebabName:    strcase.ToKebab(pluralName),
+		singularHumanName:  strcase.ToDelimited(singularName, ' '),
+		pluralHumanName:    strcase.ToDelimited(pluralName, ' '),
+	}
+
+	model := new(M)
+	if reflect.ValueOf(model).Elem().Kind() != reflect.Struct {
+		return *new(M), fmt.Errorf("model is not a struct")
+	}
+
+	modelValue := reflect.ValueOf(model).Elem()
+	foundId := false
+	for i := range modelValue.NumField() {
+		name := modelValue.Type().Field(i).Name
+		fieldValue := modelValue.Field(i)
+		field := fieldValue.Interface()
+
+		var attr Attribute
+		switch field.(type) {
+		case BoolAttribute:
+			attr = NewBoolAttribute(name)
+		case IntAttribute:
+			attr = NewIntAttribute(name)
+			if name == "Id" {
+				foundId = true
+				base.idAttribute = attr
+			}
+		case StringAttribute:
+			attr = NewStringAttribute(name)
+		case *ModelBase:
+			fieldValue.Set(reflect.ValueOf(base))
+			continue
+		default:
+			continue
+		}
+		fieldValue.Set(reflect.ValueOf(attr))
+		base.attributes = append(base.attributes, attr)
+	}
+	if !foundId {
+		return *new(M), fmt.Errorf("id attribute not found in model %s", pluralName)
+	}
+
+	return *model, nil
+}
+
+// ModelBase pointers can be embedded into structs to provide them with
+// the methods to implement the Model interface.
 type ModelBase struct {
-	dbName             string
-	displayName        string
+	entity      Entity
+	idAttribute Attribute
+	attributes  []Attribute
+
+	lifecycle Lifecycle
+
 	singularCamelName  string
 	pluralCamelName    string
 	singularPascalName string
@@ -38,29 +110,49 @@ type ModelBase struct {
 	pluralHumanName    string
 }
 
-func NewModelBase(dbName, displayName, singularName, pluralName string) ModelBase {
-	return ModelBase{
-		dbName:             dbName,
-		displayName:        displayName,
-		singularCamelName:  strcase.ToLowerCamel(singularName),
-		pluralCamelName:    strcase.ToLowerCamel(pluralName),
-		singularPascalName: strcase.ToCamel(singularName),
-		pluralPascalName:   strcase.ToCamel(pluralName),
-		singularSnakeName:  strcase.ToSnake(singularName),
-		pluralSnakeName:    strcase.ToSnake(pluralName),
-		singularKebabName:  strcase.ToKebab(singularName),
-		pluralKebabName:    strcase.ToKebab(pluralName),
-		singularHumanName:  strcase.ToDelimited(singularName, ' '),
-		pluralHumanName:    strcase.ToDelimited(pluralName, ' '),
-	}
+// New_ returns a new entity of the model.
+func (m ModelBase) New_() Entity {
+	return reflect.Zero(reflect.TypeOf(m.entity)).Interface().(Entity)
 }
 
-func (m ModelBase) DBName_() string {
-	return m.dbName
+// IdAttribute_ returns the id attribute of the model.
+func (m ModelBase) IdAttribute_() Attribute {
+	return m.idAttribute
 }
 
-func (m ModelBase) DisplayName_() string {
-	return m.displayName
+// Attributes_ return a slice of all attributes of the model.
+func (m ModelBase) Attributes_() []Attribute {
+	return m.attributes
+}
+
+// GetLifecycleHook_ returns a hook specified by the given uid
+// for the given event in the lifecycle of the model.
+func (m ModelBase) GetLifecycleHook_(event string, uid string) (LifecycleHook, error) {
+	return m.lifecycle.Get(event, uid)
+}
+
+// CallLifecycle_ calls all hooks for the given event
+// in the lifecycle of the model.
+func (m ModelBase) CallLifecycle_(event string, query EventQuery) error {
+	return m.lifecycle.Call(event, query)
+}
+
+// AddLifecycleHook_ adds a hook for the given event to the lifecycle of the model,
+// and returns a generated uid for updating or removing.
+func (m ModelBase) AddLifecycleHook_(event string, hook LifecycleHook) (string, error) {
+	return m.lifecycle.Add(event, hook)
+}
+
+// UpdateLifecycleHook_ updates a hook specified by the given uid
+// for the given event in the lifecycle of the model.
+func (m ModelBase) UpdateLifecycleHook_(event string, uid string, hook LifecycleHook) error {
+	return m.lifecycle.Update(event, uid, hook)
+}
+
+// RemoveLifecycleHook_ removes a hook specified by the given uid
+// for the given event from the lifecycle of the model.
+func (m ModelBase) RemoveLifecycleHook_(event string, uid string) error {
+	return m.lifecycle.Remove(event, uid)
 }
 
 func (m ModelBase) SingularCamelName_() string {
@@ -103,5 +195,6 @@ func (m ModelBase) PluralHumanName_() string {
 	return m.pluralHumanName
 }
 
+// Entity is a record/document.
 type Entity interface {
 }

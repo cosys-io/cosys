@@ -4,10 +4,10 @@ type IntAttribute struct {
 	*AttributeBase
 }
 
-func NewIntAttribute(name string) *IntAttribute {
+func NewIntAttribute(name string) IntAttribute {
 	base := NewAttributeBase(name)
 
-	return &IntAttribute{
+	return IntAttribute{
 		&base,
 	}
 }

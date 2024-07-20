@@ -4,10 +4,10 @@ type StringAttribute struct {
 	*AttributeBase
 }
 
-func NewStringAttribute(name string) *StringAttribute {
+func NewStringAttribute(name string) StringAttribute {
 	base := NewAttributeBase(name)
 
-	return &StringAttribute{
+	return StringAttribute{
 		&base,
 	}
 }
