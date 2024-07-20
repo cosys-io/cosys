@@ -10,6 +10,7 @@ var (
 )
 
 // RegisterModule registers a module to the cosys app.
+// Safe for concurrent use.
 func RegisterModule(moduleName string, module Module) error {
 	return mdRegister.Register(moduleName, module)
 }

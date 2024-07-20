@@ -330,7 +330,7 @@ func (c *Cosys) Start() error {
 
 // register calls all registered module functions on the cosys instance.
 func (c *Cosys) register() error {
-	for _, module := range mdRegister {
+	for _, module := range mdRegister.GetAll() {
 		if err := module(c); err != nil {
 			return err
 		}

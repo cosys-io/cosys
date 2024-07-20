@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// LogLevel is the alert level of a log message.
 type LogLevel string
 
 const (
@@ -13,6 +14,7 @@ const (
 	Error LogLevel = "ERROR"
 )
 
+// Logger is a core service for logging.
 type Logger interface {
 	Log(stringer fmt.Stringer, logLevel LogLevel)
 	Info(stringer fmt.Stringer)
