@@ -22,7 +22,7 @@ type Condition interface {
 	Or(Condition) Condition
 }
 
-type NestedCondition struct {
+type nestedCondition struct {
 	Op    NestedOperation
 	Left  Condition
 	Right Condition
@@ -36,31 +36,31 @@ const (
 	Or  NestedOperation = "Or"
 )
 
-func (n NestedCondition) Not() Condition {
-	return &NestedCondition{
+func (n nestedCondition) Not() Condition {
+	return &nestedCondition{
 		Not,
 		n,
 		nil,
 	}
 }
 
-func (n NestedCondition) And(right Condition) Condition {
-	return &NestedCondition{
+func (n nestedCondition) And(right Condition) Condition {
+	return &nestedCondition{
 		And,
 		n,
 		right,
 	}
 }
 
-func (n NestedCondition) Or(right Condition) Condition {
-	return &NestedCondition{
+func (n nestedCondition) Or(right Condition) Condition {
+	return &nestedCondition{
 		Or,
 		n,
 		right,
 	}
 }
 
-type ExpressionCondition struct {
+type expressionCondition struct {
 	Op    ExpressionOperation
 	Left  Attribute
 	Right any
@@ -90,24 +90,24 @@ const (
 	NotNull ExpressionOperation = "Is Not Null"
 )
 
-func (e ExpressionCondition) Not() Condition {
-	return &NestedCondition{
+func (e expressionCondition) Not() Condition {
+	return &nestedCondition{
 		Not,
 		&e,
 		nil,
 	}
 }
 
-func (e ExpressionCondition) And(right Condition) Condition {
-	return &NestedCondition{
+func (e expressionCondition) And(right Condition) Condition {
+	return &nestedCondition{
 		And,
 		&e,
 		right,
 	}
 }
 
-func (e ExpressionCondition) Or(right Condition) Condition {
-	return &NestedCondition{
+func (e expressionCondition) Or(right Condition) Condition {
+	return &nestedCondition{
 		Or,
 		&e,
 		right,
