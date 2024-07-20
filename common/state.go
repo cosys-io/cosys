@@ -6,6 +6,7 @@ import (
 	"syscall"
 )
 
+// Environment specifies which environment the app is running in.
 type Environment string
 
 const (
@@ -15,6 +16,7 @@ const (
 	Cmd  Environment = "command"
 )
 
+// State specifies which stage the cosys app is in.
 type State string
 
 const (
@@ -24,6 +26,8 @@ const (
 	Cleanup      State = "cleanup"
 )
 
+// shutdownChannel returns a read-only channel that is sent to
+// when the cosys app is interrupted or terminated.
 func shutdownChannel() <-chan os.Signal {
 	shutdownChan := make(chan os.Signal, 1)
 	signal.Notify(shutdownChan, syscall.SIGINT, syscall.SIGTERM)

@@ -5,20 +5,15 @@ import (
 	"log"
 )
 
+// Command takes in a cosys instance and returns a command.
 type Command func(*Cosys) *cobra.Command
 
+// String returns the name of the command, i.e. the word used to run the command in the cli.
 func (c Command) String() string {
 	return c(nil).Name()
 }
 
-func rootCmd(cosys *Cosys) *cobra.Command {
-	root := &cobra.Command{}
-
-	root.AddCommand(serveCmd(cosys))
-
-	return root
-}
-
+// serveCmd is the command to start the server in production mode.
 func serveCmd(cosys *Cosys) *cobra.Command {
 	return &cobra.Command{
 		Use:   "serve",
@@ -26,25 +21,14 @@ func serveCmd(cosys *Cosys) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cosys.SetEnvironment(Prod)
 
-			if err := cosys.Bootstrap(); err != nil {
-				log.Fatal(err)
-			}
-
-			go func() {
-				if err := cosys.Server().Start(); err != nil {
-					log.Fatal(err)
-				}
-			}()
-
-			<-cosys.ShutdownChannel()
-
-			if err := cosys.Destroy(); err != nil {
-				log.Fatal(err)
+			for err := range cosys.startServer() {
+				log.Print(err)
 			}
 		},
 	}
 }
 
+// devCmd is the command to start the server in development mode.
 func devCmd(cosys *Cosys) *cobra.Command {
 	return &cobra.Command{
 		Use:   "dev",
@@ -52,25 +36,14 @@ func devCmd(cosys *Cosys) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cosys.SetEnvironment(Dev)
 
-			if err := cosys.Bootstrap(); err != nil {
-				log.Fatal(err)
-			}
-
-			go func() {
-				if err := cosys.Server().Start(); err != nil {
-					log.Fatal(err)
-				}
-			}()
-
-			<-cosys.ShutdownChannel()
-
-			if err := cosys.Destroy(); err != nil {
-				log.Fatal(err)
+			for err := range cosys.startServer() {
+				log.Print(err)
 			}
 		},
 	}
 }
 
+// testCmd is the command to start the server in test mode.
 func testCmd(cosys *Cosys) *cobra.Command {
 	return &cobra.Command{
 		Use:   "dev",
@@ -78,20 +51,8 @@ func testCmd(cosys *Cosys) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cosys.SetEnvironment(Test)
 
-			if err := cosys.Bootstrap(); err != nil {
-				log.Fatal(err)
-			}
-
-			go func() {
-				if err := cosys.Server().Start(); err != nil {
-					log.Fatal(err)
-				}
-			}()
-
-			<-cosys.ShutdownChannel()
-
-			if err := cosys.Destroy(); err != nil {
-				log.Fatal(err)
+			for err := range cosys.startServer() {
+				log.Print(err)
 			}
 		},
 	}
