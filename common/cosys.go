@@ -69,15 +69,8 @@ func (c *Cosys) Environment() Environment {
 }
 
 // SetEnvironment specifies the environment the cosys app is running in.
-// Can only be used during registration.
-func (c *Cosys) SetEnvironment(env Environment) error {
-	if c.state != Registration {
-		return fmt.Errorf("environment must be set during registration")
-	}
-
+func (c *Cosys) SetEnvironment(env Environment) {
 	c.environment = env
-
-	return nil
 }
 
 // State returns the current state of the cosys app.

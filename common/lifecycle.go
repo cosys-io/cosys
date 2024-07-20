@@ -2,11 +2,15 @@ package common
 
 import "fmt"
 
-// LifecycleHook is a hook that is called when a model's lifecycle event happens.
-type LifecycleHook func(params DBParams, result any, state any) (afterState any, err error)
+// EventQuery is the query data associated with a lifecycle event.
+type EventQuery struct {
+	Params DBParams
+	Result any
+	State  any
+}
 
-// noopLifecycleHook is a hook that does nothing.
-func noopLifecycleHook(params DBParams, result any, state any) (any, error) { return nil, nil }
+// LifecycleHook is a hook that is called when a model's lifecycle event happens.
+type LifecycleHook func(query EventQuery) (err error)
 
 // Lifecycle is a group of lifecycle hooks associated with a model.
 type Lifecycle struct {
@@ -66,6 +70,34 @@ func (l Lifecycle) getRegister(event string) (*multiRegister[LifecycleHook], err
 	default:
 		return nil, fmt.Errorf("unknown lifecycle event: %s", event)
 	}
+}
+
+// Get returns a hook specified by its uid for a lifecycle event.
+// Safe for concurrent use.
+func (l Lifecycle) Get(event string, uid string) (LifecycleHook, error) {
+	register, err := l.getRegister(event)
+	if err != nil {
+		return nil, err
+	}
+
+	return register.Get(uid)
+}
+
+// Call calls all hooks for a lifecycle event and returns the after state.
+func (l Lifecycle) Call(event string, query EventQuery) error {
+	register, err := l.getRegister(event)
+	if err != nil {
+		return err
+	}
+
+	hooks := register.GetAll()
+	for _, hook := range hooks {
+		if err = hook(query); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Add adds a hook for a lifecycle event and returns a uid used for updating and removing.

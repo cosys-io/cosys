@@ -416,7 +416,7 @@ func randomString(prefix []byte, num int) string {
 
 // isZero returns whether an item is a zero-value.
 func isZero[T any](item T) bool {
-	return reflect.DeepEqual(item, *new(T))
+	return reflect.ValueOf(item).IsZero()
 }
 
 // anyZero returns whether any item in a map is a zero-value.
