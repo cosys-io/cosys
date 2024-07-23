@@ -11,8 +11,9 @@ var (
 
 // RegisterModule registers a module to the cosys app.
 // Safe for concurrent use.
-func RegisterModule(moduleName string, module Module) error {
-	return mdRegister.Register(moduleName, module)
+func RegisterModule(module Module) error {
+	_, err := mdRegister.RegisterRandom(module)
+	return err
 }
 
 // Module is a hook that is called during the registration stage.

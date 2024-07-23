@@ -19,7 +19,7 @@ type Route struct {
 
 // String returns the route path.
 func (r Route) String() string {
-	return r.Path
+	return r.Method + " " + r.Path
 }
 
 // NewRoute returns a new route with configurations.

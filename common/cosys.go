@@ -377,7 +377,7 @@ func (c *Cosys) Bootstrap() error {
 	c.state = Bootstrap
 
 	for _, hook := range c.bootstrapHooks.GetAll() {
-		if err := hook.Call(c); err != nil {
+		if err := hook(c); err != nil {
 			return err
 		}
 	}
@@ -392,7 +392,7 @@ func (c *Cosys) Cleanup() error {
 	c.state = Cleanup
 
 	for _, hook := range c.cleanupHooks.GetAll() {
-		if err := hook.Call(c); err != nil {
+		if err := hook(c); err != nil {
 			return err
 		}
 	}
