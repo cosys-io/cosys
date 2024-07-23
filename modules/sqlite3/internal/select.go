@@ -1,4 +1,4 @@
-package sqlite3
+package internal
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
 	}
 
 	sb.WriteString(" FROM ")
-	sb.WriteString(model.DBName_())
+	sb.WriteString(model.PluralSnakeName_())
 
 	num = len(params.Where)
 	if num > 0 {

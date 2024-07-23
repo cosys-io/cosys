@@ -260,6 +260,19 @@ func (c *Cosys) AddModels(models map[string]Model) error {
 	return c.models.RegisterMany(models)
 }
 
+// Model returns a model by uid.
+// Throws error if model with uid does not exist.
+// Safe for concurrent use.
+func (c *Cosys) Model(uid string) (Model, error) {
+	return c.models.Get(uid)
+}
+
+// Models return a map of all models.
+// Safe for concurrent use.
+func (c *Cosys) Models() map[string]Model {
+	return c.models.GetAll()
+}
+
 // AddService adds a service to the cosys app.
 // Throws error if multiple routes have the same uid.
 // Safe for concurrent use.

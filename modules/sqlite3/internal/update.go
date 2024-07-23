@@ -1,4 +1,4 @@
-package sqlite3
+package internal
 
 import (
 	"fmt"
@@ -7,18 +7,35 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-func DeleteQuery(params *common.DBParams, model common.Model) (string, error) {
+func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 	if model == nil {
 		return "", fmt.Errorf("model is nil")
 	}
 
 	var sb strings.Builder
 
-	sb.WriteString("DELETE FROM ")
+	sb.WriteString("UPDATE ")
 
-	sb.WriteString(model.DBName_())
+	sb.WriteString(model.PluralSnakeName_())
 
-	num := len(params.Where)
+	sb.WriteString(" SET ")
+
+	update := params.Columns
+	num := len(params.Columns)
+	if num == 0 {
+		update = model.Attributes_()[1:]
+		num = len(update)
+	}
+
+	for i := range num {
+		sb.WriteString(update[i].SnakeName())
+		sb.WriteString(" = ?")
+		if i < num-1 {
+			sb.WriteString(", ")
+		}
+	}
+
+	num = len(params.Where)
 	if num > 0 {
 		sb.WriteString(" WHERE")
 		for index, where := range params.Where {

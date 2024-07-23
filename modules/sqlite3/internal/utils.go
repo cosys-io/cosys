@@ -1,4 +1,4 @@
-package sqlite3
+package internal
 
 import (
 	"database/sql"
@@ -22,7 +22,7 @@ func Extract(data common.Entity, params *common.DBParams, model common.Model) ([
 
 	columns := params.Columns
 	if len(params.Columns) == 0 {
-		columns = model.All_()[1:]
+		columns = model.Attributes_()[1:]
 	}
 
 	dataValue := reflect.ValueOf(data)
@@ -59,7 +59,7 @@ func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.E
 
 	selects := params.Select
 	if len(params.Select) == 0 {
-		selects = model.All_()
+		selects = model.Attributes_()
 	}
 
 	entityType := reflect.TypeOf(entity)

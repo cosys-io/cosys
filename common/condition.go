@@ -24,9 +24,9 @@ type Condition interface {
 	Or(Condition) Condition
 }
 
-// nestedCondition is a where condition formed by performing the
+// NestedCondition is a where condition formed by performing the
 // "not", "and", or "or" operations on other condition/s.
-type nestedCondition struct {
+type NestedCondition struct {
 	Op    NestedOperation
 	Left  Condition
 	Right Condition
@@ -42,8 +42,8 @@ const (
 
 // Not returns the condition, formed by taking the
 // logical negation of the nested condition.
-func (n nestedCondition) Not() Condition {
-	return &nestedCondition{
+func (n NestedCondition) Not() Condition {
+	return &NestedCondition{
 		Not,
 		n,
 		nil,
@@ -52,8 +52,8 @@ func (n nestedCondition) Not() Condition {
 
 // And returns the condition, formed by taking the
 // logical conjunction of the nested condition and the given condition.
-func (n nestedCondition) And(right Condition) Condition {
-	return &nestedCondition{
+func (n NestedCondition) And(right Condition) Condition {
+	return &NestedCondition{
 		And,
 		n,
 		right,
@@ -62,17 +62,17 @@ func (n nestedCondition) And(right Condition) Condition {
 
 // Or returns the condition, formed by taking the
 // logical disjunction of the nested condition and the given condition.
-func (n nestedCondition) Or(right Condition) Condition {
-	return &nestedCondition{
+func (n NestedCondition) Or(right Condition) Condition {
+	return &NestedCondition{
 		Or,
 		n,
 		right,
 	}
 }
 
-// expressionCondition is a condition formed by
+// ExpressionCondition is a condition formed by
 // performing operations a value.
-type expressionCondition struct {
+type ExpressionCondition struct {
 	Op    ExpressionOperation
 	Left  Attribute
 	Right any
@@ -104,8 +104,8 @@ const (
 
 // Not returns the condition, formed by taking the
 // logical negation of the expression condition.
-func (e expressionCondition) Not() Condition {
-	return &nestedCondition{
+func (e ExpressionCondition) Not() Condition {
+	return &NestedCondition{
 		Not,
 		&e,
 		nil,
@@ -114,8 +114,8 @@ func (e expressionCondition) Not() Condition {
 
 // And returns the condition, formed by taking the
 // logical conjunction of the expression condition and the given condition.
-func (e expressionCondition) And(right Condition) Condition {
-	return &nestedCondition{
+func (e ExpressionCondition) And(right Condition) Condition {
+	return &NestedCondition{
 		And,
 		&e,
 		right,
@@ -124,8 +124,8 @@ func (e expressionCondition) And(right Condition) Condition {
 
 // Or returns the condition, formed by taking the
 // logical disjunction of the expression condition and the given condition.
-func (e expressionCondition) Or(right Condition) Condition {
-	return &nestedCondition{
+func (e ExpressionCondition) Or(right Condition) Condition {
+	return &NestedCondition{
 		Or,
 		&e,
 		right,

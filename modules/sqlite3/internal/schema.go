@@ -1,4 +1,4 @@
-package sqlite3
+package internal
 
 import (
 	"fmt"
@@ -7,18 +7,7 @@ import (
 	"strings"
 )
 
-func loadSchema(cosys common.Cosys) error {
-	for _, model := range cosys.Models {
-		schema := schemaToSQL(*model.Schema_())
-		if _, err := db.Exec(schema); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func schemaToSQL(schema common.ModelSchema) string {
+func schemaToSQL(schema *common.ModelSchema) string {
 	var sb strings.Builder
 
 	sb.WriteString("CREATE TABLE IF NOT EXISTS ")

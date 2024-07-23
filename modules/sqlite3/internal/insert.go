@@ -1,4 +1,4 @@
-package sqlite3
+package internal
 
 import (
 	"fmt"
@@ -7,33 +7,43 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
+func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
 	if model == nil {
 		return "", fmt.Errorf("model is nil")
 	}
 
 	var sb strings.Builder
 
-	sb.WriteString("UPDATE ")
+	sb.WriteString("INSERT INTO ")
 
-	sb.WriteString(model.DBName_())
+	sb.WriteString(model.PluralSnakeName_())
 
-	sb.WriteString(" SET ")
-
-	update := params.Columns
+	insert := params.Columns
 	num := len(params.Columns)
 	if num == 0 {
-		update = model.All_()[1:]
-		num = len(update)
+		insert = model.Attributes_()[1:]
+		num = len(insert)
 	}
 
-	for i := range num {
-		sb.WriteString(update[i].SnakeName())
-		sb.WriteString(" = ?")
-		if i < num-1 {
+	sb.WriteString(" ( ")
+	for index, col := range insert {
+		insertString := col.SnakeName()
+
+		sb.WriteString(insertString)
+		if index < num-1 {
 			sb.WriteString(", ")
 		}
 	}
+	sb.WriteString(" )")
+
+	sb.WriteString(" VALUES ( ")
+	for index := range num {
+		sb.WriteString("?")
+		if index < num-1 {
+			sb.WriteString(", ")
+		}
+	}
+	sb.WriteString(" )")
 
 	num = len(params.Where)
 	if num > 0 {
@@ -51,8 +61,6 @@ func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 				sb.WriteString(", ")
 			}
 		}
-	} else {
-		return "", fmt.Errorf("where condition not found")
 	}
 
 	return sb.String(), nil

@@ -11,6 +11,7 @@ type Model interface {
 	New_() Entity
 	Attributes_() []Attribute
 	IdAttribute_() Attribute
+	Schema_() *ModelSchema
 
 	GetLifecycleHook_(event string, uid string) (LifecycleHook, error)
 	CallLifecycle_(event string, query EventQuery) error
@@ -18,6 +19,7 @@ type Model interface {
 	UpdateLifecycleHook_(event string, uid string, hook LifecycleHook) error
 	RemoveLifecycleHook_(event string, uid string) error
 
+	DBName_() string
 	SingularCamelName_() string
 	PluralCamelName_() string
 	SingularPascalName_() string
@@ -31,12 +33,13 @@ type Model interface {
 }
 
 // NewModel returns a new model that is built upon ModelBase.
-func NewModel[E Entity, M Model](singularName, pluralName string) (M, error) {
+func NewModel[E Entity, M Model](dbname, singularName, pluralName string) (M, error) {
 	base := &ModelBase{
 		entity: *new(E),
 
 		lifecycle: NewLifecycle(),
 
+		dbname:             dbname,
 		singularCamelName:  strcase.ToLowerCamel(singularName),
 		pluralCamelName:    strcase.ToLowerCamel(pluralName),
 		singularPascalName: strcase.ToCamel(singularName),
@@ -98,6 +101,7 @@ type ModelBase struct {
 
 	lifecycle Lifecycle
 
+	dbname             string
 	singularCamelName  string
 	pluralCamelName    string
 	singularPascalName string
@@ -153,6 +157,10 @@ func (m ModelBase) UpdateLifecycleHook_(event string, uid string, hook Lifecycle
 // for the given event from the lifecycle of the model.
 func (m ModelBase) RemoveLifecycleHook_(event string, uid string) error {
 	return m.lifecycle.Remove(event, uid)
+}
+
+func (m ModelBase) DBName_() string {
+	return m.dbname
 }
 
 func (m ModelBase) SingularCamelName_() string {
