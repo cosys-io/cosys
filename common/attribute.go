@@ -78,7 +78,7 @@ func (a attributeBase) Desc() *Order {
 // Null returns where condition, whether
 // the value of the attribute is null.
 func (a attributeBase) Null() Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Null,
 		a,
 		nil,
@@ -88,7 +88,7 @@ func (a attributeBase) Null() Condition {
 // NotNull returns where condition, whether
 // the value of the attribute is not null.
 func (a attributeBase) NotNull() Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Null,
 		a,
 		nil,

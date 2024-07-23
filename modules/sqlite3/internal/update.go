@@ -55,5 +55,24 @@ func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 		return "", fmt.Errorf("where condition not found")
 	}
 
+	sb.WriteString(" RETURNING")
+
+	num = len(params.Select)
+	if num == 0 {
+		sb.WriteString(" *")
+	} else {
+		for index, col := range params.Select {
+			sb.WriteString(" ")
+
+			colString := col.SnakeName()
+
+			sb.WriteString(colString)
+
+			if index < num-1 {
+				sb.WriteString(",")
+			}
+		}
+	}
+
 	return sb.String(), nil
 }

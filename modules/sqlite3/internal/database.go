@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/cosys-io/cosys/common"
+	"sync"
 )
 
 type Database struct {
@@ -153,20 +154,29 @@ func (d Database) Create(uid string, data common.Entity, params common.DBParams)
 		return nil, err
 	}
 
-	_, err = d.db.Exec(query, values...)
+	rows, err := d.db.Query(query, values...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	if !rows.Next() {
+		return nil, fmt.Errorf("entity could not be created")
+	}
+
+	entity, err := Scan(rows, &params, model)
 	if err != nil {
 		return nil, err
 	}
 
 	if err = model.CallLifecycle_("afterCreate", common.EventQuery{
 		Params: params,
-		Result: data,
+		Result: entity,
 		State:  &state,
 	}); err != nil {
 		return nil, err
 	}
-
-	// TODO: return new entity
 
 	return data, nil
 }
@@ -191,27 +201,58 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 		return nil, err
 	}
 
-	for _, data := range datas {
-		values, err := Extract(data, &params, model)
-		if err != nil {
-			return nil, err
-		}
+	entities := make([]common.Entity, len(datas))
+	wg := sync.WaitGroup{}
+	errCh := make(chan error)
 
-		_, err = d.db.Exec(query, values...)
-		if err != nil {
+	for index, data := range datas {
+		wg.Add(1)
+		go func(index int, data common.Entity) {
+			values, err := Extract(data, &params, model)
+			if err != nil {
+				errCh <- err
+			}
+
+			rows, err := d.db.Query(query, values...)
+			if err != nil {
+				errCh <- err
+			}
+
+			defer rows.Close()
+
+			if !rows.Next() {
+				errCh <- fmt.Errorf("entity could not be created")
+			}
+
+			entity, err := Scan(rows, &params, model)
+			if err != nil {
+				errCh <- err
+			}
+
+			entities[index] = entity
+			wg.Done()
+		}(index, data)
+	}
+
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	select {
+	case err, ok := <-errCh:
+		if ok {
 			return nil, err
 		}
 	}
 
 	if err = model.CallLifecycle_("afterCreateMany", common.EventQuery{
 		Params: params,
-		Result: datas,
+		Result: entities,
 		State:  &state,
 	}); err != nil {
 		return nil, err
 	}
-
-	// TODO: return new entity
 
 	return datas, nil
 }
@@ -243,20 +284,29 @@ func (d Database) Update(uid string, data common.Entity, params common.DBParams)
 		return nil, err
 	}
 
-	_, err = d.db.Exec(query, values...)
+	rows, err := d.db.Query(query, values...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	if !rows.Next() {
+		return nil, fmt.Errorf("entity could not be updated")
+	}
+
+	entity, err := Scan(rows, &params, model)
 	if err != nil {
 		return nil, err
 	}
 
 	if err = model.CallLifecycle_("afterUpdate", common.EventQuery{
 		Params: params,
-		Result: data,
+		Result: entity,
 		State:  &state,
 	}); err != nil {
 		return nil, err
 	}
-
-	// TODO: return new entity
 
 	return data, nil
 }
@@ -286,20 +336,29 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 		return nil, err
 	}
 
-	_, err = d.db.Exec(query, values...)
+	rows, err := d.db.Query(query, values...)
 	if err != nil {
 		return nil, err
 	}
 
+	var entities []common.Entity
+
+	for rows.Next() {
+		entity, err := Scan(rows, &params, model)
+		if err != nil {
+			return nil, err
+		}
+
+		entities = append(entities, entity)
+	}
+
 	if err = model.CallLifecycle_("afterUpdateMany", common.EventQuery{
 		Params: params,
-		Result: data,
+		Result: entities,
 		State:  &state,
 	}); err != nil {
 		return nil, err
 	}
-
-	// TODO: return new entity
 
 	return []common.Entity{data}, nil
 }
@@ -326,16 +385,23 @@ func (d Database) Delete(uid string, params common.DBParams) (common.Entity, err
 		return nil, err
 	}
 
-	_, err = d.db.Exec(query)
+	rows, err := d.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: return old entity
+	if !rows.Next() {
+		return nil, fmt.Errorf("entity not found")
+	}
+
+	entity, err := Scan(rows, &params, model)
+	if err != nil {
+		return nil, err
+	}
 
 	if err = model.CallLifecycle_("afterDelete", common.EventQuery{
 		Params: params,
-		Result: nil,
+		Result: entity,
 		State:  &state,
 	}); err != nil {
 		return nil, err
@@ -364,16 +430,25 @@ func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entit
 		return nil, err
 	}
 
-	_, err = d.db.Exec(query)
+	rows, err := d.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: return old entity
+	var entities []common.Entity
+
+	for rows.Next() {
+		entity, err := Scan(rows, &params, model)
+		if err != nil {
+			return nil, err
+		}
+
+		entities = append(entities, entity)
+	}
 
 	if err = model.CallLifecycle_("afterDeleteMany", common.EventQuery{
 		Params: params,
-		Result: nil,
+		Result: entities,
 		State:  &state,
 	}); err != nil {
 		return nil, err

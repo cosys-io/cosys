@@ -17,7 +17,7 @@ func NewStringAttribute(name string) StringAttribute {
 // Eq returns the where condition, whether the value of
 // the string attribute is equals to the given string.
 func (s StringAttribute) Eq(right string) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Eq,
 		s,
 		right,
@@ -27,7 +27,7 @@ func (s StringAttribute) Eq(right string) Condition {
 // NEq returns the where condition, whether the value of
 // the string attribute is not equals to the given string.
 func (s StringAttribute) NEq(right string) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Neq,
 		s,
 		right,
@@ -37,7 +37,7 @@ func (s StringAttribute) NEq(right string) Condition {
 // In returns the where condition, whether the value of
 // the string attribute is in the given slice of strings.
 func (s StringAttribute) In(right []string) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		In,
 		s,
 		right,
@@ -47,7 +47,7 @@ func (s StringAttribute) In(right []string) Condition {
 // NotIn returns the where condition, whether the value of
 // the string attribute is in the given slice of strings.
 func (s StringAttribute) NotIn(right []string) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		NotIn,
 		s,
 		right,
@@ -57,7 +57,7 @@ func (s StringAttribute) NotIn(right []string) Condition {
 // Contains returns the where condition, whether the value of
 // the string attribute contains the given string.
 func (s StringAttribute) Contains(right string) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Contains,
 		s,
 		right,
@@ -67,7 +67,7 @@ func (s StringAttribute) Contains(right string) Condition {
 // NotContains returns the where condition, whether the value of
 // the string attribute does not contain the given string.
 func (s StringAttribute) NotContains(right string) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		NotContains,
 		s,
 		right,
@@ -77,7 +77,7 @@ func (s StringAttribute) NotContains(right string) Condition {
 // StartsWith returns the where condition, whether the value of
 // the string attribute starts with the given string.
 func (s StringAttribute) StartsWith(right string) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		StartsWith,
 		s,
 		right,
@@ -87,7 +87,7 @@ func (s StringAttribute) StartsWith(right string) Condition {
 // EndsWith returns the where condition, whether the value of
 // the string attribute ends with the given string.
 func (s StringAttribute) EndsWith(right string) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		EndsWith,
 		s,
 		right,

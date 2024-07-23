@@ -17,7 +17,7 @@ func NewBoolAttribute(name string) BoolAttribute {
 // Not returns where condition, whether the value of
 // the boolean attribute is false.
 func (b BoolAttribute) Not() Condition {
-	return &nestedCondition{
+	return &NestedCondition{
 		Not,
 		b,
 		nil,
@@ -27,7 +27,7 @@ func (b BoolAttribute) Not() Condition {
 // And returns where condition, whether the value of
 // the boolean attribute and the given condition are true.
 func (b BoolAttribute) And(right Condition) Condition {
-	return &nestedCondition{
+	return &NestedCondition{
 		And,
 		b,
 		right,
@@ -37,7 +37,7 @@ func (b BoolAttribute) And(right Condition) Condition {
 // Or returns where condition, whether the value of
 // the boolean attribute or the given condition is true.
 func (b BoolAttribute) Or(right Condition) Condition {
-	return &nestedCondition{
+	return &NestedCondition{
 		And,
 		b,
 		right,

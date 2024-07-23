@@ -17,7 +17,7 @@ func NewIntAttribute(name string) IntAttribute {
 // Eq returns the where condition, whether the value of
 // the integer attribute is equals to the given integer.
 func (s IntAttribute) Eq(right int) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Eq,
 		s,
 		right,
@@ -27,7 +27,7 @@ func (s IntAttribute) Eq(right int) Condition {
 // NEq returns the where condition, whether the value of
 // the integer attribute is not equals to the given integer.
 func (s IntAttribute) NEq(right int) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Neq,
 		s,
 		right,
@@ -37,7 +37,7 @@ func (s IntAttribute) NEq(right int) Condition {
 // In returns the where condition, whether the value of
 // the integer attribute is in the given slice of integers.
 func (s IntAttribute) In(right []int) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		In,
 		s,
 		right,
@@ -47,7 +47,7 @@ func (s IntAttribute) In(right []int) Condition {
 // NotIn returns the where condition, whether the value of
 // the integer attribute is not in the given slice of integers.
 func (s IntAttribute) NotIn(right []int) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		NotIn,
 		s,
 		right,
@@ -57,7 +57,7 @@ func (s IntAttribute) NotIn(right []int) Condition {
 // Lt returns the where condition, whether the value of
 // the integer attribute is less than the given integer.
 func (s IntAttribute) Lt(right int) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Lt,
 		s,
 		right,
@@ -67,7 +67,7 @@ func (s IntAttribute) Lt(right int) Condition {
 // Gt returns the where condition, whether the value of
 // the integer attribute is greater than the given integer.
 func (s IntAttribute) Gt(right int) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Gt,
 		s,
 		right,
@@ -77,7 +77,7 @@ func (s IntAttribute) Gt(right int) Condition {
 // Lte returns the where condition, whether the value of
 // the integer attribute is less than or equals to the given integer.
 func (s IntAttribute) Lte(right int) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Lte,
 		s,
 		right,
@@ -87,7 +87,7 @@ func (s IntAttribute) Lte(right int) Condition {
 // Gte returns the where condition, whether the value of
 // the integer attribute is greater than or equals to the given integer.
 func (s IntAttribute) Gte(right int) Condition {
-	return &expressionCondition{
+	return &ExpressionCondition{
 		Gte,
 		s,
 		right,
