@@ -2,20 +2,41 @@ package server
 
 import (
 	"github.com/cosys-io/cosys/common"
-	"log"
+	"github.com/cosys-io/cosys/modules/server/internal"
+)
+
+var (
+	BootstrapHookKey string
 )
 
 func init() {
-	svCtor := func(cosys *common.Cosys) common.Server {
-		port := cosys.Configs.Server.Port
+	_ = common.RegisterModule(func(cosys *common.Cosys) error {
+		var err error
 
-		return Server{
-			Port:  port,
-			Cosys: cosys,
+		if err := cosys.UseServer(internal.NewServer("3000", cosys)); err != nil {
+			return err
 		}
+
+		BootstrapHookKey, err = cosys.AddBootstrapHook(Bootstrap)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func Bootstrap(cosys *common.Cosys) error {
+	var err error
+
+	server, err := cosys.Server()
+	if err != nil {
+		return err
 	}
 
-	if err := common.RegisterServer("default", svCtor); err != nil {
-		log.Fatal(err)
+	if err = server.ResolveEndpoints(); err != nil {
+		return err
 	}
+
+	return nil
 }

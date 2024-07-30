@@ -172,6 +172,22 @@ func (r permRegister[T]) GetAll() map[string]T {
 	return maps.Clone(r.register)
 }
 
+// GetSlice returns a slice of all registered values.
+// Safe for concurrent use.
+func (r permRegister[T]) GetSlice() []T {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	items := make([]T, 0, len(r.register))
+	index := 0
+	for _, item := range r.register {
+		items[index] = item
+		index++
+	}
+
+	return items
+}
+
 // Clone returns a cloned multi register.
 // Safe for concurrent use.
 func (r permRegister[T]) Clone() *permRegister[T] {

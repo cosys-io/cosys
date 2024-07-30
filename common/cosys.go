@@ -150,6 +150,10 @@ func (c *Cosys) UseLogger(logger Logger) error {
 	return c.logger.Register(logger)
 }
 
+func (c *Cosys) Routes() []Route {
+	return c.routes.GetSlice()
+}
+
 // AddRoutes adds routes to the cosys app.
 // Throws error if multiple routes have the same path.
 // Safe for concurrent use.

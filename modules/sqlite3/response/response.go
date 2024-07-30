@@ -1,4 +1,4 @@
-package common
+package response
 
 import (
 	"encoding/json"
@@ -13,7 +13,8 @@ type Response struct {
 }
 
 type Meta struct {
-	Pagination Pagination `json:"pagination"`
+	Error      string     `json:"error,omitempty"`
+	Pagination Pagination `json:"pagination,omitempty"`
 }
 
 type Pagination struct {
@@ -29,12 +30,7 @@ func RespondOne(w http.ResponseWriter, data any, code int) {
 
 	resp := Response{
 		Data: data,
-		Meta: Meta{
-			Pagination: Pagination{
-				Page:     1,
-				PageSize: 1,
-			},
-		},
+		Meta: Meta{},
 	}
 
 	header := w.Header()
@@ -95,12 +91,9 @@ func RespondError(w http.ResponseWriter, message string, code int) {
 	}
 
 	resp := Response{
-		Data: message,
+		Data: nil,
 		Meta: Meta{
-			Pagination: Pagination{
-				Page:     1,
-				PageSize: 1,
-			},
+			Error: message,
 		},
 	}
 
@@ -125,12 +118,9 @@ func RespondInternalError(w http.ResponseWriter) {
 	}
 
 	resp := Response{
-		Data: "An unexpected error has occurred.",
+		Data: nil,
 		Meta: Meta{
-			Pagination: Pagination{
-				Page:     1,
-				PageSize: 1,
-			},
+			Error: http.StatusText(http.StatusInternalServerError),
 		},
 	}
 
