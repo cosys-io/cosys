@@ -189,13 +189,12 @@ func (c Controller) Action(uid string) (Action, error) {
 
 // NewController returns a new controller with the given uid and actions,
 // or throws an error if multiple actions have the same uid.
-func NewController(uid string, actions ...Action) (Controller, error) {
+func NewController(uid string, actions map[string]ActionFunc) (Controller, error) {
 	controller := map[string]Action{}
-	for _, action := range actions {
-		actionUid := action.String()
-
-		if _, dup := controller[actionUid]; dup {
-			return Controller{}, fmt.Errorf("duplicate action: %s", actionUid)
+	for actionUid, actionFunc := range actions {
+		action, err := NewAction(actionUid, actionFunc)
+		if err != nil {
+			return Controller{}, err
 		}
 
 		controller[actionUid] = action
