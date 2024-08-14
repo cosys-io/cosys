@@ -2,7 +2,7 @@ package internal
 
 import (
 	"github.com/cosys-io/cosys/common"
-	"github.com/cosys-io/cosys/modules/sqlite3/response"
+	"github.com/cosys-io/cosys/modules/server/response"
 	"net/http"
 )
 
@@ -15,11 +15,12 @@ type Server struct {
 func NewServer(port string, cosys *common.Cosys) *Server {
 	return &Server{
 		port:  port,
+		mux:   new(http.ServeMux),
 		cosys: cosys,
 	}
 }
 
-func (s Server) ResolveEndpoints() error {
+func (s Server) resolveEndpoints() error {
 	mux := http.NewServeMux()
 
 	routes := s.cosys.Routes()
@@ -61,11 +62,14 @@ func (s Server) ResolveEndpoints() error {
 		mux.HandleFunc(route.Method+" "+route.Path, handleFunc)
 	}
 
-	s.mux = mux
+	*s.mux = *mux
 	return nil
 }
 
 func (s Server) Start() error {
+	if err := s.resolveEndpoints(); err != nil {
+		return err
+	}
 	if err := http.ListenAndServe(":"+s.port, s.mux); err != nil {
 		return err
 	}
