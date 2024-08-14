@@ -1,11 +1,11 @@
-package cms
+package internal
 
 import (
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	rootCmd.AddCommand(generateCmd)
+	RootCmd.AddCommand(generateCmd)
 }
 
 var generateCmd = &cobra.Command{

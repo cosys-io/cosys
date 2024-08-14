@@ -1,8 +1,8 @@
-package cms
+package internal
 
 import "github.com/spf13/cobra"
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "cms <command>",
 	Short: "Manage the cms.",
 	Run: func(cmd *cobra.Command, args []string) {
