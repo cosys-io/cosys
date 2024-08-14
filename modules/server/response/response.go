@@ -13,8 +13,8 @@ type Response struct {
 }
 
 type Meta struct {
-	Error      string     `json:"error,omitempty"`
-	Pagination Pagination `json:"pagination,omitempty"`
+	Error      string      `json:"error,omitempty"`
+	Pagination *Pagination `json:"pagination,omitempty"`
 }
 
 type Pagination struct {
@@ -63,7 +63,7 @@ func RespondMany(w http.ResponseWriter, data any, page int, code int) {
 	resp := Response{
 		Data: data,
 		Meta: Meta{
-			Pagination: Pagination{
+			Pagination: &Pagination{
 				Page:     page,
 				PageSize: size,
 			},
