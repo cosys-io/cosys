@@ -78,7 +78,7 @@ func newSingleRegister[T any](cfg ...option) *singleRegister[T] {
 // Get returns the registered value and returns an error
 // if a value has not been registered.
 // Safe for concurrent use.
-func (r singleRegister[T]) Get() (T, error) {
+func (r *singleRegister[T]) Get() (T, error) {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
@@ -91,7 +91,7 @@ func (r singleRegister[T]) Get() (T, error) {
 
 // Clone returns a cloned single register
 // Safe for concurrent use.
-func (r singleRegister[T]) Clone() *singleRegister[T] {
+func (r *singleRegister[T]) Clone() *singleRegister[T] {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
@@ -108,7 +108,7 @@ func (r singleRegister[T]) Clone() *singleRegister[T] {
 // if the checkZero configuration is true and the value is a zero-value,
 // or if a value has already been registered.
 // Safe for concurrent use.
-func (r singleRegister[T]) Register(item T) error {
+func (r *singleRegister[T]) Register(item T) error {
 	if r.options.checkZero && isZero(item) {
 		return fmt.Errorf("%s is nil", r.options.itemName)
 	}
@@ -151,7 +151,7 @@ func newPermRegister[T any](cfg ...option) *permRegister[T] {
 
 // Get return the registered value with the given uid, and returns an error
 // if a value has not been registered under that uid.
-func (r permRegister[T]) Get(uid string) (T, error) {
+func (r *permRegister[T]) Get(uid string) (T, error) {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
@@ -165,7 +165,7 @@ func (r permRegister[T]) Get(uid string) (T, error) {
 
 // GetAll returns a map of all registered values.
 // Safe for concurrent use, returns a copy of underlying map.
-func (r permRegister[T]) GetAll() map[string]T {
+func (r *permRegister[T]) GetAll() map[string]T {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
@@ -174,11 +174,11 @@ func (r permRegister[T]) GetAll() map[string]T {
 
 // GetSlice returns a slice of all registered values.
 // Safe for concurrent use.
-func (r permRegister[T]) GetSlice() []T {
+func (r *permRegister[T]) GetSlice() []T {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	items := make([]T, 0, len(r.register))
+	items := make([]T, len(r.register))
 	index := 0
 	for _, item := range r.register {
 		items[index] = item
@@ -190,7 +190,7 @@ func (r permRegister[T]) GetSlice() []T {
 
 // Clone returns a cloned multi register.
 // Safe for concurrent use.
-func (r permRegister[T]) Clone() *permRegister[T] {
+func (r *permRegister[T]) Clone() *permRegister[T] {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
@@ -206,7 +206,7 @@ func (r permRegister[T]) Clone() *permRegister[T] {
 // if the checkZero configuration is true and the value is a zero-value,
 // of if a value has been registered under that uid.
 // Safe for concurrent use.
-func (r permRegister[T]) Register(uid string, item T) error {
+func (r *permRegister[T]) Register(uid string, item T) error {
 	if r.options.checkZero && isZero(item) {
 		return fmt.Errorf("%s is nil: %s", r.options.itemName, uid)
 	}
@@ -228,7 +228,7 @@ func (r permRegister[T]) Register(uid string, item T) error {
 // or if a value has been registered under any uid.
 // The operation is atomic, either all or no values will be set.
 // Safe for concurrent use.
-func (r permRegister[T]) RegisterMany(items map[string]T) error {
+func (r *permRegister[T]) RegisterMany(items map[string]T) error {
 	if r.options.checkZero {
 		if err := anyZero(r.options.itemName, items); err != nil {
 			return err
@@ -255,7 +255,7 @@ func (r permRegister[T]) RegisterMany(items map[string]T) error {
 // The generated uid are all prefixed with '$', if using both Register and RegisterRandom,
 // do not use uid prefixed by $ for Register.
 // Safe for concurrent use.
-func (r permRegister[T]) RegisterRandom(item T) (string, error) {
+func (r *permRegister[T]) RegisterRandom(item T) (string, error) {
 	if r.options.checkZero && isZero(item) {
 		return "", fmt.Errorf("%s is nil", r.options.itemName)
 	}
@@ -296,7 +296,7 @@ func newMultiRegister[T any](cfg ...option) *multiRegister[T] {
 
 // Clone returns a cloned multi register.
 // Safe for concurrent use.
-func (r multiRegister[T]) Clone() *multiRegister[T] {
+func (r *multiRegister[T]) Clone() *multiRegister[T] {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
@@ -310,7 +310,7 @@ func (r multiRegister[T]) Clone() *multiRegister[T] {
 // or if the checkZero configuration is true and the value is a zero-value,
 // or if the mustExist configuration is true and no value has been registered under that uid.
 // Safe for concurrent use.
-func (r multiRegister[T]) Update(uid string, item T) error {
+func (r *multiRegister[T]) Update(uid string, item T) error {
 	if r.options.checkZero && isZero(item) {
 		return fmt.Errorf("%s is nil: %s", r.options.itemName, uid)
 	}
@@ -331,7 +331,7 @@ func (r multiRegister[T]) Update(uid string, item T) error {
 // if the allowRemove configuration is false,
 // or if the mustExist configuration is true and no value has been registered under that uid.
 // Safe for concurrent use.
-func (r multiRegister[T]) Remove(uid string) error {
+func (r *multiRegister[T]) Remove(uid string) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -364,7 +364,7 @@ func newStringerRegister[T fmt.Stringer](cfg ...option) *stringerRegister[T] {
 // or if a value has been registered under any String() return value.
 // The operation is atomic, either all or no values will be set.
 // Safe for concurrent use.
-func (r stringerRegister[T]) RegisterStringers(items ...T) error {
+func (r *stringerRegister[T]) RegisterStringers(items ...T) error {
 	itemMap, err := toMap(r.options.itemName, items)
 	if err != nil {
 		return err
@@ -390,7 +390,7 @@ func (r stringerRegister[T]) RegisterStringers(items ...T) error {
 	return nil
 }
 
-func (r stringerRegister[T]) Clone() *stringerRegister[T] {
+func (r *stringerRegister[T]) Clone() *stringerRegister[T] {
 	return &stringerRegister[T]{
 		r.multiRegister.Clone(),
 	}
