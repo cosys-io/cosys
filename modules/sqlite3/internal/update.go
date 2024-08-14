@@ -7,7 +7,8 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
+// updateQuery returns an update sql query from the given params.
+func updateQuery(params *common.DBParams, model common.Model) (string, error) {
 	if model == nil {
 		return "", fmt.Errorf("model is nil")
 	}
@@ -41,7 +42,7 @@ func UpdateQuery(params *common.DBParams, model common.Model) (string, error) {
 		for index, where := range params.Where {
 			sb.WriteString(" ")
 
-			whereString, err := StringCondition(where)
+			whereString, err := stringCondition(where)
 			if err != nil {
 				return "", err
 			}

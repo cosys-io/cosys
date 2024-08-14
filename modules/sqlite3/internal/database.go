@@ -7,11 +7,13 @@ import (
 	"sync"
 )
 
+// Database is an implementation of the Database core service using SQLite3.
 type Database struct {
 	cosys *common.Cosys
 	db    *sql.DB
 }
 
+// NewDatabase returns a new Database.
 func NewDatabase(cosys *common.Cosys) *Database {
 	return &Database{
 		db:    new(sql.DB),
@@ -19,6 +21,7 @@ func NewDatabase(cosys *common.Cosys) *Database {
 	}
 }
 
+// Open starts the connection to the SQLite3 database.
 func (d Database) Open(dataSourceName string) error {
 	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {
@@ -29,9 +32,10 @@ func (d Database) Open(dataSourceName string) error {
 	return nil
 }
 
+// LoadSchema loads the schema of all registered models.
 func (d Database) LoadSchema() error {
 	for _, model := range d.cosys.Models() {
-		schema := schemaToSQL(model.Schema_())
+		schema := schemaQuery(model.Schema_())
 		if _, err := d.db.Exec(schema); err != nil {
 			return err
 		}
@@ -40,6 +44,7 @@ func (d Database) LoadSchema() error {
 	return nil
 }
 
+// FindOne returns one entity of the model with the given uid.
 func (d Database) FindOne(uid string, params common.DBParams) (common.Entity, error) {
 	model, err := d.cosys.Model(uid)
 	if err != nil {
@@ -57,7 +62,7 @@ func (d Database) FindOne(uid string, params common.DBParams) (common.Entity, er
 		return nil, err
 	}
 
-	query, err := SelectQuery(&params, model)
+	query, err := selectQuery(&params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +77,7 @@ func (d Database) FindOne(uid string, params common.DBParams) (common.Entity, er
 		return nil, fmt.Errorf("entity not found")
 	}
 
-	entity, err := Scan(rows, &params, model)
+	entity, err := scan(rows, &params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +93,7 @@ func (d Database) FindOne(uid string, params common.DBParams) (common.Entity, er
 	return entity, nil
 }
 
+// FindMany returns multiple entities of the model with the given uid.
 func (d Database) FindMany(uid string, params common.DBParams) ([]common.Entity, error) {
 	model, err := d.cosys.Model(uid)
 	if err != nil {
@@ -103,7 +109,7 @@ func (d Database) FindMany(uid string, params common.DBParams) ([]common.Entity,
 		return nil, err
 	}
 
-	query, err := SelectQuery(&params, model)
+	query, err := selectQuery(&params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +124,7 @@ func (d Database) FindMany(uid string, params common.DBParams) ([]common.Entity,
 
 	for rows.Next() {
 
-		entity, err := Scan(rows, &params, model)
+		entity, err := scan(rows, &params, model)
 		if err != nil {
 			return nil, err
 		}
@@ -137,6 +143,8 @@ func (d Database) FindMany(uid string, params common.DBParams) ([]common.Entity,
 	return entities, nil
 }
 
+// Create creates one entity of the model with the given uid with the given data
+// and returns the entity after creation.
 func (d Database) Create(uid string, data common.Entity, params common.DBParams) (common.Entity, error) {
 	model, err := d.cosys.Model(uid)
 	if err != nil {
@@ -152,12 +160,12 @@ func (d Database) Create(uid string, data common.Entity, params common.DBParams)
 		return nil, err
 	}
 
-	query, err := InsertQuery(&params, model)
+	query, err := insertQuery(&params, model)
 	if err != nil {
 		return nil, err
 	}
 
-	values, err := Extract(data, &params, model)
+	values, err := extract(data, &params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +180,7 @@ func (d Database) Create(uid string, data common.Entity, params common.DBParams)
 		return nil, fmt.Errorf("entity could not be created")
 	}
 
-	entity, err := Scan(rows, &params, model)
+	entity, err := scan(rows, &params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -188,6 +196,8 @@ func (d Database) Create(uid string, data common.Entity, params common.DBParams)
 	return entity, nil
 }
 
+// CreateMany creates multiple entities of the model with the given uid with the given data
+// and returns the entities after creation.
 func (d Database) CreateMany(uid string, datas []common.Entity, params common.DBParams) ([]common.Entity, error) {
 	model, err := d.cosys.Model(uid)
 	if err != nil {
@@ -203,7 +213,7 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 		return nil, err
 	}
 
-	query, err := InsertQuery(&params, model)
+	query, err := insertQuery(&params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +225,7 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 	for index, data := range datas {
 		wg.Add(1)
 		go func(index int, data common.Entity) {
-			values, err := Extract(data, &params, model)
+			values, err := extract(data, &params, model)
 			if err != nil {
 				errCh <- err
 			}
@@ -230,7 +240,7 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 				errCh <- fmt.Errorf("entity could not be created")
 			}
 
-			entity, err := Scan(rows, &params, model)
+			entity, err := scan(rows, &params, model)
 			if err != nil {
 				errCh <- err
 			}
@@ -263,6 +273,8 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 	return entities, nil
 }
 
+// Update updates one entity of the model with the given uid with the given data
+// and returns the entity after updating.
 func (d Database) Update(uid string, data common.Entity, params common.DBParams) (common.Entity, error) {
 	params.Limit = 1
 
@@ -280,12 +292,12 @@ func (d Database) Update(uid string, data common.Entity, params common.DBParams)
 		return nil, err
 	}
 
-	query, err := UpdateQuery(&params, model)
+	query, err := updateQuery(&params, model)
 	if err != nil {
 		return nil, err
 	}
 
-	values, err := Extract(data, &params, model)
+	values, err := extract(data, &params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +312,7 @@ func (d Database) Update(uid string, data common.Entity, params common.DBParams)
 		return nil, fmt.Errorf("entity could not be updated")
 	}
 
-	entity, err := Scan(rows, &params, model)
+	entity, err := scan(rows, &params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -316,6 +328,8 @@ func (d Database) Update(uid string, data common.Entity, params common.DBParams)
 	return entity, nil
 }
 
+// UpdateMany updates multiple entities of the model with the given uid with the given data
+// and returns the entities after updating.
 func (d Database) UpdateMany(uid string, data common.Entity, params common.DBParams) ([]common.Entity, error) {
 	model, err := d.cosys.Model(uid)
 	if err != nil {
@@ -331,12 +345,12 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 		return nil, err
 	}
 
-	query, err := UpdateQuery(&params, model)
+	query, err := updateQuery(&params, model)
 	if err != nil {
 		return nil, err
 	}
 
-	values, err := Extract(data, &params, model)
+	values, err := extract(data, &params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +364,7 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 	var entities []common.Entity
 
 	for rows.Next() {
-		entity, err := Scan(rows, &params, model)
+		entity, err := scan(rows, &params, model)
 		if err != nil {
 			return nil, err
 		}
@@ -369,6 +383,7 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 	return entities, nil
 }
 
+// Delete deletes one entity of the model with the given uid and returns the entity before deletion.
 func (d Database) Delete(uid string, params common.DBParams) (common.Entity, error) {
 	params.Limit = 1
 
@@ -386,7 +401,7 @@ func (d Database) Delete(uid string, params common.DBParams) (common.Entity, err
 		return nil, err
 	}
 
-	query, err := DeleteQuery(&params, model)
+	query, err := deleteQuery(&params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +416,7 @@ func (d Database) Delete(uid string, params common.DBParams) (common.Entity, err
 		return nil, fmt.Errorf("entity not found")
 	}
 
-	entity, err := Scan(rows, &params, model)
+	entity, err := scan(rows, &params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -417,6 +432,7 @@ func (d Database) Delete(uid string, params common.DBParams) (common.Entity, err
 	return entity, nil
 }
 
+// DeleteMany deletes multiple entities of the model with the given uid and returns the entities before deletion.
 func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entity, error) {
 	model, err := d.cosys.Model(uid)
 	if err != nil {
@@ -432,7 +448,7 @@ func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entit
 		return nil, err
 	}
 
-	query, err := DeleteQuery(&params, model)
+	query, err := deleteQuery(&params, model)
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +462,7 @@ func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entit
 	var entities []common.Entity
 
 	for rows.Next() {
-		entity, err := Scan(rows, &params, model)
+		entity, err := scan(rows, &params, model)
 		if err != nil {
 			return nil, err
 		}

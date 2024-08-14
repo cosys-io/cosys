@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	database         *internal.Database
-	BootstrapHookKey string
+	database         *internal.Database // database is the Database core service.
+	BootstrapHookKey string             // BootstrapHookKey can be used to update or remove the bootstrap hook.
 )
 
+// init registers the module to register the Database core service and the bootstrap hook.
 func init() {
 	_ = common.RegisterModule(func(cosys *common.Cosys) error {
 		var err error
@@ -20,7 +21,7 @@ func init() {
 			return err
 		}
 
-		BootstrapHookKey, err = cosys.AddBootstrapHook(Bootstrap)
+		BootstrapHookKey, err = cosys.AddBootstrapHook(bootstrap)
 		if err != nil {
 			return err
 		}
@@ -29,7 +30,9 @@ func init() {
 	})
 }
 
-func Bootstrap(cosys *common.Cosys) error {
+// bootstrap opens the connection to the SQLite3 database and
+// loads the schema for all registered models.
+func bootstrap(cosys *common.Cosys) error {
 	if err := database.Open("data.db"); err != nil {
 		return err
 	}

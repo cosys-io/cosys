@@ -7,7 +7,8 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-func DeleteQuery(params *common.DBParams, model common.Model) (string, error) {
+// deleteQuery returns a delete sql query from the given params.
+func deleteQuery(params *common.DBParams, model common.Model) (string, error) {
 	if model == nil {
 		return "", fmt.Errorf("model is nil")
 	}
@@ -24,7 +25,7 @@ func DeleteQuery(params *common.DBParams, model common.Model) (string, error) {
 		for index, where := range params.Where {
 			sb.WriteString(" ")
 
-			whereString, err := StringCondition(where)
+			whereString, err := stringCondition(where)
 			if err != nil {
 				return "", err
 			}

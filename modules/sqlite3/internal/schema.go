@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-func schemaToSQL(schema common.ModelSchema) string {
+// schemaQuery returns the sql query for loading the given schema.
+func schemaQuery(schema common.ModelSchema) string {
 	var sb strings.Builder
 
 	sb.WriteString("CREATE TABLE IF NOT EXISTS ")
@@ -67,6 +68,7 @@ func schemaToSQL(schema common.ModelSchema) string {
 	return sb.String()
 }
 
+// getType returns the sql data type from the attribute type.
 func getType(attrType string) string {
 	switch attrType {
 	case "Int":

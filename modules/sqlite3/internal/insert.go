@@ -7,7 +7,8 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
+// deleteQuery returns an insert sql query from the given params.
+func insertQuery(params *common.DBParams, model common.Model) (string, error) {
 	if model == nil {
 		return "", fmt.Errorf("model is nil")
 	}
@@ -51,7 +52,7 @@ func InsertQuery(params *common.DBParams, model common.Model) (string, error) {
 		for index, where := range params.Where {
 			sb.WriteString(" ")
 
-			whereString, err := StringCondition(where)
+			whereString, err := stringCondition(where)
 			if err != nil {
 				return "", err
 			}

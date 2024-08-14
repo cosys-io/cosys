@@ -7,7 +7,8 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
+// selectQuery returns a select sql query from the given params.
+func selectQuery(params *common.DBParams, model common.Model) (string, error) {
 	if model == nil {
 		return "", fmt.Errorf("model is nil")
 	}
@@ -42,7 +43,7 @@ func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
 		for index, where := range params.Where {
 			sb.WriteString("( ")
 
-			whereString, err := StringCondition(where)
+			whereString, err := stringCondition(where)
 			if err != nil {
 				return "", err
 			}
@@ -61,7 +62,7 @@ func SelectQuery(params *common.DBParams, model common.Model) (string, error) {
 		sb.WriteString(" ORDER BY ")
 		for index, orderBy := range params.OrderBy {
 
-			orderString, err := StringOrder(orderBy)
+			orderString, err := stringOrder(orderBy)
 			if err != nil {
 				return "", err
 			}

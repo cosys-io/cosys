@@ -9,7 +9,8 @@ import (
 	"github.com/cosys-io/cosys/common"
 )
 
-func Extract(data common.Entity, params *common.DBParams, model common.Model) ([]any, error) {
+// extract returns a slice of the values of an entity's fields.
+func extract(data common.Entity, params *common.DBParams, model common.Model) ([]any, error) {
 	if data == nil {
 		return nil, fmt.Errorf("data is nil")
 	}
@@ -46,7 +47,8 @@ func Extract(data common.Entity, params *common.DBParams, model common.Model) ([
 	return attrs, nil
 }
 
-func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.Entity, error) {
+// scan scans the values from a sql row into an entity struct.
+func scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.Entity, error) {
 	if rows == nil {
 		return nil, fmt.Errorf("rows is nil")
 	}
@@ -86,16 +88,17 @@ func Scan(rows *sql.Rows, params *common.DBParams, model common.Model) (common.E
 	return entity, nil
 }
 
-func StringCondition(where common.Condition) (string, error) {
+// stringCondition returns the sql condition for a where condition.
+func stringCondition(where common.Condition) (string, error) {
 	if where == nil {
 		return "", fmt.Errorf("where is nil")
 	}
 
 	switch where := where.(type) {
 	case *common.NestedCondition:
-		return StringNested(where)
+		return stringNested(where)
 	case *common.ExpressionCondition:
-		return StringExpressions(where)
+		return stringExpressions(where)
 	case *common.BoolAttribute:
 		return where.SnakeName(), nil
 	default:
@@ -103,7 +106,8 @@ func StringCondition(where common.Condition) (string, error) {
 	}
 }
 
-func StringNested(where *common.NestedCondition) (string, error) {
+// stringNested returns the sql condition for a nested where condition.
+func stringNested(where *common.NestedCondition) (string, error) {
 	if where == nil {
 		return "", fmt.Errorf("where is nil")
 	}
@@ -114,7 +118,7 @@ func StringNested(where *common.NestedCondition) (string, error) {
 	if where.Left == nil {
 		return "", fmt.Errorf("left operand not found")
 	} else {
-		left, err = StringCondition(where.Left)
+		left, err = stringCondition(where.Left)
 		if err != nil {
 			return "", err
 		}
@@ -124,7 +128,7 @@ func StringNested(where *common.NestedCondition) (string, error) {
 	if where.Right == nil {
 		right = ""
 	} else {
-		right, err = StringCondition(where.Right)
+		right, err = stringCondition(where.Right)
 		if err != nil {
 			return "", err
 		}
@@ -144,7 +148,8 @@ func StringNested(where *common.NestedCondition) (string, error) {
 	}
 }
 
-func StringExpressions(where *common.ExpressionCondition) (string, error) {
+// stringExpressions returns the sql condition for an expression where condition.
+func stringExpressions(where *common.ExpressionCondition) (string, error) {
 	if where == nil {
 		return "", fmt.Errorf("where is nil")
 	}
@@ -188,7 +193,8 @@ func StringExpressions(where *common.ExpressionCondition) (string, error) {
 	}
 }
 
-func StringOrder(orderBy *common.Order) (string, error) {
+// stringOrder returns the sql condition for an order condition.
+func stringOrder(orderBy *common.Order) (string, error) {
 	if orderBy == nil {
 		return "", fmt.Errorf("order is nil")
 	}
