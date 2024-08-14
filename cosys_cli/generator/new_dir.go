@@ -5,11 +5,13 @@ import (
 	"os"
 )
 
+// NewDirAction is an action that creates a new directory.
 type NewDirAction struct {
 	path string
 	opts genOptions
 }
 
+// NewDir returns a new directory action that creates a new directory at the given path.
 func NewDir(path string, options ...genOption) *NewDirAction {
 	opts := genOptions{
 		false,
@@ -27,6 +29,7 @@ func NewDir(path string, options ...genOption) *NewDirAction {
 	}
 }
 
+// Act creates a new directory.
 func (a NewDirAction) Act() error {
 	exists, err := pathExists(a.path)
 	if err != nil {

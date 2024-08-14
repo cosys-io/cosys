@@ -8,6 +8,7 @@ import (
 	"text/template"
 )
 
+// ModifyFileAction is an action that modifies a file.
 type ModifyFileAction struct {
 	path          string
 	patternString string
@@ -15,6 +16,7 @@ type ModifyFileAction struct {
 	ctx           any
 }
 
+// ModifyFile returns a modify file action that modifies the file at the given path, replacing all text matching the given regex pattern with the given template and context.
 func ModifyFile(path, patternString, tmplString string, ctx any) *ModifyFileAction {
 	return &ModifyFileAction{
 		path:          path,
@@ -24,6 +26,7 @@ func ModifyFile(path, patternString, tmplString string, ctx any) *ModifyFileActi
 	}
 }
 
+// Act modifies a file.
 func (a ModifyFileAction) Act() error {
 	exists, err := pathExists(a.path)
 	if err != nil {

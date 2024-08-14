@@ -1,18 +1,23 @@
 package gen
 
+// Action performs a file system change for code generation.
 type Action interface {
 	Act() error
 }
 
+// genOptions are the configurations for actions.
 type genOptions struct {
 	deleteIfExists bool
 	skipIfExists   bool
 	genHeadOnly    bool
 }
 
+// genOption is a configuration for actions.
 type genOption func(*genOptions)
 
-func DeleteIfExists(options *genOptions) {
+// DeleteIfExists is a configuration for actions,
+// specifying that the given file should be deleted if exists.
+var DeleteIfExists genOption = func(options *genOptions) {
 	if options == nil {
 		return
 	}
@@ -20,7 +25,9 @@ func DeleteIfExists(options *genOptions) {
 	options.deleteIfExists = true
 }
 
-func SkipIfExists(options *genOptions) {
+// SkipIfExists is a configuration for actions,
+// specifying that the action should be skipped if the given file exists.
+var SkipIfExists genOption = func(options *genOptions) {
 	if options == nil {
 		return
 	}
@@ -28,7 +35,9 @@ func SkipIfExists(options *genOptions) {
 	options.skipIfExists = true
 }
 
-func GenHeadOnly(options *genOptions) {
+// GenHeadOnly is a configuration for actions,
+// specifying that only the head of the path should be created.
+var GenHeadOnly genOption = func(options *genOptions) {
 	if options == nil {
 		return
 	}

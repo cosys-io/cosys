@@ -8,6 +8,7 @@ import (
 	"text/template"
 )
 
+// NewFileAction is an action that create a new file.
 type NewFileAction struct {
 	path       string
 	tmplString string
@@ -15,6 +16,7 @@ type NewFileAction struct {
 	opts       genOptions
 }
 
+// NewFile returns a new file action that creates a file at the given path using the given template and context.
 func NewFile(path string, tmplString string, ctx any, options ...genOption) *NewFileAction {
 	opts := genOptions{
 		false,
@@ -34,6 +36,7 @@ func NewFile(path string, tmplString string, ctx any, options ...genOption) *New
 	}
 }
 
+// Act creates a new file.
 func (a NewFileAction) Act() error {
 	exists, err := pathExists(a.path)
 	if err != nil {
