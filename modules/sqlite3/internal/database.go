@@ -12,11 +12,21 @@ type Database struct {
 	db    *sql.DB
 }
 
-func NewDatabase(db *sql.DB, cosys *common.Cosys) *Database {
+func NewDatabase(cosys *common.Cosys) *Database {
 	return &Database{
-		db:    db,
+		db:    new(sql.DB),
 		cosys: cosys,
 	}
+}
+
+func (d Database) Open(dataSourceName string) error {
+	db, err := sql.Open("sqlite3", dataSourceName)
+	if err != nil {
+		return err
+	}
+
+	*d.db = *db
+	return nil
 }
 
 func (d Database) LoadSchema() error {
@@ -56,7 +66,6 @@ func (d Database) FindOne(uid string, params common.DBParams) (common.Entity, er
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	if !rows.Next() {
@@ -99,13 +108,12 @@ func (d Database) FindMany(uid string, params common.DBParams) ([]common.Entity,
 		return nil, err
 	}
 
-	var entities []common.Entity
+	entities := []common.Entity{}
 
 	rows, err := d.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
@@ -158,7 +166,6 @@ func (d Database) Create(uid string, data common.Entity, params common.DBParams)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	if !rows.Next() {
@@ -178,7 +185,7 @@ func (d Database) Create(uid string, data common.Entity, params common.DBParams)
 		return nil, err
 	}
 
-	return data, nil
+	return entity, nil
 }
 
 func (d Database) CreateMany(uid string, datas []common.Entity, params common.DBParams) ([]common.Entity, error) {
@@ -217,7 +224,6 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 			if err != nil {
 				errCh <- err
 			}
-
 			defer rows.Close()
 
 			if !rows.Next() {
@@ -254,7 +260,7 @@ func (d Database) CreateMany(uid string, datas []common.Entity, params common.DB
 		return nil, err
 	}
 
-	return datas, nil
+	return entities, nil
 }
 
 func (d Database) Update(uid string, data common.Entity, params common.DBParams) (common.Entity, error) {
@@ -288,7 +294,6 @@ func (d Database) Update(uid string, data common.Entity, params common.DBParams)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	if !rows.Next() {
@@ -308,7 +313,7 @@ func (d Database) Update(uid string, data common.Entity, params common.DBParams)
 		return nil, err
 	}
 
-	return data, nil
+	return entity, nil
 }
 
 func (d Database) UpdateMany(uid string, data common.Entity, params common.DBParams) ([]common.Entity, error) {
@@ -340,6 +345,7 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var entities []common.Entity
 
@@ -360,7 +366,7 @@ func (d Database) UpdateMany(uid string, data common.Entity, params common.DBPar
 		return nil, err
 	}
 
-	return []common.Entity{data}, nil
+	return entities, nil
 }
 
 func (d Database) Delete(uid string, params common.DBParams) (common.Entity, error) {
@@ -389,6 +395,7 @@ func (d Database) Delete(uid string, params common.DBParams) (common.Entity, err
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		return nil, fmt.Errorf("entity not found")
@@ -407,7 +414,7 @@ func (d Database) Delete(uid string, params common.DBParams) (common.Entity, err
 		return nil, err
 	}
 
-	return nil, nil
+	return entity, nil
 }
 
 func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entity, error) {
@@ -434,6 +441,7 @@ func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entit
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var entities []common.Entity
 
@@ -454,5 +462,5 @@ func (d Database) DeleteMany(uid string, params common.DBParams) ([]common.Entit
 		return nil, err
 	}
 
-	return nil, nil
+	return entities, nil
 }
