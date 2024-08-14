@@ -55,14 +55,31 @@ func (m modelParseable) Schema() (*ModelSchema, error) {
 		return nil, fmt.Errorf("model has no plural name: %s", m.DisplayName)
 	}
 
-	attrs := make([]common.AttributeSchema, len(m.Attributes))
+	var attrs []common.AttributeSchema
+	var index int
 
-	for index, attr := range m.Attributes {
+	hasId := false
+	for _, attr := range m.Attributes {
+		if attr.Name == "id" {
+			hasId = true
+		}
+	}
+	if hasId {
+		attrs = make([]common.AttributeSchema, len(m.Attributes))
+		index = 0
+	} else {
+		attrs = make([]common.AttributeSchema, len(m.Attributes)+1)
+		attrs[0] = &IdSchema
+		index = 1
+	}
+
+	for _, attr := range m.Attributes {
 		attrSchema, err := attr.Schema()
 		if err != nil {
 			return nil, err
 		}
 		attrs[index] = attrSchema
+		index += 1
 	}
 
 	return &ModelSchema{
