@@ -46,7 +46,7 @@ func devCmd(cosys *Cosys) *cobra.Command {
 // testCmd is the command to start the server in test mode.
 func testCmd(cosys *Cosys) *cobra.Command {
 	return &cobra.Command{
-		Use:   "dev",
+		Use:   "test",
 		Short: "Start the server in test mode",
 		Run: func(cmd *cobra.Command, args []string) {
 			cosys.SetEnvironment(Test)
