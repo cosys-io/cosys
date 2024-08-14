@@ -10,8 +10,13 @@ import (
 
 // AddSchemaRoutes registers routes for getting and creating schemas for the given models.
 func AddSchemaRoutes(cosys *common.Cosys, models map[string]common.Model) error {
+	getAction, err := getSchema(models)
+	if err != nil {
+		return err
+	}
+
 	schemaRoutes := []common.Route{
-		common.NewRoute("GET", `/admin/schema`, getSchema(models)),
+		common.NewRoute("GET", `/admin/schema`, getAction),
 		common.NewRoute("POST", `/admin/schema`, createSchema),
 	}
 
@@ -19,12 +24,17 @@ func AddSchemaRoutes(cosys *common.Cosys, models map[string]common.Model) error 
 }
 
 // getSchema returns the ActionFunc for getting schemas.
-func getSchema(models map[string]common.Model) common.ActionFunc {
-	schemas := make([]common.ModelSchema, len(models))
+func getSchema(models map[string]common.Model) (common.ActionFunc, error) {
+	schemas := make([]schema.ModelSerializable, len(models))
 
 	index := 0
 	for _, model := range models {
-		schemas[index] = model.Schema_()
+		modelSchema, err := schema.ToModelSerializable(model.Schema_())
+		if err != nil {
+			return nil, err
+		}
+
+		schemas[index] = modelSchema
 		index = index + 1
 	}
 
@@ -32,7 +42,7 @@ func getSchema(models map[string]common.Model) common.ActionFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			response.RespondMany(w, schemas, 1, http.StatusOK)
 		}, nil
-	}
+	}, nil
 }
 
 // createSchema is the ActionFunc for creating schemas.

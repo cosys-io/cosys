@@ -9,13 +9,13 @@ import (
 
 // ParseSchema parses json from a reader and scans it into a ModelSchema.
 func ParseSchema(schema *ModelSchema, reader io.Reader) error {
-	schemaZero := modelSchemaZero{}
+	schemaParseable := modelParseable{}
 
-	if err := json.NewDecoder(reader).Decode(&schemaZero); err != nil {
+	if err := json.NewDecoder(reader).Decode(&schemaParseable); err != nil {
 		return err
 	}
 
-	parsedSchema, err := schemaZero.Schema()
+	parsedSchema, err := schemaParseable.Schema()
 	if err != nil {
 		return err
 	}
@@ -24,21 +24,21 @@ func ParseSchema(schema *ModelSchema, reader io.Reader) error {
 	return nil
 }
 
-// modelSchemaZero is used to parse model schema json with default values.
+// modelParseable is used to parse model schema json with default values.
 // Fields that are missing in the json are parsed as nil pointers instead of zero values,
 // which are then replaced with their respective default values.
-type modelSchemaZero struct {
-	ModelType      string                 `yaml:"modelType" json:"modelType"`
-	CollectionName string                 `yaml:"collectionName" json:"collectionName"`
-	DisplayName    string                 `yaml:"displayName" json:"displayName"`
-	SingularName   string                 `yaml:"singularName" json:"singularName"`
-	PluralName     string                 `yaml:"pluralName" json:"pluralName"`
-	Description    string                 `yaml:"description" json:"description"`
-	Attributes     []*attributeSchemaZero `yaml:"attributes" json:"attributes"`
+type modelParseable struct {
+	ModelType      string           `yaml:"modelType" json:"modelType"`
+	CollectionName string           `yaml:"collectionName" json:"collectionName"`
+	DisplayName    string           `yaml:"displayName" json:"displayName"`
+	SingularName   string           `yaml:"singularName" json:"singularName"`
+	PluralName     string           `yaml:"pluralName" json:"pluralName"`
+	Description    string           `yaml:"description" json:"description"`
+	Attributes     []*attrParseable `yaml:"attributes" json:"attributes"`
 }
 
 // Schema returns the corresponding ModelSchema with default values.
-func (m modelSchemaZero) Schema() (*ModelSchema, error) {
+func (m modelParseable) Schema() (*ModelSchema, error) {
 	if m.DisplayName == "" {
 		return nil, fmt.Errorf("model has no display name")
 	}
@@ -76,10 +76,10 @@ func (m modelSchemaZero) Schema() (*ModelSchema, error) {
 	}, nil
 }
 
-// attributeSchemaZero is used to parse attribute schema json with default values.
+// attrParseable is used to parse attribute schema json with default values.
 // Fields that are missing in the json are parsed as nil pointers instead of zero values,
 // which are then replaced with their respective default values.
-type attributeSchemaZero struct {
+type attrParseable struct {
 	Name               string `yaml:"name" json:"name"`
 	SimplifiedDataType string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
 	DetailedDataType   string `yaml:"detailedDataType" json:"detailedDataType"`
@@ -100,7 +100,7 @@ type attributeSchemaZero struct {
 }
 
 // Schema returns the corresponding AttributeSchema with default values.
-func (a attributeSchemaZero) Schema() (*AttributeSchema, error) {
+func (a attrParseable) Schema() (*AttributeSchema, error) {
 	if a.Name == "" {
 		return nil, fmt.Errorf("attribute has no name")
 	}
