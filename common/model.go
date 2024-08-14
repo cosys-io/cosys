@@ -11,7 +11,7 @@ type Model interface {
 	New_() Entity
 	Attributes_() []Attribute
 	IdAttribute_() Attribute
-	Schema_() *ModelSchema
+	Schema_() ModelSchema
 
 	GetLifecycleHook_(event string, uid string) (LifecycleHook, error)
 	CallLifecycle_(event string, query EventQuery) error
@@ -33,9 +33,10 @@ type Model interface {
 }
 
 // NewModel returns a new model that is built upon ModelBase.
-func NewModel[E Entity, M Model](dbname, singularName, pluralName string) (M, error) {
+func NewModel[E Entity, M Model](dbname, singularName, pluralName string, schema ModelSchema) (M, error) {
 	base := &ModelBase{
 		entity: *new(E),
+		schema: schema,
 
 		lifecycle: NewLifecycle(),
 
@@ -98,6 +99,7 @@ type ModelBase struct {
 	entity      Entity
 	idAttribute Attribute
 	attributes  []Attribute
+	schema      ModelSchema
 
 	lifecycle Lifecycle
 
@@ -116,7 +118,7 @@ type ModelBase struct {
 
 // New_ returns a new entity of the model.
 func (m ModelBase) New_() Entity {
-	return reflect.Zero(reflect.TypeOf(m.entity)).Interface().(Entity)
+	return reflect.New(reflect.TypeOf(m.entity)).Interface().(Entity)
 }
 
 // IdAttribute_ returns the id attribute of the model.
@@ -127,6 +129,11 @@ func (m ModelBase) IdAttribute_() Attribute {
 // Attributes_ return a slice of all attributes of the model.
 func (m ModelBase) Attributes_() []Attribute {
 	return m.attributes
+}
+
+// Schema_ returns the model schema.
+func (m ModelBase) Schema_() ModelSchema {
+	return m.schema
 }
 
 // GetLifecycleHook_ returns a hook specified by the given uid
