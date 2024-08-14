@@ -3,7 +3,7 @@ package generators
 import (
 	"bufio"
 	"github.com/cosys-io/cosys/common"
-	gen "github.com/cosys-io/cosys/cosys_cli/cmd/generator"
+	gen "github.com/cosys-io/cosys/cosys_cli/generator"
 	"github.com/cosys-io/cosys/modules/cms/schema"
 	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"

@@ -2,7 +2,7 @@ package internal
 
 import (
 	"github.com/cosys-io/cosys/common"
-	gen "github.com/cosys-io/cosys/cosys_cli/cmd/generator"
+	gen "github.com/cosys-io/cosys/cosys_cli/generator"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"

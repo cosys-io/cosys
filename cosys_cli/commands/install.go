@@ -1,8 +1,8 @@
-package cmd
+package commands
 
 import (
 	"fmt"
-	gen "github.com/cosys-io/cosys/cosys_cli/cmd/generator"
+	gen "github.com/cosys-io/cosys/cosys_cli/generator"
 	cp "github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 	"log"

@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "cosys_cli <command> [arguments]",
+	Use:   "cosys <command> [arguments]",
 	Short: "Manage a cosys project.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
