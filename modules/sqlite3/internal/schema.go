@@ -7,30 +7,33 @@ import (
 	"strings"
 )
 
-func schemaToSQL(schema *common.ModelSchema) string {
+func schemaToSQL(schema common.ModelSchema) string {
 	var sb strings.Builder
 
 	sb.WriteString("CREATE TABLE IF NOT EXISTS ")
-	sb.WriteString(schema.CollectionName)
+	sb.WriteString(schema.CollectionName())
 	sb.WriteString(" ( id INTEGER PRIMARY KEY AUTOINCREMENT, ")
 
-	for index, attr := range schema.Attributes[1:] {
-		sb.WriteString(attr.Name)
+	for index, attr := range schema.Attributes()[1:] {
+		sb.WriteString(attr.Name())
 		sb.WriteString(" ")
-		sb.WriteString(attr.DetailedDataType)
+		sb.WriteString(getType(attr.DetailedDataType()))
 
 		var checks []string
-		if attr.Max != 2147483647 {
-			checks = append(checks, attr.Name+" <= "+strconv.FormatInt(attr.Max, 10))
+		if attr.DetailedDataType() == "Boolean" {
+			checks = append(checks, attr.Name()+" IN (0, 1)")
 		}
-		if attr.Min != -2147483648 {
-			checks = append(checks, attr.Name+" >= "+strconv.FormatInt(attr.Min, 10))
+		if attr.Max() != 2147483647 {
+			checks = append(checks, attr.Name()+" <= "+strconv.FormatInt(attr.Max(), 10))
 		}
-		if attr.MaxLength != -1 {
-			checks = append(checks, fmt.Sprintf("length(%s) <= %d", attr.Name, attr.MaxLength))
+		if attr.Min() != -2147483648 {
+			checks = append(checks, attr.Name()+" >= "+strconv.FormatInt(attr.Min(), 10))
 		}
-		if attr.MinLength != -1 {
-			checks = append(checks, fmt.Sprintf("length(%s) >= %d", attr.Name, attr.MinLength))
+		if attr.MaxLength() != -1 {
+			checks = append(checks, fmt.Sprintf("length(%s) <= %d", attr.Name(), attr.MaxLength()))
+		}
+		if attr.MinLength() != -1 {
+			checks = append(checks, fmt.Sprintf("length(%s) >= %d", attr.Name(), attr.MinLength()))
 		}
 		if len(checks) > 0 {
 			sb.WriteString(" CHECK( ")
@@ -43,18 +46,18 @@ func schemaToSQL(schema *common.ModelSchema) string {
 			sb.WriteString(" )")
 		}
 
-		if attr.Default != "" {
+		if attr.Default() != "" {
 			sb.WriteString(" DEFAULT ")
-			sb.WriteString(attr.Default)
+			sb.WriteString(attr.Default())
 		}
-		if !attr.Nullable {
+		if !attr.Nullable() {
 			sb.WriteString(" NOT NULL")
 		}
-		if attr.Unique {
+		if attr.Unique() {
 			sb.WriteString(" UNIQUE")
 		}
 
-		if index < len(schema.Attributes)-2 {
+		if index < len(schema.Attributes())-2 {
 			sb.WriteString(", ")
 		}
 	}
@@ -62,4 +65,19 @@ func schemaToSQL(schema *common.ModelSchema) string {
 	sb.WriteString(" )")
 
 	return sb.String()
+}
+
+func getType(attrType string) string {
+	switch attrType {
+	case "Int":
+		return "INTEGER"
+	case "Float":
+		return "REAL"
+	case "Boolean":
+		return "INTEGER"
+	case "String":
+		return "TEXT"
+	default:
+		return ""
+	}
 }
