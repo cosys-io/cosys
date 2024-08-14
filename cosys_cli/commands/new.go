@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	modFile string
-	db      string
-	tmpl    string
+	modFile string // modFile is bound to the modfile flag, which is required.
+	db      string // db is bound to the database flag.
+	tmpl    string // tmpl is bound to the template flag.
 )
 
 func init() {
@@ -25,8 +25,9 @@ func init() {
 	rootCmd.AddCommand(newCmd)
 }
 
+// newCmd is the command for creating a new cosys project.
 var newCmd = &cobra.Command{
-	Use:   "new project_name -P profile_name",
+	Use:   "new project_name -M module_name",
 	Short: "Create a new cosys project",
 	Long:  `Create a new cosys project.`,
 	Args:  cobra.ExactArgs(1),
@@ -40,6 +41,7 @@ var newCmd = &cobra.Command{
 	},
 }
 
+// generateProject generates files for a new project.
 func generateProject(projectName, modFile, db, tmpl string) error {
 	var modules []string
 	switch tmpl {
@@ -69,6 +71,7 @@ func generateProject(projectName, modFile, db, tmpl string) error {
 	return nil
 }
 
+// generateConfigs generates files for project configuration.
 func generateConfigs(projectName string) error {
 	ctx := struct {
 		ProjectName string
@@ -76,34 +79,36 @@ func generateConfigs(projectName string) error {
 		ProjectName: projectName,
 	}
 
-	if err := gen.NewFile(filepath.Join(projectName, ".env"), EnvTmpl, ctx).Act(); err != nil {
+	if err := gen.NewFile(filepath.Join(projectName, ".env"), envTmpl, ctx).Act(); err != nil {
 		return err
 	}
 
-	if err := gen.NewFile(filepath.Join(projectName, ".cli_configs"), CliConfigTmpl, ctx).Act(); err != nil {
+	if err := gen.NewFile(filepath.Join(projectName, ".cli_configs"), cliConfigTmpl, ctx).Act(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// generateModFile creates a new go module.
 func generateModFile(projectName, modFile string) error {
-	if err := RunCommand(fmt.Sprintf("go mod init %s", modFile), Dir(projectName)); err != nil {
+	if err := runCommand(fmt.Sprintf("go mod init %s", modFile), dir(projectName)); err != nil {
 		return err
 	}
 
-	//if err := RunCommand("go mod tidy", Dir(projectName)); err != nil {
+	//if err := runCommand("go mod tidy", Dir(projectName)); err != nil {
 	//	return err
 	//}
 
 	return nil
 }
 
+// generateMain generates the main package.
 func generateMain(projectName string, modules []string) error {
 	generator := gen.NewGenerator(
 		gen.NewDir(filepath.Join(projectName, "cmd"), gen.GenHeadOnly),
 		gen.NewDir(filepath.Join(projectName, "cmd", "cosys"), gen.GenHeadOnly),
-		gen.NewFile(filepath.Join(projectName, "cmd", "cosys", "main.go"), MainTmpl, modules),
+		gen.NewFile(filepath.Join(projectName, "cmd", "cosys", "main.go"), mainTmpl, modules),
 	)
 	if err := generator.Generate(); err != nil {
 		return err
@@ -112,7 +117,8 @@ func generateMain(projectName string, modules []string) error {
 	return nil
 }
 
-var EnvTmpl = `HOST = localhost
+// envTmpl is the template for the .env file.
+var envTmpl = `HOST = localhost
 PORT = 3000
 
 DBNAME = cosys
@@ -121,12 +127,14 @@ DBPORT = 3000
 DBUSER = cosys
 DBPASS = cosys`
 
-var CliConfigTmpl = `main_path: cmd/{{.ProjectName}}/main.go
+// cliConfigTmpl is the template for the .cli_config file.
+var cliConfigTmpl = `main_path: cmd/{{.ProjectName}}/main.go
 index_path: web/
 bin_path: bin/{{.ProjectName}}
 `
 
-var MainTmpl = `package main
+// mainTmpl is the template for the main file.
+var mainTmpl = `package main
 
 import (
 	"log"

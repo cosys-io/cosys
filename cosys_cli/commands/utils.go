@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -11,32 +10,12 @@ import (
 	"strings"
 )
 
-func getModFile() (string, error) {
-	file, err := os.Open("go.mod")
-	if err != nil {
-		return "", nil
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		return line[7:], nil
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	return "", errors.New("module not found")
-}
-
-func RunCommand(command string, options ...RunOption) error {
-	cfg := &RunConfigs{
-		Dir:    "",
-		Quiet:  false,
-		Cancel: nil,
+// runCommand runs a command in shell.
+func runCommand(command string, options ...runOption) error {
+	cfg := &runConfigs{
+		dir:    "",
+		quiet:  false,
+		cancel: nil,
 	}
 
 	for _, option := range options {
@@ -51,7 +30,7 @@ func RunCommand(command string, options ...RunOption) error {
 		return fmt.Errorf("no command specified")
 	}
 
-	if cfg.Cancel == nil {
+	if cfg.cancel == nil {
 		if len(args) == 1 {
 			cmd = exec.Command(args[0])
 		} else {
@@ -63,14 +42,14 @@ func RunCommand(command string, options ...RunOption) error {
 		} else {
 			cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 		}
-		cmd.Cancel = cfg.Cancel(ctx)
+		cmd.Cancel = cfg.cancel(ctx)
 	}
 
-	if cfg.Dir != "" {
-		cmd.Dir = cfg.Dir
+	if cfg.dir != "" {
+		cmd.Dir = cfg.dir
 	}
 
-	if !cfg.Quiet {
+	if !cfg.quiet {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
@@ -82,6 +61,7 @@ func RunCommand(command string, options ...RunOption) error {
 	return nil
 }
 
+// pathExists returns whether a path exists.
 func pathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -93,26 +73,34 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-type RunConfigs struct {
-	Dir    string
-	Quiet  bool
-	Cancel func(context.Context) func() error
+// runConfigs are configurations for running a shell command.
+type runConfigs struct {
+	dir    string
+	quiet  bool
+	cancel func(context.Context) func() error
 }
 
-type RunOption func(*RunConfigs)
+// runOption is a configuration for running a shell command.
+type runOption func(*runConfigs)
 
-func Dir(dir string) RunOption {
-	return func(cfg *RunConfigs) {
-		cfg.Dir = dir
+// dir is a configuration for running a shell command,
+// specifying which directory to run the command from.
+func dir(dir string) runOption {
+	return func(cfg *runConfigs) {
+		cfg.dir = dir
 	}
 }
 
-func Quiet(cfg *RunConfigs) {
-	cfg.Quiet = true
+// quiet is a configuration for running a shell command,
+// specifying that the command should be run without outputting to stdout and stderr.
+func quiet(cfg *runConfigs) {
+	cfg.quiet = true
 }
 
-func Cancel(cancelFunc func(context.Context) func() error) RunOption {
-	return func(cfg *RunConfigs) {
-		cfg.Cancel = cancelFunc
+// cancel is a configuration for running a shell command,
+// providing a context for cancelling the command.
+func cancel(cancelFunc func(context.Context) func() error) runOption {
+	return func(cfg *runConfigs) {
+		cfg.cancel = cancelFunc
 	}
 }

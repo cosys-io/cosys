@@ -11,6 +11,7 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 }
 
+// runCmd is the command for running a command registered from a module.
 var runCmd = &cobra.Command{
 	Use:   "run command_name [arguments]",
 	Short: "Run a command from the project binary",
@@ -33,7 +34,7 @@ var runCmd = &cobra.Command{
 		}
 
 		command := strings.Join(append([]string{binPath}, args...), " ")
-		if err := RunCommand(command); err != nil {
+		if err := runCommand(command); err != nil {
 			log.Fatal(err)
 		}
 	},

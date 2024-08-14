@@ -11,6 +11,7 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 }
 
+// initConfigs loads the configurations from the .cli_configs file.
 func initConfigs() {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -24,6 +25,7 @@ func initConfigs() {
 	}
 }
 
+// configCmd is the command for managing configurations for the cli tool.
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage configurations for the cli tool",

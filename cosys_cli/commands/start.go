@@ -10,6 +10,7 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 }
 
+// startCmd is the command for starting the server.
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Deploy the Golang server and the Content Management UI server",
@@ -21,6 +22,7 @@ var startCmd = &cobra.Command{
 	},
 }
 
+// startServer starts the server.
 func startServer() error {
 	initConfigs()
 
@@ -37,7 +39,7 @@ func startServer() error {
 		log.Fatal("binary path does not exist")
 	}
 
-	if err = RunCommand(binPath + " serve"); err != nil {
+	if err = runCommand(binPath + " serve"); err != nil {
 		return err
 	}
 

@@ -8,21 +8,22 @@ import (
 )
 
 var (
-	main_path  string
-	index_path string
-	bin_path   string
+	mainPath  string // mainPath is bound to the main_path flag.
+	indexPath string // indexPath is bound to the index_path flag.
+	binPath   string // binPath is bound to the output flag.
 )
 
 func init() {
-	buildCmd.Flags().StringVarP(&main_path, "main_path", "M", "", "location of main package")
-	buildCmd.Flags().StringVarP(&index_path, "index_path", "I", "", "location of ui index file")
-	buildCmd.Flags().StringVarP(&bin_path, "output", "O", "", "location to output binaries")
+	buildCmd.Flags().StringVarP(&mainPath, "main_path", "M", "", "location of main package")
+	buildCmd.Flags().StringVarP(&indexPath, "index_path", "I", "", "location of ui index file")
+	buildCmd.Flags().StringVarP(&binPath, "output", "O", "", "location to output binaries")
 	viper.BindPFlag("main_path", buildCmd.Flags().Lookup("main_path"))
 	viper.BindPFlag("index_path", buildCmd.Flags().Lookup("index_path"))
 	viper.BindPFlag("bin_path", buildCmd.Flags().Lookup("output"))
 	rootCmd.AddCommand(buildCmd)
 }
 
+// buildCmd is the command for building the project binary.
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build Golang binaries and Content Management UI deployment",
@@ -46,7 +47,7 @@ var buildCmd = &cobra.Command{
 		}
 
 		binPath := viper.GetString("bin_path")
-		if err := RunCommand(fmt.Sprintf("go build -o %s %s", binPath, mainPath)); err != nil {
+		if err := runCommand(fmt.Sprintf("go build -o %s %s", binPath, mainPath)); err != nil {
 			log.Fatal(err)
 		}
 	},

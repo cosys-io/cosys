@@ -10,8 +10,9 @@ func init() {
 	configCmd.AddCommand(configsGetCmd)
 }
 
+// configsGetCmd is the command for getting configurations for the cli tool.
 var configsGetCmd = &cobra.Command{
-	Use:   "get cfg_name",
+	Use:   "get config_name",
 	Short: "Get configurations for the cli tool",
 	Long:  `Get configurations for the cli tool.`,
 	Args:  cobra.ExactArgs(1),

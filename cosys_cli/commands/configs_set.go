@@ -10,6 +10,7 @@ func init() {
 	configCmd.AddCommand(configsSetCmd)
 }
 
+// configsSetCmd is the command for setting configurations for the cli tool.
 var configsSetCmd = &cobra.Command{
 	Use:   "set config_name config_value",
 	Short: "Set configurations for the cli tool",

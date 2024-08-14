@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// rootCmd is the root command for the cli tool.
 var rootCmd = &cobra.Command{
 	Use:   "cosys <command> [arguments]",
 	Short: "Manage a cosys project.",
@@ -15,6 +16,7 @@ var rootCmd = &cobra.Command{
 		cmd.Help()
 	}}
 
+// Execute runs the cli tool.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
