@@ -136,9 +136,12 @@ import (
 )
 
 func main() {
-	cosys := common.NewCosys()
+	cosys, err := common.New()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if err := cosys.Start(); err != nil {
+	if err = cosys.Start(); err != nil {
 		log.Fatal(err)
 	}
 }`
