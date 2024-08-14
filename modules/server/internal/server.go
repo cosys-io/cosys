@@ -6,12 +6,14 @@ import (
 	"net/http"
 )
 
+// Server is an implementation of the Server core service using the native net/http package.
 type Server struct {
 	port  string
 	mux   *http.ServeMux
 	cosys *common.Cosys
 }
 
+// NewServer returns a new Server.
 func NewServer(port string, cosys *common.Cosys) *Server {
 	return &Server{
 		port:  port,
@@ -20,6 +22,7 @@ func NewServer(port string, cosys *common.Cosys) *Server {
 	}
 }
 
+// resolveEndpoints creates the mux from the registered routes, controllers, middlewares and policies.
 func (s Server) resolveEndpoints() error {
 	mux := http.NewServeMux()
 
@@ -66,6 +69,7 @@ func (s Server) resolveEndpoints() error {
 	return nil
 }
 
+// Start resolved the server endpoints and starts the server.
 func (s Server) Start() error {
 	if err := s.resolveEndpoints(); err != nil {
 		return err

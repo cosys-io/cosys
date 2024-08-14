@@ -7,21 +7,25 @@ import (
 	"reflect"
 )
 
+// Response is the standard server response.
 type Response struct {
 	Data any  `json:"data"`
 	Meta Meta `json:"meta"`
 }
 
+// Meta contains meta data about the response.
 type Meta struct {
 	Error      string      `json:"error,omitempty"`
 	Pagination *Pagination `json:"pagination,omitempty"`
 }
 
+// Pagination contains pagination data about the response.
 type Pagination struct {
 	Page     int `json:"page"`
 	PageSize int `json:"pageSize"`
 }
 
+// RespondOne responds with no pagination data.
 func RespondOne(w http.ResponseWriter, data any, code int) {
 	if w == nil {
 		RespondInternalError(w)
@@ -47,6 +51,7 @@ func RespondOne(w http.ResponseWriter, data any, code int) {
 	}
 }
 
+// RespondMany responds with pagination data.
 func RespondMany(w http.ResponseWriter, data any, page int, code int) {
 	if w == nil {
 		RespondInternalError(w)
@@ -84,6 +89,7 @@ func RespondMany(w http.ResponseWriter, data any, page int, code int) {
 	}
 }
 
+// RespondError responds with an error message.
 func RespondError(w http.ResponseWriter, message string, code int) {
 	if w == nil {
 		RespondInternalError(w)
@@ -111,6 +117,7 @@ func RespondError(w http.ResponseWriter, message string, code int) {
 	}
 }
 
+// RespondInternalError responds with an internal server error.
 func RespondInternalError(w http.ResponseWriter) {
 	if w == nil {
 		log.Printf("response writer is nil")
