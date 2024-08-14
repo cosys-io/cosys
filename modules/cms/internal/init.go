@@ -1,4 +1,4 @@
-package cms
+package internal
 
 import (
 	"github.com/cosys-io/cosys/common"
@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(initCmd)
+	RootCmd.AddCommand(initCmd)
 }
 
 var initCmd = &cobra.Command{
@@ -67,8 +67,8 @@ func generateModule(moduleDir, moduleName, modFile string) error {
 		gen.NewFile(filepath.Join(moduleDir, "policies", "policies.go"), PoliciesTmpl, nil),
 		gen.NewDir(filepath.Join(moduleDir, "routes"), gen.GenHeadOnly),
 		gen.NewFile(filepath.Join(moduleDir, "routes", "routes.go"), RoutesTmpl, nil),
-		gen.NewDir(filepath.Join(moduleDir, "services"), gen.GenHeadOnly),
-		gen.NewFile(filepath.Join(moduleDir, "services", "services.go"), ServicesTmpl, nil),
+		//gen.NewDir(filepath.Join(moduleDir, "services"), gen.GenHeadOnly),
+		//gen.NewFile(filepath.Join(moduleDir, "services", "services.go"), ServicesTmpl, nil),
 	)
 	if err := generator.Generate(); err != nil {
 		return err
@@ -81,23 +81,46 @@ var ModuleTmpl = `package {{.ModuleName}}
 
 import (
 	"github.com/cosys-io/cosys/common"
+	"{{.ModFile}}/{{.ModuleDir}}/content_types"
 	"{{.ModFile}}/{{.ModuleDir}}/controllers"
 	"{{.ModFile}}/{{.ModuleDir}}/middlewares"
 	"{{.ModFile}}/{{.ModuleDir}}/policies"
 	"{{.ModFile}}/{{.ModuleDir}}/routes"
-	"{{.ModFile}}/{{.ModuleDir}}/content_types"
+	"github.com/cosys-io/cosys/modules/cms/admin"
 )
 
-var Module = &common.Module{
-	Routes: routes.Routes,
-	Controllers: controllers.Controllers,
-	Middlewares: middlewares.Middlewares,
-	Policies: policies.Policies,
-	Models: models.Models,
-	Services: nil,
+func init() {
+	_ = common.RegisterModule(func(cosys *common.Cosys) error {
+		if err := cosys.AddRoutes(routes.Routes...); err != nil {
+			return err
+		}
 
-	OnRegister: nil,
-	OnDestroy: nil,
+		if err := cosys.AddControllers(controllers.Controllers...); err != nil {
+			return err
+		}
+
+		if err := cosys.AddMiddlewares(middlewares.Middlewares...); err != nil {
+			return err
+		}
+
+		if err := cosys.AddPolicies(policies.Policies...); err != nil {
+			return err
+		}
+
+		if err := cosys.AddModels(models.Models); err != nil {
+			return err
+		}
+
+		if err := admin.AddAdminRoutes(cosys, models.Models); err != nil {
+			return err
+		}
+
+		if err := admin.AddSchemaRoutes(cosys, models.Models); err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 `
 
@@ -105,35 +128,28 @@ var ControllersTmpl = `package controllers
 
 import "github.com/cosys-io/cosys/common"
 
-var Controllers = map[string]common.Controller{
+var Controllers = []common.Controller{
 }`
 
 var MiddlewaresTmpl = `package middlewares
 
 import "github.com/cosys-io/cosys/common"
 
-var Middlewares = map[string]common.Middleware{
+var Middlewares = []common.Middleware{
 }`
 
 var PoliciesTmpl = `package policies
 
 import "github.com/cosys-io/cosys/common"
 
-var Policies = map[string]common.Policy{
+var Policies = []common.Policy{
 }`
 
 var RoutesTmpl = `package routes
 
 import "github.com/cosys-io/cosys/common"
 
-var Routes = []*common.Route{
-}`
-
-var ServicesTmpl = `package services
-
-import "github.com/cosys-io/cosys/common"
-
-var Services = map[string]common.Service{
+var Routes = []common.Route{
 }`
 
 var ModelsTmpl = `package models
