@@ -1,2 +1,2 @@
 # cosys - cms
-This module is responsible for all CMS functionality
+This module provides a headless content management system.

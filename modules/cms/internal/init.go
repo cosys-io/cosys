@@ -13,10 +13,11 @@ func init() {
 	RootCmd.AddCommand(initCmd)
 }
 
+// initCmd is the command for generating the default configurations and code for the cms module.
 var initCmd = &cobra.Command{
 	Use:   "init module_path",
-	Short: "Generate default configurations and configurations for the cms module",
-	Long:  `Generate default configurations and configurations for the cms module.`,
+	Short: "Generate default configurations and code for the cms module",
+	Long:  `Generate default configurations and code for the cms module.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		modulePath := args[0]
@@ -43,6 +44,7 @@ var initCmd = &cobra.Command{
 	},
 }
 
+// generateModule generates the code for the content types, controllers, middlewares, policies and routes packages.
 func generateModule(moduleDir, moduleName, modFile string) error {
 	ctx := struct {
 		ModuleDir  string
@@ -56,17 +58,17 @@ func generateModule(moduleDir, moduleName, modFile string) error {
 
 	generator := gen.NewGenerator(
 		gen.NewDir(moduleDir),
-		gen.NewFile(filepath.Join(moduleDir, "module.go"), ModuleTmpl, ctx),
+		gen.NewFile(filepath.Join(moduleDir, "module.go"), moduleTmpl, ctx),
 		gen.NewDir(filepath.Join(moduleDir, "content_types"), gen.GenHeadOnly),
-		gen.NewFile(filepath.Join(moduleDir, "content_types", "models.go"), ModelsTmpl, nil),
+		gen.NewFile(filepath.Join(moduleDir, "content_types", "models.go"), modelsTmpl, nil),
 		gen.NewDir(filepath.Join(moduleDir, "controllers"), gen.GenHeadOnly),
-		gen.NewFile(filepath.Join(moduleDir, "controllers", "controllers.go"), ControllersTmpl, nil),
+		gen.NewFile(filepath.Join(moduleDir, "controllers", "controllers.go"), controllersTmpl, nil),
 		gen.NewDir(filepath.Join(moduleDir, "middlewares"), gen.GenHeadOnly),
-		gen.NewFile(filepath.Join(moduleDir, "middlewares", "middlewares.go"), MiddlewaresTmpl, nil),
+		gen.NewFile(filepath.Join(moduleDir, "middlewares", "middlewares.go"), middlewaresTmpl, nil),
 		gen.NewDir(filepath.Join(moduleDir, "policies"), gen.GenHeadOnly),
-		gen.NewFile(filepath.Join(moduleDir, "policies", "policies.go"), PoliciesTmpl, nil),
+		gen.NewFile(filepath.Join(moduleDir, "policies", "policies.go"), policiesTmpl, nil),
 		gen.NewDir(filepath.Join(moduleDir, "routes"), gen.GenHeadOnly),
-		gen.NewFile(filepath.Join(moduleDir, "routes", "routes.go"), RoutesTmpl, nil),
+		gen.NewFile(filepath.Join(moduleDir, "routes", "routes.go"), routesTmpl, nil),
 		//gen.NewDir(filepath.Join(moduleDir, "services"), gen.GenHeadOnly),
 		//gen.NewFile(filepath.Join(moduleDir, "services", "services.go"), ServicesTmpl, nil),
 	)
@@ -77,7 +79,8 @@ func generateModule(moduleDir, moduleName, modFile string) error {
 	return nil
 }
 
-var ModuleTmpl = `package {{.ModuleName}}
+// moduleTmpl is the template for creating the module.go file.
+var moduleTmpl = `package {{.ModuleName}}
 
 import (
 	"github.com/cosys-io/cosys/common"
@@ -124,35 +127,40 @@ func init() {
 }
 `
 
-var ControllersTmpl = `package controllers
+// controllersTmpl is the template for creating the controllers.go file.
+var controllersTmpl = `package controllers
 
 import "github.com/cosys-io/cosys/common"
 
 var Controllers = []common.Controller{
 }`
 
-var MiddlewaresTmpl = `package middlewares
+// middlewaresTmpl is the template for creating the middlewares.go file.
+var middlewaresTmpl = `package middlewares
 
 import "github.com/cosys-io/cosys/common"
 
 var Middlewares = []common.Middleware{
 }`
 
-var PoliciesTmpl = `package policies
+// policiesTmpl is the template for creating the policies.go file.
+var policiesTmpl = `package policies
 
 import "github.com/cosys-io/cosys/common"
 
 var Policies = []common.Policy{
 }`
 
-var RoutesTmpl = `package routes
+// routesTmpl is the template for creating the routes.go file.
+var routesTmpl = `package routes
 
 import "github.com/cosys-io/cosys/common"
 
 var Routes = []common.Route{
 }`
 
-var ModelsTmpl = `package models
+// modelsTmpl is the template for creating the models.go file.
+var modelsTmpl = `package models
 
 import (
 	"github.com/cosys-io/cosys/common"

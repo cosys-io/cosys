@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// FindMany returns the find many ActionFunc for the model of the given uid.
 func FindMany(modelUid string) common.ActionFunc {
 	return func(cosys *common.Cosys) (http.HandlerFunc, error) {
 		model, err := cosys.Model(modelUid)
@@ -43,6 +44,7 @@ func FindMany(modelUid string) common.ActionFunc {
 	}
 }
 
+// FindOne returns the find one ActionFunc for the model of the given uid.
 func FindOne(modelUid string) common.ActionFunc {
 	return func(cosys *common.Cosys) (http.HandlerFunc, error) {
 		model, err := cosys.Model(modelUid)
@@ -77,6 +79,7 @@ func FindOne(modelUid string) common.ActionFunc {
 	}
 }
 
+// Create returns the create ActionFunc for the model of the given uid.
 func Create(modelUid string) common.ActionFunc {
 	return func(cosys *common.Cosys) (http.HandlerFunc, error) {
 		model, err := cosys.Model(modelUid)
@@ -108,6 +111,7 @@ func Create(modelUid string) common.ActionFunc {
 	}
 }
 
+// Update returns the update ActionFunc for the model of the given uid.
 func Update(modelUid string) common.ActionFunc {
 	return func(cosys *common.Cosys) (http.HandlerFunc, error) {
 		model, err := cosys.Model(modelUid)
@@ -149,6 +153,7 @@ func Update(modelUid string) common.ActionFunc {
 	}
 }
 
+// Delete returns the delete ActionFunc for the model of the given uid.
 func Delete(modelUid string) common.ActionFunc {
 	return func(cosys *common.Cosys) (http.HandlerFunc, error) {
 		model, err := cosys.Model(modelUid)

@@ -5,6 +5,7 @@ import (
 	"github.com/cosys-io/cosys/modules/cms/routes"
 )
 
+// AddAdminRoutes registers admin crud routes for the given models.
 func AddAdminRoutes(cosys *common.Cosys, models map[string]common.Model) error {
 	adminRoutes := make([]common.Route, len(models)*5)
 

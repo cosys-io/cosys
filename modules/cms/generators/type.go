@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 )
 
+// GenerateType generates the files for a new collection type.
 func GenerateType(schema *schema.ModelSchema) error {
 	common.InitConfigs()
 
@@ -38,13 +39,14 @@ func GenerateType(schema *schema.ModelSchema) error {
 		return err
 	}
 
-	if err = generateApi(typesDir, controllersDir, routesDir, ctx); err != nil {
+	if err = generateApi(controllersDir, routesDir, ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// getCtx returns the code generator context from the given model schema.
 func getCtx(modelSchema *schema.ModelSchema, typesDir string) (*modelCtx, error) {
 	modFile, err := getModFile()
 	if err != nil {
@@ -60,6 +62,7 @@ func getCtx(modelSchema *schema.ModelSchema, typesDir string) (*modelCtx, error)
 	return ctx, nil
 }
 
+// getModFile returns the module name.
 func getModFile() (string, error) {
 	file, err := os.Open("go.mod")
 	if err != nil {
@@ -81,6 +84,7 @@ func getModFile() (string, error) {
 	return "", errors.New("module not found")
 }
 
+// getModelCtx returns the code generator context from the given model schema, without the attribute contexts.
 func getModelCtx(schema *schema.ModelSchema, modFile string, typesDir string) *modelCtx {
 	return &modelCtx{
 		DBName:             schema.CollectionName(),
@@ -102,6 +106,7 @@ func getModelCtx(schema *schema.ModelSchema, modFile string, typesDir string) *m
 	}
 }
 
+// getAttrCtx returns the code generator context from the given attribute schema.
 func getAttrCtx(schema *schema.AttributeSchema) *attrCtx {
 	ctx := &attrCtx{
 		CamelName:  schema.Name(),
@@ -123,13 +128,16 @@ func getAttrCtx(schema *schema.AttributeSchema) *attrCtx {
 	return ctx
 }
 
+// generateModel generates the code for the model of the collection type.
 func generateModel(typeSnakeName string, typesDir string, schema *schema.ModelSchema, ctx *modelCtx) error {
 	typeDir := filepath.Join(typesDir, typeSnakeName)
 	generator := gen.NewGenerator(
 		gen.NewDir(typeDir, gen.GenHeadOnly),
-		gen.NewFile(filepath.Join(typeDir, "schema.yaml"), SchemaYamlTmpl, schema),
-		gen.NewFile(filepath.Join(typeDir, "schema.go"), SchemaGoTmpl, schema),
-		gen.NewFile(filepath.Join(typeDir, "model.go"), ModelTmpl, ctx),
+		gen.NewFile(filepath.Join(typeDir, "schema.yaml"), schemaYamlTmpl, schema),
+		gen.NewFile(filepath.Join(typeDir, "schema.go"), schemaGoTmpl, schema),
+		gen.NewFile(filepath.Join(typeDir, "model.go"), modelTmpl, ctx),
+		gen.ModifyFile(filepath.Join(typesDir, "models.go"), `import \(`, modelsImportTmpl, ctx),
+		gen.ModifyFile(filepath.Join(typesDir, "models.go"), `var Models = map\[string\]common\.Model\{`, modelsStructTmpl, ctx),
 	)
 	if err := generator.Generate(); err != nil {
 		return err
@@ -138,13 +146,12 @@ func generateModel(typeSnakeName string, typesDir string, schema *schema.ModelSc
 	return nil
 }
 
-func generateApi(typesDir, controllersDir, routesDir string, ctx *modelCtx) error {
+// generateApi generates the code for the controllers and routes of the collection type.
+func generateApi(controllersDir, routesDir string, ctx *modelCtx) error {
 	generator := gen.NewGenerator(
-		gen.ModifyFile(filepath.Join(typesDir, "models.go"), `import \(`, ModelsImportTmpl, ctx),
-		gen.ModifyFile(filepath.Join(typesDir, "models.go"), `var Models = map\[string\]common\.Model\{`, ModelsStructTmpl, ctx),
-		gen.NewFile(filepath.Join(controllersDir, ctx.PluralSnakeName+"_controllers.go"), ControllerStructTmpl, ctx),
-		gen.ModifyFile(filepath.Join(controllersDir, "controllers.go"), `var Controllers = \[\]common\.Controller\{`, ControllersStructTmpl, ctx),
-		gen.ModifyFile(filepath.Join(routesDir, "routes.go"), `var Routes = \[\]common\.Route\{`, RoutesStructTmpl, ctx),
+		gen.NewFile(filepath.Join(controllersDir, ctx.PluralSnakeName+"_controllers.go"), typeControllerTmpl, ctx),
+		gen.ModifyFile(filepath.Join(controllersDir, "controllers.go"), `var Controllers = \[\]common\.Controller\{`, controllersTmpl, ctx),
+		gen.ModifyFile(filepath.Join(routesDir, "routes.go"), `var Routes = \[\]common\.Route\{`, routesTmpl, ctx),
 	)
 	if err := generator.Generate(); err != nil {
 		return err
@@ -153,6 +160,7 @@ func generateApi(typesDir, controllersDir, routesDir string, ctx *modelCtx) erro
 	return nil
 }
 
+// modelCtx contains the data for generating code for a new collection type.
 type modelCtx struct {
 	DBName             string
 	DisplayName        string
@@ -172,6 +180,7 @@ type modelCtx struct {
 	Attributes []*attrCtx
 }
 
+// attrCtx contains the data for generating code for an attribute of a new collection type.
 type attrCtx struct {
 	TypeLower  string
 	TypeUpper  string
@@ -179,7 +188,8 @@ type attrCtx struct {
 	PascalName string
 }
 
-var ModelTmpl = `package {{.PluralCamelName}}
+// modelTmpl is the template for creating the entity type, model type and model for a new collection type.
+var modelTmpl = `package {{.PluralCamelName}}
 	
 import (
 	"github.com/cosys-io/cosys/common"
@@ -203,7 +213,8 @@ var {{.PluralPascalName}}, _ = common.NewModel[{{.SingularPascalName}}, {{.Plura
 	{{.SingularCamelName}}Schema,
 )`
 
-var SchemaGoTmpl = `package {{.PluralName}}
+// schemaGoTmpl is the template for creating the schema struct of a new collection type.
+var schemaGoTmpl = `package {{.PluralName}}
 
 import (
 	"github.com/cosys-io/cosys/modules/cms/schema"
@@ -237,7 +248,8 @@ var {{.SingularName}}Schema = schema.NewModelSchema(
 {{end}})
 `
 
-var SchemaYamlTmpl = `modelType: {{.ModelType}}
+// schemaYamlTmpl is the template for creating the yaml configuration of a new collection type.
+var schemaYamlTmpl = `modelType: {{.ModelType}}
 collectionName: {{.CollectionName}}
 displayName: {{.DisplayName}}
 singularName: {{.SingularName}}
@@ -262,16 +274,24 @@ attributes:
     unique: true{{end}}
 {{end}}`
 
-var ModelsImportTmpl = `import (
+// modelsImportTmpl is the template for adding the import for the model of a new collection type
+// to the imports in the models.go file.
+var modelsImportTmpl = `import (
 	"{{.ModFile}}/{{.TypesDir}}/{{.PluralSnakeName}}"`
 
-var ModelsStructTmpl = `var Models = map[string]common.Model{
+// modelsStructTmpl is the template for the adding the model of a new collection type
+// to the models map in the models.go file.
+var modelsStructTmpl = `var Models = map[string]common.Model{
 	"api.{{.PluralCamelName}}": {{.PluralCamelName}}.{{.PluralPascalName}},`
 
-var ControllersStructTmpl = `var Controllers = []common.Controller{
+// controllersTmpl is the template for adding the controller of a new collection type
+// to the controllers slice in the controllers.go file.
+var controllersTmpl = `var Controllers = []common.Controller{
 	{{.PluralCamelName}}Controller,`
 
-var ControllerStructTmpl = `package controllers
+// typeControllerTmpl is the template for creating the controller of a new collection type
+// in a new file in the controllers package.
+var typeControllerTmpl = `package controllers
 
 import (
 	"github.com/cosys-io/cosys/common"
@@ -286,7 +306,9 @@ var {{.PluralCamelName}}Controller, _ = common.NewController("{{.PluralCamelName
 	"delete": routes.Delete("api.{{.PluralCamelName}}"),
 })`
 
-var RoutesStructTmpl = `var Routes = []common.Route{
+// routesTmpl is the template for adding the routes for a new collection type
+// to the routes slice in the routes.go file.
+var routesTmpl = `var Routes = []common.Route{
 	common.NewRoute("GET", ` + "`/api/{{.PluralKebabName}}`" + `, common.GetAction("{{.PluralCamelName}}.findMany")),
 	common.NewRoute("GET", ` + "`/api/{{.PluralKebabName}}/{id}`" + `, common.GetAction("{{.PluralCamelName}}.findOne")),
 	common.NewRoute("POST", ` + "`/api/{{.PluralKebabName}}`" + `, common.GetAction("{{.PluralCamelName}}.create")),

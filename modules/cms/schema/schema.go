@@ -2,6 +2,8 @@ package schema
 
 import "github.com/cosys-io/cosys/common"
 
+// ModelSchema is an implementation of the ModelSchema common interface,
+// with added getter methods for display name and description.
 type ModelSchema struct {
 	modelType      string
 	collectionName string
@@ -40,6 +42,8 @@ func (m ModelSchema) Attributes() []common.AttributeSchema {
 	return m.attributes
 }
 
+// AttributeSchema is an implementation of the AttributeSchema common interface,
+// with the added getter method for whether the attribute is shown in table.
 type AttributeSchema struct {
 	name               string
 	simplifiedDataType string
@@ -120,6 +124,7 @@ func (a AttributeSchema) Unique() bool {
 	return a.unique
 }
 
+// NewModelSchema returns a new ModelSchema from the given names, descriptions and attribute schemas.
 func NewModelSchema(collection, display, singular, plural, description string, attrs ...*AttributeSchema) *ModelSchema {
 	commonAttrs := make([]common.AttributeSchema, len(attrs))
 	for i, attr := range attrs {
@@ -137,6 +142,7 @@ func NewModelSchema(collection, display, singular, plural, description string, a
 	}
 }
 
+// NewAttrSchema returns a new AttributeSchema from the given names, types and configurations.
 func NewAttrSchema(attrName, simpleType, detailedType string, opts ...AttrOption) *AttributeSchema {
 	schema := &AttributeSchema{
 		name:               attrName,
@@ -163,68 +169,82 @@ func NewAttrSchema(attrName, simpleType, detailedType string, opts ...AttrOption
 	return schema
 }
 
+// AttrOption is a configuration for an attribute schema.
 type AttrOption func(*AttributeSchema)
 
+// Required specifies that the attribute is required.
 var Required AttrOption = func(schema *AttributeSchema) {
 	schema.required = true
 }
 
+// HideInTable specifies that the attribute is hidden in the table.
 var HideInTable AttrOption = func(schema *AttributeSchema) {
 	schema.shownInTable = false
 }
 
+// Max specifies that the attribute has the given maximum value.
 func Max(max int64) AttrOption {
 	return func(schema *AttributeSchema) {
 		schema.max = max
 	}
 }
 
+// Min specifies that the attribute has the given minimum value.
 func Min(min int64) AttrOption {
 	return func(schema *AttributeSchema) {
 		schema.min = min
 	}
 }
 
+// MaxLength specifies that the attribute has the given maximum length.
 func MaxLength(max int) AttrOption {
 	return func(schema *AttributeSchema) {
 		schema.maxLength = max
 	}
 }
 
+// MinLength specifies that the attribute has the given minimum length.
 func MinLength(min int) AttrOption {
 	return func(schema *AttributeSchema) {
 		schema.minLength = min
 	}
 }
 
+// Private specifies that the attribute is private.
 var Private AttrOption = func(schema *AttributeSchema) {
 	schema.private = true
 }
 
+// NotEditable specifies that the attribute is not editable.
 var NotEditable AttrOption = func(schema *AttributeSchema) {
 	schema.editable = false
 }
 
+// Enum specifies that an attribute is can only take the given values.
 func Enum(enum ...string) AttrOption {
 	return func(schema *AttributeSchema) {
 		schema.enum = enum
 	}
 }
 
+// Default specifies that an attribute has the given default value.
 func Default(def string) AttrOption {
 	return func(schema *AttributeSchema) {
 		schema.defaultValue = def
 	}
 }
 
+// NotNullable specifies that an attribute is cannot be null.
 var NotNullable AttrOption = func(schema *AttributeSchema) {
 	schema.nullable = false
 }
 
+// Unique specifies that an attribute is unique.
 var Unique AttrOption = func(schema *AttributeSchema) {
 	schema.unique = true
 }
 
+// IdSchema is the schema for the id attribute.
 var IdSchema = AttributeSchema{
 	name:               "id",
 	simplifiedDataType: "Number",
@@ -245,6 +265,7 @@ var IdSchema = AttributeSchema{
 	unique:       true,
 }
 
+// UuidSchema is the schema for the uuid attribute.
 var UuidSchema = AttributeSchema{
 	name:               "uuid",
 	simplifiedDataType: "String",

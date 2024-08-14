@@ -8,6 +8,7 @@ func init() {
 	RootCmd.AddCommand(generateCmd)
 }
 
+// generateCmd is the command for generating code.
 var generateCmd = &cobra.Command{
 	Use:   "generate <command>",
 	Short: "Generate code",

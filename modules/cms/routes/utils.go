@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// getParams returns the DBParams from the query string.
 func getParams(r *http.Request, attrs []common.Attribute) (common.DBParams, error) {
 	pageSize, err := getPageSize(r)
 	if err != nil {
@@ -46,6 +47,7 @@ func getParams(r *http.Request, attrs []common.Attribute) (common.DBParams, erro
 		Build(), nil
 }
 
+// getPageSize returns the page size value from the query string.
 func getPageSize(r *http.Request) (int64, error) {
 	pageSizeString := r.PathValue("pageSize")
 	if pageSizeString != "" {
@@ -60,6 +62,7 @@ func getPageSize(r *http.Request) (int64, error) {
 	}
 }
 
+// getPage returns the page number value from the query string.
 func getPage(r *http.Request) (int, error) {
 	pageString := r.PathValue("page")
 	if pageString != "" {
@@ -74,6 +77,7 @@ func getPage(r *http.Request) (int, error) {
 	}
 }
 
+// getSort returns the order conditions from the query string.
 func getSort(r *http.Request, attrs []common.Attribute) ([]*common.Order, error) {
 	sortSliceString := r.PathValue("sort")
 	if sortSliceString != "" {
@@ -116,6 +120,7 @@ func getSort(r *http.Request, attrs []common.Attribute) ([]*common.Order, error)
 	}
 }
 
+// getFields returns the return fields from the query string.
 func getFields(r *http.Request, attrs []common.Attribute) ([]common.Attribute, error) {
 	fieldSliceString := r.PathValue("fields")
 	if fieldSliceString != "" {
@@ -143,6 +148,7 @@ func getFields(r *http.Request, attrs []common.Attribute) ([]common.Attribute, e
 	}
 }
 
+// getPopulate returns the fields to populate from the query string.
 func getPopulate(r *http.Request, attrs []common.Attribute) ([]common.Attribute, error) {
 	populateSliceString := r.PathValue("populate")
 	if populateSliceString != "" {
@@ -171,6 +177,7 @@ func getPopulate(r *http.Request, attrs []common.Attribute) ([]common.Attribute,
 	}
 }
 
+// getId returns the entity id from the query params.
 func getId(r *http.Request) (int, error) {
 	idString := r.PathValue("id")
 	if idString == "" {

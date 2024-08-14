@@ -7,6 +7,7 @@ import (
 	"io"
 )
 
+// ParseSchema parses json from a reader and scans it into a ModelSchema.
 func ParseSchema(schema *ModelSchema, reader io.Reader) error {
 	schemaZero := modelSchemaZero{}
 
@@ -23,6 +24,9 @@ func ParseSchema(schema *ModelSchema, reader io.Reader) error {
 	return nil
 }
 
+// modelSchemaZero is used to parse model schema json with default values.
+// Fields that are missing in the json are parsed as nil pointers instead of zero values,
+// which are then replaced with their respective default values.
 type modelSchemaZero struct {
 	ModelType      string                 `yaml:"modelType" json:"modelType"`
 	CollectionName string                 `yaml:"collectionName" json:"collectionName"`
@@ -33,6 +37,7 @@ type modelSchemaZero struct {
 	Attributes     []*attributeSchemaZero `yaml:"attributes" json:"attributes"`
 }
 
+// Schema returns the corresponding ModelSchema with default values.
 func (m modelSchemaZero) Schema() (*ModelSchema, error) {
 	if m.DisplayName == "" {
 		return nil, fmt.Errorf("model has no display name")
@@ -71,6 +76,9 @@ func (m modelSchemaZero) Schema() (*ModelSchema, error) {
 	}, nil
 }
 
+// attributeSchemaZero is used to parse attribute schema json with default values.
+// Fields that are missing in the json are parsed as nil pointers instead of zero values,
+// which are then replaced with their respective default values.
 type attributeSchemaZero struct {
 	Name               string `yaml:"name" json:"name"`
 	SimplifiedDataType string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
@@ -91,6 +99,7 @@ type attributeSchemaZero struct {
 	Unique   *bool   `yaml:"unique" json:"unique"`
 }
 
+// Schema returns the corresponding AttributeSchema with default values.
 func (a attributeSchemaZero) Schema() (*AttributeSchema, error) {
 	if a.Name == "" {
 		return nil, fmt.Errorf("attribute has no name")
@@ -123,6 +132,7 @@ func (a attributeSchemaZero) Schema() (*AttributeSchema, error) {
 	}, nil
 }
 
+// checkDefault returns the value pointed to by a pointer, or a default value if the pointer is null.
 func checkDefault[T any](defaultValue T, value *T) T {
 	if value == nil {
 		return defaultValue

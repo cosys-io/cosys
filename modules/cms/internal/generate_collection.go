@@ -14,11 +14,11 @@ import (
 )
 
 var (
-	databaseName string
-	viewName     string
-	singularName string
-	pluralName   string
-	about        string
+	databaseName string // databaseName is bound to the database flag.
+	viewName     string // viewName is bound to the view flag.
+	singularName string // singularName is bound to the singular flag.
+	pluralName   string // pluralName is bound to the plural flag.
+	about        string // about is bound to the about flag.
 )
 
 func init() {
@@ -33,6 +33,7 @@ func init() {
 	generateCmd.AddCommand(generateCollectionCmd)
 }
 
+// generateCollectionCmd is the command for generating a collection type.
 var generateCollectionCmd = &cobra.Command{
 	Use:   "collection [attributes] [flags]",
 	Short: "Generate a collection type",
@@ -50,6 +51,7 @@ var generateCollectionCmd = &cobra.Command{
 	},
 }
 
+// getSchema returns the ModelSchema from the given names, description and attribute strings.
 func getSchema(databaseName string, viewName string, singularName string, pluralName string,
 	about string, attrStrings []string) (*schema.ModelSchema, error) {
 
@@ -74,6 +76,7 @@ func getSchema(databaseName string, viewName string, singularName string, plural
 	return getModelSchema(databaseName, viewName, singularName, pluralName, about, attrs), nil
 }
 
+// getType returns the simple and detailed type from the given attribute type string.
 func getType(attrType string) (string, string, error) {
 	var attrSimpleType string
 	var attrDetailedType string
@@ -107,6 +110,7 @@ func getType(attrType string) (string, string, error) {
 	return attrSimpleType, attrDetailedType, nil
 }
 
+// getModelSchema returns the ModelSchema from the given names, description and attribute schemas.
 func getModelSchema(databaseName, viewName, singularName, pluralName, about string, attrs []*schema.AttributeSchema) *schema.ModelSchema {
 	var collectionName string
 	if databaseName != "" {
@@ -125,6 +129,7 @@ func getModelSchema(databaseName, viewName, singularName, pluralName, about stri
 	return schema.NewModelSchema(collectionName, displayName, singularName, pluralName, about, attrs...)
 }
 
+// getAttrSchema returns the AttributeSchema from the given attribute string.
 func getAttrSchema(attrString string) (*schema.AttributeSchema, error) {
 	split := strings.Split(attrString, ":")
 	if len(split) < 2 {
@@ -141,7 +146,7 @@ func getAttrSchema(attrString string) (*schema.AttributeSchema, error) {
 	attrSchema := schema.NewAttrSchema(attrName, attrSimpleType, attrDetailedType)
 
 	for _, optionString := range split[2:] {
-		option, err := getOption(attrSchema, optionString)
+		option, err := getOption(optionString)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +156,8 @@ func getAttrSchema(attrString string) (*schema.AttributeSchema, error) {
 	return attrSchema, nil
 }
 
-func getOption(attrSchema *schema.AttributeSchema, option string) (schema.AttrOption, error) {
+// getOption returns the attribute configuration from the given attribute configuration string.
+func getOption(option string) (schema.AttrOption, error) {
 	switch {
 	case option == "notshown":
 		return schema.HideInTable, nil
