@@ -2,20 +2,12 @@ package server
 
 import (
 	"github.com/cosys-io/cosys/common"
-	"log"
+	"github.com/cosys-io/cosys/modules/server/internal"
 )
 
+// init registers the module to register the Server core service.
 func init() {
-	svCtor := func(cosys *common.Cosys) common.Server {
-		port := cosys.Configs.Server.Port
-
-		return Server{
-			Port:  port,
-			Cosys: cosys,
-		}
-	}
-
-	if err := common.RegisterServer("default", svCtor); err != nil {
-		log.Fatal(err)
-	}
+	_ = common.RegisterModule(func(cosys *common.Cosys) error {
+		return cosys.UseServer(internal.NewServer("3000", cosys))
+	})
 }

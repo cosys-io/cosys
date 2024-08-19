@@ -1,31 +1,6 @@
 package common
 
-import (
-	"fmt"
-	"sync"
-)
-
-var (
-	dbMutex    sync.RWMutex
-	dbRegister = make(map[string]func(*Cosys) Database)
-)
-
-func RegisterDatabase(dbName string, dbCtor func(*Cosys) Database) error {
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
-
-	if dbCtor == nil {
-		return fmt.Errorf("database is nil: %s", dbName)
-	}
-
-	if _, dup := dbRegister[dbName]; dup {
-		return fmt.Errorf("duplicate database: %s", dbName)
-	}
-
-	dbRegister[dbName] = dbCtor
-	return nil
-}
-
+// Database is a core service for interacting with the relational database.
 type Database interface {
 	FindOne(uid string, params DBParams) (Entity, error)
 	FindMany(uid string, params DBParams) ([]Entity, error)
@@ -37,6 +12,7 @@ type Database interface {
 	DeleteMany(uid string, params DBParams) ([]Entity, error)
 }
 
+// DBParams are query conditions.
 type DBParams struct {
 	Select   []Attribute
 	Columns  []Attribute
@@ -47,6 +23,7 @@ type DBParams struct {
 	Populate []Attribute
 }
 
+// NewDBParams returns a new DBParams with default conditions.
 func NewDBParams() DBParams {
 	return DBParams{
 		Select:   []Attribute{},
@@ -59,6 +36,7 @@ func NewDBParams() DBParams {
 	}
 }
 
+// DBParamsBuilder is a builder for DBParams.
 type DBParamsBuilder struct {
 	selectFields []Attribute
 	columns      []Attribute
@@ -69,6 +47,7 @@ type DBParamsBuilder struct {
 	populate     []Attribute
 }
 
+// NewDBParamsBuilder returns a new DBParamsBuilder with default conditions.
 func NewDBParamsBuilder() DBParamsBuilder {
 	return DBParamsBuilder{
 		[]Attribute{},
@@ -81,46 +60,55 @@ func NewDBParamsBuilder() DBParamsBuilder {
 	}
 }
 
+// Select adds attributes to return for all queries.
 func (p DBParamsBuilder) Select(selects ...Attribute) DBParamsBuilder {
 	p.selectFields = append(p.selectFields, selects...)
 	return p
 }
 
+// Insert adds attributes to insert for insert queries.
 func (p DBParamsBuilder) Insert(columns ...Attribute) DBParamsBuilder {
 	p.columns = append(p.columns, columns...)
 	return p
 }
 
+// Update adds attributes to update for update queries.
 func (p DBParamsBuilder) Update(columns ...Attribute) DBParamsBuilder {
 	p.columns = append(p.columns, columns...)
 	return p
 }
 
+// Where adds where conditions for all queries.
 func (p DBParamsBuilder) Where(where ...Condition) DBParamsBuilder {
 	p.where = append(p.where, where...)
 	return p
 }
 
+// Limit sets the limit condition for all queries.
 func (p DBParamsBuilder) Limit(limit int64) DBParamsBuilder {
 	p.limit = limit
 	return p
 }
 
+// Offset sets the offset condition for all queries.
 func (p DBParamsBuilder) Offset(offset int64) DBParamsBuilder {
 	p.offset = offset
 	return p
 }
 
+// OrderBy adds order-by conditions for all queries.
 func (p DBParamsBuilder) OrderBy(orderBy ...*Order) DBParamsBuilder {
 	p.orderBy = append(p.orderBy, orderBy...)
 	return p
 }
 
+// Populate adds populate conditions for all queries.
 func (p DBParamsBuilder) Populate(populate ...Attribute) DBParamsBuilder {
 	p.populate = append(p.populate, populate...)
 	return p
 }
 
+// Build returns the DBParams with the set conditions.
 func (p DBParamsBuilder) Build() DBParams {
 	return DBParams{
 		Select:   p.selectFields,

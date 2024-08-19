@@ -1,78 +1,59 @@
 package common
 
 import (
-	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"io/fs"
 	"log"
-	"os"
-	"sync"
 )
 
-var (
-	cmdMutex    sync.RWMutex
-	cmdRegister = make(map[string]*cobra.Command)
-)
+// Command takes in a cosys instance and returns a command.
+type Command func(*Cosys) *cobra.Command
 
-func RegisterCommand(command *cobra.Command) error {
-	cmdMutex.Lock()
-	defer cmdMutex.Unlock()
-
-	if command == nil {
-		return fmt.Errorf("command is nil", command)
-	}
-
-	commandName := command.Name()
-
-	if _, dup := cmdRegister[commandName]; dup {
-		return fmt.Errorf("duplicate command:" + commandName)
-	}
-
-	cmdRegister[commandName] = command
-	return nil
+// String returns the name of the command, i.e. the word used to run the command in the cli.
+func (c Command) String() string {
+	return c(nil).Name()
 }
 
-func InitConfigs() {
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	viper.SetConfigType("yaml")
-	viper.SetConfigName(".cli_configs")
-	viper.AddConfigPath(dir)
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal(err)
+// serveCmd is the command to start the server in production mode.
+func serveCmd(cosys *Cosys) *cobra.Command {
+	return &cobra.Command{
+		Use:   "serve",
+		Short: "Start the server in production mode",
+		Run: func(cmd *cobra.Command, args []string) {
+			cosys.SetEnvironment(Prod)
+
+			for err := range cosys.startServer() {
+				log.Print(err)
+			}
+		},
 	}
 }
 
-func GetPathConfig(key string, checkExists bool) (string, error) {
-	if !viper.InConfig(key) {
-		return "", fmt.Errorf("configuration not found: %s", key)
-	}
-	config := viper.GetString(key)
+// devCmd is the command to start the server in development mode.
+func devCmd(cosys *Cosys) *cobra.Command {
+	return &cobra.Command{
+		Use:   "dev",
+		Short: "Start the server in development mode",
+		Run: func(cmd *cobra.Command, args []string) {
+			cosys.SetEnvironment(Dev)
 
-	if checkExists {
-		exists, err := pathExists(config)
-		if err != nil {
-			return "", err
-		}
-		if !exists {
-			return "", fmt.Errorf("path does not exist: %s", config)
-		}
+			for err := range cosys.startServer() {
+				log.Print(err)
+			}
+		},
 	}
-
-	return config, nil
 }
 
-func pathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
+// testCmd is the command to start the server in test mode.
+func testCmd(cosys *Cosys) *cobra.Command {
+	return &cobra.Command{
+		Use:   "test",
+		Short: "Start the server in test mode",
+		Run: func(cmd *cobra.Command, args []string) {
+			cosys.SetEnvironment(Test)
+
+			for err := range cosys.startServer() {
+				log.Print(err)
+			}
+		},
 	}
-	if errors.Is(err, fs.ErrNotExist) {
-		return false, nil
-	}
-	return false, err
 }

@@ -2,6 +2,7 @@ package common
 
 import "github.com/iancoleman/strcase"
 
+// Attribute is a field of a model.
 type Attribute interface {
 	Asc() *Order
 	Desc() *Order
@@ -16,7 +17,9 @@ type Attribute interface {
 	HumanName() string
 }
 
-type AttributeBase struct {
+// attributeBase can be embedded into structs to provide them
+// the methods to implement the Attribute interface.
+type attributeBase struct {
 	camelName  string
 	pascalName string
 	snakeName  string
@@ -24,8 +27,10 @@ type AttributeBase struct {
 	humanName  string
 }
 
-func NewAttributeBase(name string) AttributeBase {
-	return AttributeBase{
+// newAttributeBase returns a new attributeBase
+// based on the given attribute name.
+func newAttributeBase(name string) attributeBase {
+	return attributeBase{
 		camelName:  strcase.ToLowerCamel(name),
 		pascalName: strcase.ToCamel(name),
 		snakeName:  strcase.ToSnake(name),
@@ -34,41 +39,45 @@ func NewAttributeBase(name string) AttributeBase {
 	}
 }
 
-func (a AttributeBase) CamelName() string {
+func (a attributeBase) CamelName() string {
 	return a.camelName
 }
 
-func (a AttributeBase) PascalName() string {
+func (a attributeBase) PascalName() string {
 	return a.pascalName
 }
 
-func (a AttributeBase) SnakeName() string {
+func (a attributeBase) SnakeName() string {
 	return a.snakeName
 }
 
-func (a AttributeBase) KebabName() string {
+func (a attributeBase) KebabName() string {
 	return a.kebabName
 }
 
-func (a AttributeBase) HumanName() string {
+func (a attributeBase) HumanName() string {
 	return a.humanName
 }
 
-func (a AttributeBase) Asc() *Order {
+// Asc returns the ascending order-by condition for this attribute.
+func (a attributeBase) Asc() *Order {
 	return &Order{
 		a,
 		Asc,
 	}
 }
 
-func (a AttributeBase) Desc() *Order {
+// Desc returns the descending order-by condition for this attribute.
+func (a attributeBase) Desc() *Order {
 	return &Order{
 		a,
 		Desc,
 	}
 }
 
-func (a AttributeBase) Null() Condition {
+// Null returns where condition, whether
+// the value of the attribute is null.
+func (a attributeBase) Null() Condition {
 	return &ExpressionCondition{
 		Null,
 		a,
@@ -76,7 +85,9 @@ func (a AttributeBase) Null() Condition {
 	}
 }
 
-func (a AttributeBase) NotNull() Condition {
+// NotNull returns where condition, whether
+// the value of the attribute is not null.
+func (a attributeBase) NotNull() Condition {
 	return &ExpressionCondition{
 		Null,
 		a,

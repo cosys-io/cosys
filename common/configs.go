@@ -1,76 +1,53 @@
 package common
 
 import (
-	"github.com/joho/godotenv"
-	"path/filepath"
+	"errors"
+	"fmt"
+	"github.com/spf13/viper"
+	"io/fs"
+	"log"
+	"os"
 )
 
-type Configs struct {
-	Admin    *AdminConfigs
-	Database *DatabaseConfigs
-	Server   *ServerConfigs
+func InitConfigs() {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	viper.SetConfigType("yaml")
+	viper.SetConfigName(".cli_configs")
+	viper.AddConfigPath(dir)
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatal(err)
+	}
 }
 
-type AdminConfigs struct{}
+func GetPathConfig(key string, checkExists bool) (string, error) {
+	if !viper.InConfig(key) {
+		return "", fmt.Errorf("configuration not found: %s", key)
+	}
+	config := viper.GetString(key)
 
-type DatabaseConfigs struct {
-	Client string `yaml:"client"`
-	Host   string `yaml:"host"`
-	Port   string `yaml:"port"`
-	Name   string `yaml:"name"`
-	User   string `yaml:"user"`
-	Pass   string `yaml:"pass"`
+	if checkExists {
+		exists, err := pathExists(config)
+		if err != nil {
+			return "", err
+		}
+		if !exists {
+			return "", fmt.Errorf("path does not exist: %s", config)
+		}
+	}
+
+	return config, nil
 }
 
-type ModuleConfigs struct {
-	Modules []string `yaml:"modules"`
-}
-
-type ServerConfigs struct {
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
-}
-
-func GetConfigs(path string) (Configs, error) {
-	if err := godotenv.Load(); err != nil {
-		return Configs{}, err
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
 	}
-
-	adminCfg := AdminConfigs{}
-	databaseCfg := DatabaseConfigs{}
-	serverCfg := ServerConfigs{}
-
-	if err := ParseFile(filepath.Join(path, "admin.yaml"), &adminCfg, true); err != nil {
-		return Configs{}, err
+	if errors.Is(err, fs.ErrNotExist) {
+		return false, nil
 	}
-	if err := ParseFile(filepath.Join(path, "database.yaml"), &databaseCfg, true); err != nil {
-		return Configs{}, err
-	}
-	if err := ParseFile(filepath.Join(path, "server.yaml"), &serverCfg, true); err != nil {
-		return Configs{}, err
-	}
-
-	return Configs{
-		Admin:    &adminCfg,
-		Database: &databaseCfg,
-		Server:   &serverCfg,
-	}, nil
-}
-
-func NewConfigs() Configs {
-	return Configs{
-		Admin: &AdminConfigs{},
-		Database: &DatabaseConfigs{
-			Client: "sqlite3",
-			Host:   "localhost",
-			Port:   "4000",
-			Name:   "cosys",
-			User:   "cosys",
-			Pass:   "cosys",
-		},
-		Server: &ServerConfigs{
-			Host: "localhost",
-			Port: "3000",
-		},
-	}
+	return false, err
 }

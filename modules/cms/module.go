@@ -2,29 +2,13 @@ package cms
 
 import (
 	"github.com/cosys-io/cosys/common"
-	"log"
+	"github.com/cosys-io/cosys/modules/cms/internal"
+	"github.com/spf13/cobra"
 )
 
+// init registers the module to register the cli commands for the cms.
 func init() {
-	if err := common.RegisterCommand(rootCmd); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := common.RegisterModule("admin", adminModule); err != nil {
-		log.Fatal(err)
-	}
-}
-
-var adminModule = &common.Module{
-	Routes: schemaRoutes,
-	Controllers: map[string]common.Controller{
-		"admin": schemaController,
-	},
-	Middlewares: nil,
-	Policies:    nil,
-	Models:      nil,
-	Services:    nil,
-
-	OnRegister: onRegister,
-	OnDestroy:  nil,
+	_ = common.RegisterModule(func(cosys *common.Cosys) error {
+		return cosys.AddCommands(func(*common.Cosys) *cobra.Command { return internal.RootCmd })
+	})
 }

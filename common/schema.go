@@ -1,215 +1,268 @@
 package common
 
-import "fmt"
-
-type ModelSchema struct {
-	ModelType      string             `yaml:"modelType" json:"modelType"`
-	CollectionName string             `yaml:"collectionName" json:"collectionName"`
-	DisplayName    string             `yaml:"displayName" json:"displayName"`
-	SingularName   string             `yaml:"singularName" json:"singularName"`
-	PluralName     string             `yaml:"pluralName" json:"pluralName"`
-	Description    string             `yaml:"description" json:"description"`
-	Attributes     []*AttributeSchema `yaml:"attributes" json:"attributes"`
+// ModelSchema is a schema for a model.
+type ModelSchema interface {
+	CollectionName() string
+	SingularName() string
+	PluralName() string
+	Attributes() []AttributeSchema
 }
 
-type AttributeSchema struct {
-	Name               string `yaml:"name" json:"name"`
-	SimplifiedDataType string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
-	DetailedDataType   string `yaml:"detailedDataType" json:"detailedDataType"`
+// AttributeSchema is a schema for a model attribute.
+type AttributeSchema interface {
+	Name() string
+	SimplifiedDataType() string
+	DetailedDataType() string
 
-	ShownInTable bool  `yaml:"shownInTable" json:"shownInTable"`
-	Required     bool  `yaml:"required" json:"required"`
-	Max          int64 `yaml:"max" json:"max"`
-	Min          int64 `yaml:"min" json:"min"`
-	MaxLength    int   `yaml:"maxLength" json:"maxLength"`
-	MinLength    int   `yaml:"minLength" json:"minLength"`
-	Private      bool  `yaml:"private" json:"private"`
-	Editable     bool  `yaml:"editable" json:"editable"`
+	Required() bool
+	Max() int64
+	Min() int64
+	MaxLength() int
+	MinLength() int
+	Private() bool
+	Editable() bool
+	Enum() []string
 
-	Default  string `yaml:"default" json:"default"`
-	Nullable bool   `yaml:"nullable" json:"nullable"`
-	Unique   bool   `yaml:"unique" json:"unique"`
+	Default() string
+	Nullable() bool
+	Unique() bool
 }
 
-func NewAttributeSchema(attrName, attrType string) (*AttributeSchema, error) {
-	if attrName == "" {
-		return nil, fmt.Errorf("invalid attribute name: %s", attrName)
-	}
-
-	var simpleType string
-	var detailedType string
-
-	switch attrType {
-	case "string":
-		simpleType = "String"
-		detailedType = "String"
-	case "int":
-		simpleType = "Number"
-		detailedType = "Int"
-	case "float":
-		simpleType = "Number"
-		detailedType = "Float"
-	case "boolean":
-		simpleType = "Boolean"
-		detailedType = "Boolean"
-	case "date":
-		simpleType = "Date"
-		detailedType = "Date"
-	case "datetime":
-		simpleType = "DateTime"
-		detailedType = "DateTime"
-	case "timestamp":
-		simpleType = "TimeStamp"
-		detailedType = "TimeStamp"
-	default:
-		return nil, fmt.Errorf("invalid attribute type: %s", attrType)
-	}
-
-	return &AttributeSchema{
-		Name:               attrName,
-		SimplifiedDataType: simpleType,
-		DetailedDataType:   detailedType,
-		ShownInTable:       true,
-		Required:           false,
-		Max:                2147483647,
-		Min:                -2147483648,
-		MaxLength:          -1,
-		MinLength:          -1,
-		Private:            false,
-		Editable:           true,
-		Default:            "",
-		Nullable:           true,
-		Unique:             false,
-	}, nil
+// modelSchema is an implementation of the ModelSchema interface.
+type modelSchema struct {
+	collectionName string
+	singularName   string
+	pluralName     string
+	attributes     []AttributeSchema
 }
 
-var IdSchema = AttributeSchema{
-	Name:               "id",
-	SimplifiedDataType: "Number",
-	DetailedDataType:   "Int",
-	ShownInTable:       true,
-	Required:           true,
-	Max:                2147483647,
-	Min:                -2147483648,
-	MaxLength:          -1,
-	MinLength:          -1,
-	Private:            false,
-	Editable:           false,
-	Nullable:           false,
-	Unique:             true,
+func (s modelSchema) CollectionName() string {
+	return s.collectionName
 }
 
-func GetSchema(path string) (*ModelSchema, error) {
-	schemaParsed := ModelSchemaParsed{}
-
-	if err := ParseFile(path, &schemaParsed, false); err != nil {
-		return nil, err
-	}
-
-	return schemaParsed.Schema()
+func (s modelSchema) SingularName() string {
+	return s.singularName
 }
 
-type ModelSchemaParsed struct {
-	ModelType      string                   `yaml:"modelType" json:"modelType"`
-	CollectionName string                   `yaml:"collectionName" json:"collectionName"`
-	DisplayName    string                   `yaml:"displayName" json:"displayName"`
-	SingularName   string                   `yaml:"singularName" json:"singularName"`
-	PluralName     string                   `yaml:"pluralName" json:"pluralName"`
-	Description    string                   `yaml:"description" json:"description"`
-	Attributes     []*AttributeSchemaParsed `yaml:"attributes" json:"attributes"`
+func (s modelSchema) PluralName() string {
+	return s.pluralName
 }
 
-func (m ModelSchemaParsed) Schema() (*ModelSchema, error) {
-	if m.DisplayName == "" {
-		return nil, fmt.Errorf("model has no display name")
-	}
-	if m.ModelType == "" {
-		return nil, fmt.Errorf("model has no model type: %s", m.DisplayName)
-	}
-	if m.CollectionName == "" {
-		return nil, fmt.Errorf("model has no collection name: %s", m.DisplayName)
-	}
-	if m.SingularName == "" {
-		return nil, fmt.Errorf("model has no singular name: %s", m.DisplayName)
-	}
-	if m.PluralName == "" {
-		return nil, fmt.Errorf("model has no plural name: %s", m.DisplayName)
-	}
-
-	var attrs []*AttributeSchema
-
-	for _, attr := range m.Attributes {
-		attrSchema, err := attr.Schema()
-		if err != nil {
-			return nil, err
-		}
-		attrs = append(attrs, attrSchema)
-	}
-
-	return &ModelSchema{
-		ModelType:      m.ModelType,
-		CollectionName: m.CollectionName,
-		DisplayName:    m.DisplayName,
-		SingularName:   m.SingularName,
-		PluralName:     m.PluralName,
-		Description:    m.Description,
-		Attributes:     attrs,
-	}, nil
+func (s modelSchema) Attributes() []AttributeSchema {
+	return s.attributes
 }
 
-type AttributeSchemaParsed struct {
-	Name               string `yaml:"name" json:"name"`
-	SimplifiedDataType string `yaml:"simplifiedDataType" json:"simplifiedDataType"`
-	DetailedDataType   string `yaml:"detailedDataType" json:"detailedDataType"`
+// attributeSchema is an implementation of the AttributeSchema interface.
+type attributeSchema struct {
+	name               string
+	simplifiedDataType string
+	detailedDataType   string
 
-	ShownInTable *bool  `yaml:"shownInTable" json:"shownInTable"`
-	Required     *bool  `yaml:"required" json:"required"`
-	Max          *int64 `yaml:"max" json:"max"`
-	Min          *int64 `yaml:"min" json:"min"`
-	MaxLength    *int   `yaml:"maxLength" json:"maxLength"`
-	MinLength    *int   `yaml:"minLength" json:"minLength"`
-	Private      *bool  `yaml:"private" json:"private"`
-	Editable     *bool  `yaml:"editable" json:"editable"`
+	required  bool
+	max       int64
+	min       int64
+	maxLength int
+	minLength int
+	private   bool
+	editable  bool
+	enum      []string
 
-	Default  *string `yaml:"default" json:"default"`
-	Nullable *bool   `yaml:"nullable" json:"nullable"`
-	Unique   *bool   `yaml:"unique" json:"unique"`
+	defaultValue string
+	nullable     bool
+	unique       bool
 }
 
-func (a AttributeSchemaParsed) Schema() (*AttributeSchema, error) {
-	if a.Name == "" {
-		return nil, fmt.Errorf("attribute has no name")
-	}
-	if a.SimplifiedDataType == "" {
-		return nil, fmt.Errorf("attribute has no simple type: %s", a.Name)
-	}
-	if a.DetailedDataType == "" {
-		return nil, fmt.Errorf("attribute has no detailed type: %s", a.Name)
-	}
-
-	return &AttributeSchema{
-		Name:               a.Name,
-		SimplifiedDataType: a.SimplifiedDataType,
-		DetailedDataType:   a.DetailedDataType,
-
-		ShownInTable: checkDefault(true, a.ShownInTable),
-		Required:     checkDefault(false, a.Required),
-		Max:          checkDefault(int64(2147483647), a.Max),
-		Min:          checkDefault(int64(-2147483648), a.Min),
-		MaxLength:    checkDefault(-1, a.MaxLength),
-		MinLength:    checkDefault(-1, a.MinLength),
-		Private:      checkDefault(false, a.Private),
-		Editable:     checkDefault(true, a.Editable),
-
-		Default:  checkDefault("", a.Default),
-		Nullable: checkDefault(true, a.Nullable),
-		Unique:   checkDefault(false, a.Unique),
-	}, nil
+func (s attributeSchema) Name() string {
+	return s.name
 }
 
-func checkDefault[T any](defaultValue T, value *T) T {
-	if value == nil {
-		return defaultValue
+func (s attributeSchema) SimplifiedDataType() string {
+	return s.simplifiedDataType
+}
+
+func (s attributeSchema) DetailedDataType() string {
+	return s.detailedDataType
+}
+
+func (s attributeSchema) Required() bool {
+	return s.required
+}
+
+func (s attributeSchema) Max() int64 {
+	return s.max
+}
+
+func (s attributeSchema) Min() int64 {
+	return s.min
+}
+
+func (s attributeSchema) MaxLength() int {
+	return s.maxLength
+}
+
+func (s attributeSchema) MinLength() int {
+	return s.minLength
+}
+
+func (s attributeSchema) Private() bool {
+	return s.private
+}
+
+func (s attributeSchema) Editable() bool {
+	return s.editable
+}
+
+func (s attributeSchema) Enum() []string {
+	return s.enum
+}
+
+func (s attributeSchema) Default() string {
+	return s.defaultValue
+}
+
+func (s attributeSchema) Nullable() bool {
+	return s.nullable
+}
+
+func (s attributeSchema) Unique() bool {
+	return s.unique
+}
+
+// NewModelSchema returns a new model schema from the given names and attribute schemas.
+func NewModelSchema(collection, singular, plural string, attrs ...AttributeSchema) ModelSchema {
+	return &modelSchema{
+		collectionName: collection,
+		singularName:   singular,
+		pluralName:     plural,
+		attributes:     attrs,
 	}
-	return *value
+}
+
+// NewAttrSchema returns a new attribute schema from the given name, types and configurations.
+func NewAttrSchema(attrName, simpleType, detailedType string, opts ...AttrOption) AttributeSchema {
+	schema := &attributeSchema{
+		name:               attrName,
+		simplifiedDataType: simpleType,
+		detailedDataType:   detailedType,
+		required:           false,
+		max:                2147483647,
+		min:                -2147483648,
+		maxLength:          -1,
+		minLength:          -1,
+		private:            false,
+		editable:           true,
+		defaultValue:       "",
+		nullable:           true,
+		unique:             false,
+	}
+
+	for _, opt := range opts {
+		opt(schema)
+	}
+
+	return schema
+}
+
+// AttrOption is a configuration for an attribute schema.
+type AttrOption func(*attributeSchema)
+
+// Required specifies that an attribute is required.
+var Required AttrOption = func(schema *attributeSchema) {
+	schema.required = true
+}
+
+// Max specifies that an attribute has the given maximum value.
+func Max(max int64) AttrOption {
+	return func(schema *attributeSchema) {
+		schema.max = max
+	}
+}
+
+// Min specifies that an attribute has the given minimum value.
+func Min(min int64) AttrOption {
+	return func(schema *attributeSchema) {
+		schema.min = min
+	}
+}
+
+// MaxLength specifies that an attribute has the given maximum length.
+func MaxLength(max int) AttrOption {
+	return func(schema *attributeSchema) {
+		schema.maxLength = max
+	}
+}
+
+// MinLength specifies that an attribute has the given minimum length.
+func MinLength(min int) AttrOption {
+	return func(schema *attributeSchema) {
+		schema.minLength = min
+	}
+}
+
+// Private specifies that an attribute is private.
+var Private AttrOption = func(schema *attributeSchema) {
+	schema.private = true
+}
+
+// NotEditable specifies that an attribute is not editable.
+var NotEditable AttrOption = func(schema *attributeSchema) {
+	schema.editable = false
+}
+
+// Enum specifies that an attribute is can only take the given values.
+func Enum(enum []string) AttrOption {
+	return func(schema *attributeSchema) {
+		schema.enum = enum
+	}
+}
+
+// Default specifies that an attribute has the given default value.
+func Default(def string) AttrOption {
+	return func(schema *attributeSchema) {
+		schema.defaultValue = def
+	}
+}
+
+// NotNullable specifies that an attribute is cannot be null.
+var NotNullable AttrOption = func(schema *attributeSchema) {
+	schema.nullable = false
+}
+
+// Unique specifies that an attribute is unique.
+var Unique AttrOption = func(schema *attributeSchema) {
+	schema.unique = true
+}
+
+// IdSchema is the schema for the id attribute.
+var IdSchema = attributeSchema{
+	name:               "id",
+	simplifiedDataType: "Number",
+	detailedDataType:   "Int",
+	required:           false,
+	max:                2147483647,
+	min:                -2147483648,
+	maxLength:          -1,
+	minLength:          -1,
+	private:            false,
+	editable:           false,
+	enum:               nil,
+	nullable:           false,
+	unique:             true,
+}
+
+// UuidSchema is the schema for the uuid attribute.
+var UuidSchema = attributeSchema{
+	name:               "uuid",
+	simplifiedDataType: "String",
+	detailedDataType:   "String",
+	required:           false,
+	max:                2147483647,
+	min:                -2147483648,
+	maxLength:          -1,
+	minLength:          -1,
+	private:            false,
+	editable:           false,
+	enum:               nil,
+	nullable:           false,
+	unique:             true,
 }

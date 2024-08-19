@@ -1,17 +1,21 @@
 package common
 
+// StringAttribute is an attribute of string datatype.
 type StringAttribute struct {
-	*AttributeBase
+	*attributeBase
 }
 
-func NewStringAttribute(name string) *StringAttribute {
-	base := NewAttributeBase(name)
+// NewStringAttribute returns a new string attribute with the given name.
+func NewStringAttribute(name string) StringAttribute {
+	base := newAttributeBase(name)
 
-	return &StringAttribute{
+	return StringAttribute{
 		&base,
 	}
 }
 
+// Eq returns the where condition, whether the value of
+// the string attribute is equals to the given string.
 func (s StringAttribute) Eq(right string) Condition {
 	return &ExpressionCondition{
 		Eq,
@@ -20,6 +24,8 @@ func (s StringAttribute) Eq(right string) Condition {
 	}
 }
 
+// NEq returns the where condition, whether the value of
+// the string attribute is not equals to the given string.
 func (s StringAttribute) NEq(right string) Condition {
 	return &ExpressionCondition{
 		Neq,
@@ -28,6 +34,8 @@ func (s StringAttribute) NEq(right string) Condition {
 	}
 }
 
+// In returns the where condition, whether the value of
+// the string attribute is in the given slice of strings.
 func (s StringAttribute) In(right []string) Condition {
 	return &ExpressionCondition{
 		In,
@@ -36,6 +44,8 @@ func (s StringAttribute) In(right []string) Condition {
 	}
 }
 
+// NotIn returns the where condition, whether the value of
+// the string attribute is in the given slice of strings.
 func (s StringAttribute) NotIn(right []string) Condition {
 	return &ExpressionCondition{
 		NotIn,
@@ -44,6 +54,8 @@ func (s StringAttribute) NotIn(right []string) Condition {
 	}
 }
 
+// Contains returns the where condition, whether the value of
+// the string attribute contains the given string.
 func (s StringAttribute) Contains(right string) Condition {
 	return &ExpressionCondition{
 		Contains,
@@ -52,6 +64,8 @@ func (s StringAttribute) Contains(right string) Condition {
 	}
 }
 
+// NotContains returns the where condition, whether the value of
+// the string attribute does not contain the given string.
 func (s StringAttribute) NotContains(right string) Condition {
 	return &ExpressionCondition{
 		NotContains,
@@ -60,6 +74,8 @@ func (s StringAttribute) NotContains(right string) Condition {
 	}
 }
 
+// StartsWith returns the where condition, whether the value of
+// the string attribute starts with the given string.
 func (s StringAttribute) StartsWith(right string) Condition {
 	return &ExpressionCondition{
 		StartsWith,
@@ -68,6 +84,8 @@ func (s StringAttribute) StartsWith(right string) Condition {
 	}
 }
 
+// EndsWith returns the where condition, whether the value of
+// the string attribute ends with the given string.
 func (s StringAttribute) EndsWith(right string) Condition {
 	return &ExpressionCondition{
 		EndsWith,

@@ -1,49 +1,41 @@
 package sqlite3
 
 import (
-	"database/sql"
 	"github.com/cosys-io/cosys/common"
-	"log"
-
+	"github.com/cosys-io/cosys/modules/sqlite3/internal"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
-	db *sql.DB
+	database         *internal.Database // database is the Database core service.
+	BootstrapHookKey string             // BootstrapHookKey can be used to update or remove the bootstrap hook.
 )
 
+// init registers the module to register the Database core service and the bootstrap hook.
 func init() {
-	dbCtor := func(cosys *common.Cosys) common.Database {
-		return Database{
-			cosys: cosys,
-			db:    db,
+	_ = common.RegisterModule(func(cosys *common.Cosys) error {
+		var err error
+
+		database = internal.NewDatabase(cosys)
+		if err = cosys.UseDatabase(database); err != nil {
+			return err
 		}
-	}
 
-	if err := common.RegisterDatabase("sqlite3", dbCtor); err != nil {
-		log.Fatal(err)
-	}
+		BootstrapHookKey, err = cosys.AddBootstrapHook(bootstrap)
+		if err != nil {
+			return err
+		}
 
-	if err := common.RegisterModule("sqlite3", module); err != nil {
-		log.Fatal(err)
-	}
+		return nil
+	})
 }
 
-func OnRegister(cosys common.Cosys) (common.Cosys, error) {
-	var err error
-	db, err = sql.Open("sqlite3", "data.db")
-	if err != nil {
-		return common.Cosys{}, err
+// bootstrap opens the connection to the SQLite3 database and
+// loads the schema for all registered models.
+func bootstrap(cosys *common.Cosys) error {
+	if err := database.Open("data.db"); err != nil {
+		return err
 	}
 
-	if err = loadSchema(cosys); err != nil {
-		return common.Cosys{}, err
-	}
-
-	return cosys, nil
-}
-
-var module = &common.Module{
-	OnRegister: OnRegister,
-	OnDestroy:  nil,
+	return database.LoadSchema()
 }
